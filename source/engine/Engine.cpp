@@ -29,10 +29,16 @@ void Engine::Initialize()
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
 	renderContext.CreateCommandBuffer(&deviceContext);
+}
+
+void Engine::CreateRenderResources()
+{
 	renderContext.CreateRootSignature(&deviceContext);
 	renderContext.CreateShaders(&deviceContext);
 	renderContext.CreatePipelineState(&deviceContext);
 	renderContext.CreateViewportAndScissorRect(&deviceContext);
+	renderContext.CreateVertexBuffer(&deviceContext);
+	deviceContext.Flush();
 }
 
 void Engine::Tick()

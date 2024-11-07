@@ -5,13 +5,9 @@ LOCATION_DIRECTORY_NAME = "build"
 
 -- Workspace
 workspace "SuperEZ"
-    configurations
-	{
-		"Debug",
-		"Release"
-	}
+    configurations { "Debug", "Release", "Final" }
+	architecture "x86_64"
 	system "Windows"
-    architecture "x86_64"
 	location(LOCATION_DIRECTORY_NAME)
 	project "Engine"
 	project "Game"
@@ -20,20 +16,29 @@ project "Engine"
     kind "StaticLib"
     language "C++"
 	cppdialect "C++20"
+	location(LOCATION_DIRECTORY_NAME)
     targetdir "bin/%{cfg.buildcfg}"
 	includedirs
 	{
-		"source/external/d3dx12"
+		"source/external/d3dx12",
+		"source/external/SimpleMath"
 	}
     files
 	{
 		"source/engine/**.h", "source/engine/**.cpp"
 	}
+	symbolspath '$(OutDir)$(TargetName).pdb'
+	filter "configurations:Final"
+		defines { "FINAL" }
+		postbuildcommands { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/shaders.hlsl] %[%{!cfg.targetdir}]" }
+	filter "configurations:Debug"
+		defines { "DEBUG" }
 	
 project "Game"
     kind "ConsoleApp"
     language "C++"
 	cppdialect "C++20"
+	location(LOCATION_DIRECTORY_NAME)
     targetdir "bin/%{cfg.buildcfg}"
 	links
 	{

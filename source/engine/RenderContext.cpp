@@ -4,6 +4,7 @@
 
 #include <Windows.h>
 #include <d3dcompiler.h>
+#include "../externals/SimpleMath/SimpleMath.h"
 #include "debugapi.h"
 #include "Utils.h"
 
@@ -18,8 +19,12 @@ RenderContext::~RenderContext()
 {
 	OutputDebugString(L"RenderContext Destructor\n");
 
+	// Reelease Render Resources
+	SafeRelease(&vertexBuffer);
 	SafeRelease(&pipelineState);
+	SafeRelease(&vertexShader);
 	SafeRelease(&rootSignature);
+
 	SafeRelease(&commandList);
 	SafeRelease(&commandAllocator);
 	for (int i = 0; i < FRAME_COUNT; i++)
@@ -115,15 +120,22 @@ void RenderContext::CreateShaders(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateShaders\n");
 
-#if defined(_DEBUG)
+#if defined(DEBUG)
 	// Enable better shader debugging with the graphics debugging tools.
 	UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #else
 	UINT compileFlags = 0;
 #endif
 
+#if defined(DEBUG)
+	// If you run from VS, the working directory is build, so we need to go up one level
+	ExitIfFailed(D3DCompileFromFile(L"../source/engine/shaders/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(L"../source/engine/shaders/shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+#else
+	// In final we will copy shaders to the bin directory
 	ExitIfFailed(D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
 	ExitIfFailed(D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+#endif
 	OutputDebugString(L"CreateShaders succeeded\n");
 }
 
@@ -134,8 +146,8 @@ void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
 	// Define the vertex input layout.
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 	{
-	    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	    { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	    //{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 	// Describe and create the graphics pipeline state object (PSO).
@@ -145,6 +157,7 @@ void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader);
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState.DepthEnable = FALSE;
 	psoDesc.DepthStencilState.StencilEnable = FALSE;
@@ -165,6 +178,46 @@ void RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(windowContext.GetWidth()), static_cast<float>(windowContext.GetHeight()));
 	scissorRect = CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight()));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
+}
+
+void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
+{
+	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
+	DirectX::SimpleMath::Vector4 triangleVertices[] =
+	{
+		DirectX::SimpleMath::Vector4(0.0f, 0.25f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.25f, -0.25f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.25f, -0.25f * ratio, 0.0f, 1.0f)
+	};
+
+	const UINT vertexBufferSize = sizeof(triangleVertices);
+
+	// Note: using upload heaps to transfer static data like vert buffers is not 
+	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
+	// over. Please read up on Default Heap usage. An upload heap is used here for 
+	// code simplicity and because there are very few verts to actually transfer.
+	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
+	ExitIfFailed(deviceContext->GetDevice()->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&vertexBuffer)));
+	
+	// Copy the triangle data to the vertex buffer.
+	UINT8* pVertexDataBegin;
+	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
+	
+	ExitIfFailed(vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+	vertexBuffer->Unmap(0, nullptr);
+	
+	// Initialize the vertex buffer view.
+	vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+	vertexBufferView.StrideInBytes = sizeof(DirectX::SimpleMath::Vector4);
+	vertexBufferView.SizeInBytes = vertexBufferSize;
 }
 
 void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
@@ -190,8 +243,11 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 	{
 		commandList->ClearRenderTargetView(rtvHandle, clearColorTwo, 0, nullptr);
 	}
-	//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//commandList->DrawInstanced(3, 1, 0, 0);
+
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+	commandList->DrawInstanced(3, 1, 0, 0);
+
 	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	commandList->ResourceBarrier(1, &barrierToPresent);
 	ExitIfFailed(commandList->Close());
