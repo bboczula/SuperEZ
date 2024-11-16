@@ -20,7 +20,6 @@ RenderContext::~RenderContext()
 	OutputDebugString(L"RenderContext Destructor\n");
 
 	// Reelease Render Resources
-	SafeRelease(&vertexBuffer);
 	SafeRelease(&pipelineState);
 	SafeRelease(&vertexShader);
 	SafeRelease(&rootSignature);
@@ -185,37 +184,54 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 	DirectX::SimpleMath::Vector4 triangleVertices[] =
 	{
-		DirectX::SimpleMath::Vector4(0.0f, 0.25f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.25f, -0.25f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.25f, -0.25f * ratio, 0.0f, 1.0f)
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.079f, 0.097f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.0f, 0.0f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.0f, 0.0f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.079f, 0.097f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.168f, 0.21f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.079f, 0.097f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.079f, 0.097f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.168f, 0.21f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.079f, 0.384f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.168f, 0.21f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.168f, 0.21f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.079f, 0.384f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.0f, 0.5f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.079f, 0.384f * ratio, 0.0f, 1.0f),
+
+		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(-0.079f, 0.384f * ratio, 0.0f, 1.0f),
+		DirectX::SimpleMath::Vector4(0.0f, 0.5f * ratio, 0.0f, 1.0f)
 	};
 
 	const UINT vertexBufferSize = sizeof(triangleVertices);
 
-	// Note: using upload heaps to transfer static data like vert buffers is not 
-	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
-	// over. Please read up on Default Heap usage. An upload heap is used here for 
-	// code simplicity and because there are very few verts to actually transfer.
-	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
-	ExitIfFailed(deviceContext->GetDevice()->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&vertexBuffer)));
+	UINT bufferId = deviceContext->CreateVertexBuffer(vertexBufferSize);
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 	
-	ExitIfFailed(vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+	auto vb = deviceContext->GetVertexBuffer(bufferId);
+	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
 	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
-	vertexBuffer->Unmap(0, nullptr);
+	vb->Unmap(0, nullptr);
 	
 	// Initialize the vertex buffer view.
-	vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
+	vertexBufferView.BufferLocation = vb->GetGPUVirtualAddress();
 	vertexBufferView.StrideInBytes = sizeof(DirectX::SimpleMath::Vector4);
 	vertexBufferView.SizeInBytes = vertexBufferSize;
 }
@@ -233,20 +249,12 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[deviceContext->GetCurrentBackBufferIndex()], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->GetCPUDescriptorHandleForHeapStart(), deviceContext->GetCurrentBackBufferIndex(), rtvHeapDescriptorSize);
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-	float clearColorOne[] = { 0.0f, 0.2f, 0.424f, 0.969f };
-	float clearColorTwo[] = { 0.0f, 0.306f, 0.639f, 0.533f };
-	if (frameIndex % 2 == 0)
-	{
-		commandList->ClearRenderTargetView(rtvHandle, clearColorOne, 0, nullptr);
-	}
-	else
-	{
-		commandList->ClearRenderTargetView(rtvHandle, clearColorTwo, 0, nullptr);
-	}
+	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-	commandList->DrawInstanced(3, 1, 0, 0);
+	commandList->DrawInstanced(24, 1, 0, 0);
 
 	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	commandList->ResourceBarrier(1, &barrierToPresent);

@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <vector>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d12.lib")
@@ -17,6 +18,8 @@ public:
 	IDXGISwapChain* GetSwapChain();
 	ID3D12CommandQueue* GetCommandQueue() { return commandQueue; }
 	UINT GetCurrentBackBufferIndex() { return currentBackBufferIndex; }
+	UINT CreateVertexBuffer(UINT size);
+	ID3D12Resource* GetVertexBuffer(UINT index) { return vertexBuffers[index]; }
 	void Present();
 	void Flush();
 private:
@@ -44,4 +47,5 @@ private:
 	UINT64 fenceValue;
 	ID3D12Fence* fence;
 	UINT currentBackBufferIndex;
+	std::vector<ID3D12Resource*> vertexBuffers;
 };

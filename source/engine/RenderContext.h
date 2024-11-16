@@ -49,6 +49,5 @@ private:
 	CD3DX12_RECT scissorRect;
 private:
 	std::vector<RenderTarget*> renderTargets;
-	ID3D12Resource* vertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 };

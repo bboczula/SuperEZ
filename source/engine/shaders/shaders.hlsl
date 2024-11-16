@@ -29,5 +29,5 @@ PSInput VSMain(float4 position : POSITION)
 float4 PSMain(PSInput input) : SV_TARGET
 {
     //return input.color;
-	return float4(1.0f, 0.0f, 0.0f, 1.0f);
+	return float4(0.89f, 0.43f, 0.07f, 1.0f);
 }
