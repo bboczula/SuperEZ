@@ -46,7 +46,7 @@ void DeviceContext::Present()
 {
 	swapChain->Present(1, 0);
 	currentBackBufferIndex = swapChain->GetCurrentBackBufferIndex();
-	Sleep(500);
+	//Sleep(500);
 }
 
 void DeviceContext::CreateDxgiFactory()

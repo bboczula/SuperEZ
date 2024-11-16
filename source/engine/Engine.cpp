@@ -3,6 +3,7 @@
 #include "DeviceContext.h"
 #include "WindowContext.h"
 #include "RenderContext.h"
+#include "RenderGraph.h"
 #include "Settings.h"
 
 #define FRAME_COUNT 2
@@ -12,6 +13,7 @@ Settings settings;
 WindowContext windowContext;
 DeviceContext deviceContext;
 RenderContext renderContext;
+RenderGraph renderGraph;
 
 Engine::Engine()
 {
@@ -43,6 +45,7 @@ void Engine::CreateRenderResources()
 
 void Engine::Tick()
 {
+	renderGraph.Execute();
 	renderContext.PopulateCommandList(&deviceContext);
 	renderContext.ExecuteCommandList(&deviceContext);
 	deviceContext.Flush();

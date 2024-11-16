@@ -2,6 +2,7 @@
 
 #include "WindowContext.h"
 #include "Utils.h"
+#include "CommCtrl.h"
 
 #define WINDOW_CLASS_NAME L"SapphireMyWindowWin32Class"
 #define WINDOW_TITLE L"SapphireEngine"
@@ -70,6 +71,19 @@ void WindowContext::CreateWindowInstance()
 		exit(1);
 	}
 	OutputDebugString(L"Successfully created window\n");
+
+	button = CreateWindowEx(0,
+		WC_TREEVIEW,
+		TEXT("Tree View"),
+		WS_VISIBLE | WS_CHILD | WS_BORDER | TVS_HASLINES,
+		0,
+		0,
+		windowDimentions.first * 0.25f,
+		windowDimentions.second,
+		hwnd,
+		nullptr,
+		instance,
+		NULL);
 
 	CreateMenuBar();
 }

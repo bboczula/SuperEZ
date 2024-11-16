@@ -1,6 +1,9 @@
+#pragma once
+
 #include "vector"
 
 class RenderTarget;
+class DeviceContext;
 
 class RenderPass
 {
@@ -9,5 +12,5 @@ public:
 	~RenderPass();
 	virtual void Prepare();
 	virtual void Execute() = 0;
-	virtual void Allocate() = 0;
+	virtual void Allocate(DeviceContext* deviceContext) = 0;
 };

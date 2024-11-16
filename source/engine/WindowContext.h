@@ -15,6 +15,7 @@ private:
 	void CreateWindowInstance();
 	void CreateMenuBar();
 	HWND hwnd;
+	HWND button;
 	HINSTANCE instance;
 	LONG width;
 	LONG height;
