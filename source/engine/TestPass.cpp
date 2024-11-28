@@ -1,5 +1,11 @@
 #include "TestPass.h"
 
+#include "RenderContext.h"
+#include "DeviceContext.h"
+
+extern DeviceContext deviceContext;
+extern RenderContext renderContext;
+
 TestPass::TestPass()
 {
 }
@@ -10,12 +16,18 @@ TestPass::~TestPass()
 
 void TestPass::Prepare()
 {
-	// Why do we reeally need Prepare?
+	renderContext.CreateRootSignature(&deviceContext);
+	renderContext.CreateShaders(&deviceContext);
+	renderContext.CreatePipelineState(&deviceContext);
+	renderContext.CreateViewportAndScissorRect(&deviceContext);
+	renderContext.CreateVertexBuffer(&deviceContext);
+	deviceContext.Flush();
 }
 
 void TestPass::Execute()
 {
-	// Then in execute we need to bind the render target
+	renderContext.PopulateCommandList(&deviceContext);
+	renderContext.ExecuteCommandList(&deviceContext);
 }
 
 void TestPass::Allocate(DeviceContext* deviceContext)

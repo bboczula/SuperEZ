@@ -17,7 +17,14 @@ void RenderGraph::Execute()
 {
 	for (RenderPass* renderPass : renderPasses)
 	{
-		renderPass->Prepare();
 		renderPass->Execute();
+	}
+}
+
+void RenderGraph::Initialize()
+{
+	for (RenderPass* renderPass : renderPasses)
+	{
+		renderPass->Prepare();
 	}
 }

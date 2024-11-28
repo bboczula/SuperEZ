@@ -145,8 +145,8 @@ void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
 	// Define the vertex input layout.
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 	{
-	    { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	    //{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	    { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
 	// Describe and create the graphics pipeline state object (PSO).
@@ -182,44 +182,114 @@ void RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 {
 	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	DirectX::SimpleMath::Vector4 triangleVertices[] =
+
+#define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
+#define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
+#define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
+#define COLOR_4 0.500f, 0.500f, 0.500f, 1.0f
+
+#define T1_V1 0.000f, 0.289f * ratio, 0.0f, 1.0f
+#define T1_V2 0.079f, 0.097f * ratio, 0.0f, 1.0f
+#define T1_V3 0.000f, 0.000f * ratio, 0.0f, 1.0f
+
+#define T2_V1 T1_V1
+#define T2_V2 0.168f, 0.210f * ratio, 0.0f, 1.0f
+#define T2_V3 T1_V2
+
+#define T3_V1 T1_V1
+#define T3_V2 0.079f, 0.384f * ratio, 0.0f, 1.0f
+#define T3_V3 T2_V2
+
+#define T4_V1 T1_V1
+#define T4_V2 0.000f, 0.500f * ratio, 0.0f, 1.0f
+#define T4_V3 T3_V2
+
+	float arrayVertexAndColor[][8] =
 	{
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.079f, 0.097f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.0f, 0.0f * ratio, 0.0f, 1.0f),
+		{ T1_V1,   COLOR_1 },
+		{ T1_V2,   COLOR_1 },
+		{ T1_V3,   COLOR_1 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.0f, 0.0f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.079f, 0.097f * ratio, 0.0f, 1.0f),
+		{ T2_V1,   COLOR_1 },
+		{ T2_V2,   COLOR_1 },
+		{ T2_V3,   COLOR_1 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.168f, 0.21f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.079f, 0.097f * ratio, 0.0f, 1.0f),
+		{ T3_V1,   COLOR_1 },
+		{ T3_V2,   COLOR_1 },
+		{ T3_V3,   COLOR_1 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.079f, 0.097f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.168f, 0.21f * ratio, 0.0f, 1.0f),
+		{ T4_V1,   COLOR_1 },
+		{ T4_V2,   COLOR_1 },
+		{ T4_V3,   COLOR_1 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.079f, 0.384f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.168f, 0.21f * ratio, 0.0f, 1.0f),
+		{ 0.160f, 0.468f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ T3_V2,   COLOR_2 },
+		{ 0.000f, 0.500f * ratio, 0.0f, 1.0f,   COLOR_2 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.168f, 0.21f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.079f, 0.384f * ratio, 0.0f, 1.0f),
+		{ 0.160f, 0.468f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ T3_V2,   COLOR_2 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.0f, 0.5f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.079f, 0.384f * ratio, 0.0f, 1.0f),
+		{ 0.160f, 0.468f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.313f, 0.531f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
 
-		DirectX::SimpleMath::Vector4(0.0f, 0.289f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(-0.079f, 0.384f * ratio, 0.0f, 1.0f),
-		DirectX::SimpleMath::Vector4(0.0f, 0.5f * ratio, 0.0f, 1.0f)
+		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ 0.313f, 0.531f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_3 },
+
+		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_2 },
+
+		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_2 },
+
+		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_1 },
+		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_1 },
+		{ T3_V2,   COLOR_1 },
+
+		{ T3_V2,   COLOR_3 },
+		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ T2_V2,   COLOR_3 },
+
+		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_1 },
+		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_1 },
+		{ T2_V2,   COLOR_1 },
+
+		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_3 },
+
+		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_4 },
+		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_4 },
+		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_4 },
+
+		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ 0.473f, 0.300f * ratio, 0.0f, 1.0f,   COLOR_3 },
+
+		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.473f, 0.300f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_2 },
+
+		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_2 },
+
+		{ T2_V2,   COLOR_2 },
+		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{ 0.342f, 0.131f * ratio, 0.0f, 1.0f,   COLOR_2 },
+
+		{ T2_V2,   COLOR_3 },
+		{ 0.342f, 0.131f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{ T2_V3,   COLOR_3 },
 	};
+	
+	const UINT colorSize = sizeof(arrayVertexAndColor);
 
-	const UINT vertexBufferSize = sizeof(triangleVertices);
-
-	UINT bufferId = deviceContext->CreateVertexBuffer(vertexBufferSize);
+	UINT bufferId = deviceContext->CreateVertexBuffer(colorSize);
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -227,13 +297,13 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	
 	auto vb = deviceContext->GetVertexBuffer(bufferId);
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+	memcpy(pVertexDataBegin, arrayVertexAndColor, sizeof(arrayVertexAndColor));
 	vb->Unmap(0, nullptr);
 	
 	// Initialize the vertex buffer view.
 	vertexBufferView.BufferLocation = vb->GetGPUVirtualAddress();
-	vertexBufferView.StrideInBytes = sizeof(DirectX::SimpleMath::Vector4);
-	vertexBufferView.SizeInBytes = vertexBufferSize;
+	vertexBufferView.StrideInBytes = 8 * sizeof(float);
+	vertexBufferView.SizeInBytes = colorSize;
 }
 
 void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
@@ -254,7 +324,7 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-	commandList->DrawInstanced(24, 1, 0, 0);
+	commandList->DrawInstanced(60, 1, 0, 0);
 
 	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	commandList->ResourceBarrier(1, &barrierToPresent);

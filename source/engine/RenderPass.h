@@ -4,6 +4,7 @@
 
 class RenderTarget;
 class DeviceContext;
+class RenderContext;
 
 class RenderPass
 {

@@ -12,22 +12,22 @@
 struct PSInput
 {
     float4 position : SV_POSITION;
-//    float4 color : COLOR;
+    float4 color : COLOR;
 };
 
-//PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
-PSInput VSMain(float4 position : POSITION)
+PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
+//PSInput VSMain(float4 position : POSITION)
 {
     PSInput result;
 
     result.position = position;
-    //result.color = color;
+    result.color = color;
 
     return result;
 }
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    //return input.color;
-	return float4(0.89f, 0.43f, 0.07f, 1.0f);
+    return input.color;
+	//return float4(0.89f, 0.43f, 0.07f, 1.0f);
 }

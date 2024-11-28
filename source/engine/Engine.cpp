@@ -31,23 +31,24 @@ void Engine::Initialize()
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
 	renderContext.CreateCommandBuffer(&deviceContext);
+	renderGraph.Initialize();
 }
 
 void Engine::CreateRenderResources()
 {
-	renderContext.CreateRootSignature(&deviceContext);
-	renderContext.CreateShaders(&deviceContext);
-	renderContext.CreatePipelineState(&deviceContext);
-	renderContext.CreateViewportAndScissorRect(&deviceContext);
-	renderContext.CreateVertexBuffer(&deviceContext);
-	deviceContext.Flush();
+	//renderContext.CreateRootSignature(&deviceContext);
+	//renderContext.CreateShaders(&deviceContext);
+	//renderContext.CreatePipelineState(&deviceContext);
+	//renderContext.CreateViewportAndScissorRect(&deviceContext);
+	//renderContext.CreateVertexBuffer(&deviceContext);
+	//deviceContext.Flush();
 }
 
 void Engine::Tick()
 {
 	renderGraph.Execute();
-	renderContext.PopulateCommandList(&deviceContext);
-	renderContext.ExecuteCommandList(&deviceContext);
+	//renderContext.PopulateCommandList(&deviceContext);
+	//renderContext.ExecuteCommandList(&deviceContext);
 	deviceContext.Flush();
 	deviceContext.Present();
 	deviceContext.Flush();
@@ -55,6 +56,8 @@ void Engine::Tick()
 
 void Engine::Run()
 {
+	Initialize();
+
 	MSG msg{ 0 };
 	while (1)
 	{
