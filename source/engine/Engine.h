@@ -1,8 +1,5 @@
 #include <Windows.h>
 
-class RenderManager;
-class RenderGraph;
-
 class Engine
 {
 public:

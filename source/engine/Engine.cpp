@@ -36,19 +36,12 @@ void Engine::Initialize()
 
 void Engine::CreateRenderResources()
 {
-	//renderContext.CreateRootSignature(&deviceContext);
-	//renderContext.CreateShaders(&deviceContext);
-	//renderContext.CreatePipelineState(&deviceContext);
-	//renderContext.CreateViewportAndScissorRect(&deviceContext);
-	//renderContext.CreateVertexBuffer(&deviceContext);
-	//deviceContext.Flush();
+	// Here we can make engine speciffic allocations
 }
 
 void Engine::Tick()
 {
 	renderGraph.Execute();
-	//renderContext.PopulateCommandList(&deviceContext);
-	//renderContext.ExecuteCommandList(&deviceContext);
 	deviceContext.Flush();
 	deviceContext.Present();
 	deviceContext.Flush();
