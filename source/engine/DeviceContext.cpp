@@ -214,7 +214,7 @@ void DeviceContext::SetDebugNames()
 	ExitIfFailed(fence->SetName(L"Device Context Fence"));
 }
 
-UINT DeviceContext::CreateVertexBuffer(UINT size)
+ID3D12Resource* DeviceContext::CreateVertexBuffer(UINT size)
 {
 	// Note: using upload heaps to transfer static data like vert buffers is not 
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
@@ -231,9 +231,11 @@ UINT DeviceContext::CreateVertexBuffer(UINT size)
 		nullptr,
 		IID_PPV_ARGS(&vertexBuffer)));
 
+	return vertexBuffer;
+
 	// We need to store the vertex buffer pointer
-	vertexBuffers.push_back(vertexBuffer);
+	//vertexBuffers.push_back(vertexBuffer);
 
 	// Return the index of the vertex buffer
-	return vertexBuffers.size() - 1;
+	//return vertexBuffers.size() - 1;
 }

@@ -289,13 +289,14 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	
 	const UINT colorSize = sizeof(arrayVertexAndColor);
 
-	UINT bufferId = deviceContext->CreateVertexBuffer(colorSize);
+	auto buffer = deviceContext->CreateVertexBuffer(colorSize);
+	vertexBuffers.push_back(buffer);
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 	
-	auto vb = deviceContext->GetVertexBuffer(bufferId);
+	auto vb = vertexBuffers[0];
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
 	memcpy(pVertexDataBegin, arrayVertexAndColor, sizeof(arrayVertexAndColor));
 	vb->Unmap(0, nullptr);

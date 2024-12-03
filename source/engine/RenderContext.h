@@ -28,6 +28,7 @@ public:
 	void CreateTexture(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
 	void CreateShader(DeviceContext* deviceContext);
+	ID3D12Resource* GetVertexBuffer(UINT index) { return vertexBuffers[index]; }
 	void PopulateCommandList(DeviceContext* deviceContext);
 	void ExecuteCommandList(DeviceContext* deviceContext);
 private:
@@ -50,4 +51,5 @@ private:
 private:
 	std::vector<RenderTarget*> renderTargets;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+	std::vector<ID3D12Resource*> vertexBuffers;
 };

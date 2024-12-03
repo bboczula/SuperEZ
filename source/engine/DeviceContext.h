@@ -18,8 +18,7 @@ public:
 	IDXGISwapChain* GetSwapChain();
 	ID3D12CommandQueue* GetCommandQueue() { return commandQueue; }
 	UINT GetCurrentBackBufferIndex() { return currentBackBufferIndex; }
-	UINT CreateVertexBuffer(UINT size);
-	ID3D12Resource* GetVertexBuffer(UINT index) { return vertexBuffers[index]; }
+	ID3D12Resource* CreateVertexBuffer(UINT size);
 	void Present();
 	void Flush();
 private:
@@ -47,5 +46,4 @@ private:
 	UINT64 fenceValue;
 	ID3D12Fence* fence;
 	UINT currentBackBufferIndex;
-	std::vector<ID3D12Resource*> vertexBuffers;
 };
