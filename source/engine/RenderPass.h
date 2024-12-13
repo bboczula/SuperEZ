@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vector"
+#include <d3d12.h>
 
 class RenderTarget;
 class DeviceContext;
@@ -14,4 +14,6 @@ public:
 	virtual void Prepare();
 	virtual void Execute() = 0;
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
+protected:
+	UINT shaderIndex;
 };

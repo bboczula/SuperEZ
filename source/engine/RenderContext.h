@@ -19,7 +19,7 @@ public:
 	void CreateRenderTarget(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	void CreateRootSignature(DeviceContext* deviceContext);
-	void CreateShaders(DeviceContext* deviceContext);
+	UINT CreateShaders(DeviceContext* deviceContext);
 	void CreatePipelineState(DeviceContext* deviceContext);
 	void CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	void CreateVertexBuffer(DeviceContext* deviceContext);
@@ -43,13 +43,13 @@ private:
 	// Need to get rid of this magic number
 	ID3D12Resource* backBuffer[2];
 	ID3D12RootSignature* rootSignature;
-	ID3DBlob* vertexShader;
-	ID3DBlob* pixelShader;
 	ID3D12PipelineState* pipelineState;
 	CD3DX12_VIEWPORT viewport;
 	CD3DX12_RECT scissorRect;
 private:
 	std::vector<RenderTarget*> renderTargets;
+	std::vector<ID3DBlob*> vertexShaders;
+	std::vector<ID3DBlob*> pixelShaders;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 	std::vector<ID3D12Resource*> vertexBuffers;
 };

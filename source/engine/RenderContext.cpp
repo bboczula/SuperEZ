@@ -21,7 +21,14 @@ RenderContext::~RenderContext()
 
 	// Reelease Render Resources
 	SafeRelease(&pipelineState);
-	SafeRelease(&vertexShader);
+	for (auto& vertexShader : vertexShaders)
+	{
+		SafeRelease(&vertexShader);
+	}
+	for (auto& pixelShader : pixelShaders)
+	{
+		SafeRelease(&pixelShader);
+	}
 	SafeRelease(&rootSignature);
 
 	SafeRelease(&commandList);
@@ -115,7 +122,7 @@ void RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	OutputDebugString(L"CreateRootSignature succeeded\n");
 }
 
-void RenderContext::CreateShaders(DeviceContext* deviceContext)
+UINT RenderContext::CreateShaders(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateShaders\n");
 
@@ -126,6 +133,8 @@ void RenderContext::CreateShaders(DeviceContext* deviceContext)
 	UINT compileFlags = 0;
 #endif
 
+	ID3DBlob* vertexShader;
+	ID3DBlob* pixelShader;
 #if defined(DEBUG)
 	// If you run from VS, the working directory is build, so we need to go up one level
 	ExitIfFailed(D3DCompileFromFile(L"../source/engine/shaders/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
@@ -135,6 +144,12 @@ void RenderContext::CreateShaders(DeviceContext* deviceContext)
 	ExitIfFailed(D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
 	ExitIfFailed(D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 #endif
+	UINT index = vertexShaders.size();
+	vertexShaders.push_back(vertexShader);
+	pixelShaders.push_back(pixelShader);
+
+	return index;
+
 	OutputDebugString(L"CreateShaders succeeded\n");
 }
 
@@ -153,8 +168,8 @@ void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
 	psoDesc.pRootSignature = rootSignature;
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader);
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader);
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[0]);
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[0]);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);

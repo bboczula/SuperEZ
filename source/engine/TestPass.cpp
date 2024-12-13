@@ -17,7 +17,7 @@ TestPass::~TestPass()
 void TestPass::Prepare()
 {
 	renderContext.CreateRootSignature(&deviceContext);
-	renderContext.CreateShaders(&deviceContext);
+	shaderIndex = renderContext.CreateShaders(&deviceContext);
 	renderContext.CreatePipelineState(&deviceContext);
 	renderContext.CreateViewportAndScissorRect(&deviceContext);
 	renderContext.CreateVertexBuffer(&deviceContext);
