@@ -16,10 +16,10 @@ TestPass::~TestPass()
 
 void TestPass::Prepare()
 {
-	renderContext.CreateRootSignature(&deviceContext);
+	rootSignatureIndex = renderContext.CreateRootSignature(&deviceContext);
 	shaderIndex = renderContext.CreateShaders(&deviceContext);
-	renderContext.CreatePipelineState(&deviceContext);
-	renderContext.CreateViewportAndScissorRect(&deviceContext);
+	pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex);
+	viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
 	renderContext.CreateVertexBuffer(&deviceContext);
 	deviceContext.Flush();
 }

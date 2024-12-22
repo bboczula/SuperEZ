@@ -20,7 +20,10 @@ RenderContext::~RenderContext()
 	OutputDebugString(L"RenderContext Destructor\n");
 
 	// Reelease Render Resources
-	SafeRelease(&pipelineState);
+	for (auto& pipelineState : pipelineStates)
+	{
+		SafeRelease(&pipelineState);
+	}
 	for (auto& vertexShader : vertexShaders)
 	{
 		SafeRelease(&vertexShader);
@@ -29,7 +32,10 @@ RenderContext::~RenderContext()
 	{
 		SafeRelease(&pixelShader);
 	}
-	SafeRelease(&rootSignature);
+	for (auto& rootSignature : rootSignatures)
+	{
+		SafeRelease(&rootSignature);
+	}
 
 	SafeRelease(&commandList);
 	SafeRelease(&commandAllocator);
@@ -83,8 +89,26 @@ void RenderContext::CreateCommandBuffer(DeviceContext* deviceContext)
 	OutputDebugString(L"CreateCommandBuffer succeeded\n");
 }
 
-void RenderContext::CreateRenderTarget(DeviceContext* deviceContext)
+UINT RenderContext::CreateRenderTarget(DeviceContext* deviceContext)
 {
+
+	// Create Texture
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+
+	// We need a flag ALLOW_RENDER_TARGET
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 1920, 1080, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	ID3D12Resource* resource;
+	ExitIfFailed(deviceContext->GetDevice()->CreateCommittedResource(&heapProperties, heapFlags, &desc, initResourceState, nullptr, IID_PPV_ARGS(&resource)));
+
+
+	// Create RTV
+	// - get the last descriptor from the heap
+	// - call CreateRenderTargetView function
 }
 
 void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext)
@@ -107,7 +131,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 	}
 }
 
-void RenderContext::CreateRootSignature(DeviceContext* deviceContext)
+UINT RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
@@ -117,9 +141,14 @@ void RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	ID3DBlob* signature;
 	ID3DBlob* error;
 	ExitIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+	ID3D12RootSignature* rootSignature;
 	ExitIfFailed(deviceContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 	rootSignature->SetName(L"Render Context Root Signature");
+	
+	UINT index = rootSignatures.size();
+	rootSignatures.push_back(rootSignature);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
+	return index;
 }
 
 UINT RenderContext::CreateShaders(DeviceContext* deviceContext)
@@ -153,7 +182,7 @@ UINT RenderContext::CreateShaders(DeviceContext* deviceContext)
 	OutputDebugString(L"CreateShaders succeeded\n");
 }
 
-void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
+UINT RenderContext::CreatePipelineState(DeviceContext* deviceContext, UINT rootSignatureIndex, UINT shaderIndex)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
@@ -167,9 +196,9 @@ void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
 	// Describe and create the graphics pipeline state object (PSO).
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-	psoDesc.pRootSignature = rootSignature;
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[0]);
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[0]);
+	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -180,18 +209,28 @@ void RenderContext::CreatePipelineState(DeviceContext* deviceContext)
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.SampleDesc.Count = 1;
+	ID3D12PipelineState* pipelineState;
 	ExitIfFailed(deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)));
 	pipelineState->SetName(L"Render Context Pipeline State");
+
+	UINT index = pipelineStates.size();
+	pipelineStates.push_back(pipelineState);
+
 	OutputDebugString(L"CreatePipelineState succeeded\n");
+	return index;
 }
 
-void RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
+UINT RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateViewportAndScissorRect\n");
 
-	viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(windowContext.GetWidth()), static_cast<float>(windowContext.GetHeight()));
-	scissorRect = CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight()));
+	UINT index = viewports.size();
+
+	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(windowContext.GetWidth()), static_cast<float>(windowContext.GetHeight())));
+	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight())));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
+
+	return index;
 }
 
 void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
@@ -322,14 +361,40 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	vertexBufferView.SizeInBytes = colorSize;
 }
 
+UINT RenderContext::CreateTexture(DeviceContext* deviceContext)
+{
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+
+	// We need a flag ALLOW_RENDER_TARGET
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 1920, 1080, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	ID3D12Resource* resource;
+	ExitIfFailed(deviceContext->GetDevice()->CreateCommittedResource(&heapProperties, heapFlags, &desc, initResourceState, nullptr, IID_PPV_ARGS(&resource)));
+	
+
+	
+	return 0;
+}
+
 void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 {
+	// This is common to all Render Passes
 	auto frameIndex = deviceContext->GetCurrentBackBufferIndex();
 	ExitIfFailed(commandAllocator->Reset());
-	ExitIfFailed(commandList->Reset(commandAllocator, pipelineState));
-	commandList->SetGraphicsRootSignature(rootSignature);
-	commandList->RSSetViewports(1, &viewport);
-	commandList->RSSetScissorRects(1, &scissorRect);
+	ExitIfFailed(commandList->Reset(commandAllocator, pipelineStates[0]));
+
+	// This is per-pass stuff
+	commandList->SetGraphicsRootSignature(rootSignatures[0]);
+	commandList->RSSetViewports(1, &viewports[0]);
+	commandList->RSSetScissorRects(1, &scissorRects[0]);
+
+	// We could have a separate Render Target for each pass, and then finally a blit from last (or any) Render Pass
+
+	// This is blit to back buffer actually
 	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	commandList->ResourceBarrier(1, &barrierToRenderTarget);
 	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[deviceContext->GetCurrentBackBufferIndex()], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -338,10 +403,15 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
+	// This is per-pass I think, though might not necessarily be
+	// By design, I have only two types of passes, a fullscreen pass and pass that has access to game object tree
+	// Maybe this could be somehow automated
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 	commandList->DrawInstanced(60, 1, 0, 0);
 
+
+	// This is part of a blit
 	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 	commandList->ResourceBarrier(1, &barrierToPresent);
 	ExitIfFailed(commandList->Close());

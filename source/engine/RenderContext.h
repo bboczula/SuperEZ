@@ -16,16 +16,16 @@ public:
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateCommandBuffer(DeviceContext* deviceContext);
-	void CreateRenderTarget(DeviceContext* deviceContext);
+	UINT CreateRenderTarget(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
-	void CreateRootSignature(DeviceContext* deviceContext);
+	UINT CreateRootSignature(DeviceContext* deviceContext);
 	UINT CreateShaders(DeviceContext* deviceContext);
-	void CreatePipelineState(DeviceContext* deviceContext);
-	void CreateViewportAndScissorRect(DeviceContext* deviceContext);
+	UINT CreatePipelineState(DeviceContext* deviceContext, UINT rootSignatureIndex, UINT shaderIndex);
+	UINT CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	void CreateVertexBuffer(DeviceContext* deviceContext);
 	void CreateIndexBuffer(DeviceContext* deviceContext);
 	void CreateConstantBuffer(DeviceContext* deviceContext);
-	void CreateTexture(DeviceContext* deviceContext);
+	UINT CreateTexture(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
 	void CreateShader(DeviceContext* deviceContext);
 	ID3D12Resource* GetVertexBuffer(UINT index) { return vertexBuffers[index]; }
@@ -42,14 +42,14 @@ private:
 	ID3D12GraphicsCommandList* commandList;
 	// Need to get rid of this magic number
 	ID3D12Resource* backBuffer[2];
-	ID3D12RootSignature* rootSignature;
-	ID3D12PipelineState* pipelineState;
-	CD3DX12_VIEWPORT viewport;
-	CD3DX12_RECT scissorRect;
 private:
 	std::vector<RenderTarget*> renderTargets;
 	std::vector<ID3DBlob*> vertexShaders;
 	std::vector<ID3DBlob*> pixelShaders;
+	std::vector<ID3D12RootSignature*> rootSignatures;
+	std::vector<ID3D12PipelineState*> pipelineStates;
+	std::vector<CD3DX12_VIEWPORT> viewports;
+	std::vector<CD3DX12_RECT> scissorRects;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 	std::vector<ID3D12Resource*> vertexBuffers;
 };

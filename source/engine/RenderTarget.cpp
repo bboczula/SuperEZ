@@ -3,3 +3,7 @@
 RenderTarget::RenderTarget()
 {
 }
+
+void RenderTarget::Create()
+{
+}

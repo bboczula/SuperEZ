@@ -16,4 +16,7 @@ public:
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
 protected:
 	UINT shaderIndex;
+	UINT rootSignatureIndex;
+	UINT pipelineStateIndex;
+	UINT viewportAndScissorsIndex;
 };
