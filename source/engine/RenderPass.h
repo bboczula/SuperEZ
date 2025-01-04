@@ -11,6 +11,7 @@ class RenderPass
 public:
 	RenderPass();
 	~RenderPass();
+	void AutomaticPrepare();
 	virtual void Prepare();
 	virtual void Execute() = 0;
 	virtual void Allocate(DeviceContext* deviceContext) = 0;

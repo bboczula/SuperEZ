@@ -6,32 +6,30 @@ void DescriptorHeap::Create(D3D12_DESCRIPTOR_HEAP_TYPE type, DeviceContext* devi
 {
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
 	rtvHeapDesc.Type = type;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	switch (type)
-	{
-	case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-		rtvHeapDesc.NumDescriptors = 1000;
-		rtvHeapDesc.Flags |= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		break;
-	case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
-		rtvHeapDesc.NumDescriptors = 100;
-		break;
-	case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
-		rtvHeapDesc.NumDescriptors = 100;
-		break;
-	case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-		rtvHeapDesc.NumDescriptors = 100;
-		break;
-	case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES:
-		break;
-	default:
-		break;
-	}
+	rtvHeapDesc.Flags = (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	rtvHeapDesc.NumDescriptors = 100;
 
 	ExitIfFailed(deviceContext->GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&heap)));
-	heap->SetName(L"RTV Heap");
-	OutputDebugString(L"Successfully created RTV descriptor heap\n");
+	heap->SetName(L"Descriptor Heap");
 
 	descriptorSize = deviceContext->GetDevice()->GetDescriptorHandleIncrementSize(type);
+
+	size = 0;
+}
+
+CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Allocate()
+{
+	// Here you can add a check to see if the heap is full
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(heap->GetCPUDescriptorHandleForHeapStart());
+	rtvHandle.Offset(size++, descriptorSize);
+
+	return rtvHandle;
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Get(int index)
+{
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(heap->GetCPUDescriptorHandleForHeapStart());
+	rtvHandle.Offset(index, descriptorSize);
+
+	return rtvHandle;
 }

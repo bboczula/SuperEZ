@@ -25,6 +25,7 @@ void RenderGraph::Initialize()
 {
 	for (RenderPass* renderPass : renderPasses)
 	{
+		renderPass->AutomaticPrepare();
 		renderPass->Prepare();
 	}
 }

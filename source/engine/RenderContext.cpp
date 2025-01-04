@@ -43,37 +43,16 @@ RenderContext::~RenderContext()
 	{
 		SafeRelease(&backBuffer[i]);
 	}
-	SafeRelease(&rtvHeap);
-	SafeRelease(&dsvHeap);
-	SafeRelease(&cbvSrvUavHeap);
+
+	// Descriptor Heaps are released automatically
 }
 
 void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateDescriptorHeap\n");
-
-	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-	rtvHeapDesc.NumDescriptors = FRAME_COUNT;
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	ExitIfFailed(deviceContext->GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&rtvHeap)));
-	rtvHeap->SetName(L"RTV Heap");
-	OutputDebugString(L"Successfully created RTV descriptor heap\n");
-
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	ExitIfFailed(deviceContext->GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&dsvHeap)));
-	dsvHeap->SetName(L"DSV Heap");
-	OutputDebugString(L"Successfully created DSV descriptor heap\n");
-
-	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	rtvHeapDesc.Flags |= D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	ExitIfFailed(deviceContext->GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&cbvSrvUavHeap)));
-	cbvSrvUavHeap->SetName(L"CBV_SRV_UAV Heap");
-	OutputDebugString(L"Successfully created CBV_SRV_UAV descriptor heap\n");
-
-	rtvHeapDescriptorSize = deviceContext->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	dsvHeapDescriptorSize = deviceContext->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	cbvSrvUavHeapDescriptorSize = deviceContext->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	rtvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, deviceContext);
+	dsvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, deviceContext);
+	cbvSrvUavHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, deviceContext);
 }
 
 void RenderContext::CreateCommandBuffer(DeviceContext* deviceContext)
@@ -109,13 +88,13 @@ UINT RenderContext::CreateRenderTarget(DeviceContext* deviceContext)
 	// Create RTV
 	// - get the last descriptor from the heap
 	// - call CreateRenderTargetView function
+
+	return 0;
 }
 
 void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRenderTargetFromBackBuffer\n");
-	// We need to get the descriptor handle for the first RTV
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->GetCPUDescriptorHandleForHeapStart());
 	
 	// Create a RTV for each frame
 	for (UINT i = 0; i < FRAME_COUNT; i++)
@@ -125,8 +104,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		IDXGISwapChain* swapChain = deviceContext->GetSwapChain();
 		ExitIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer[i])));
 		backBuffer[i]->SetName(L"Render Context Back Buffer");
-		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHandle);
-		rtvHandle.Offset(1, rtvHeapDescriptorSize);
+		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
@@ -397,8 +375,8 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 	// This is blit to back buffer actually
 	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	commandList->ResourceBarrier(1, &barrierToRenderTarget);
-	//commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[deviceContext->GetCurrentBackBufferIndex()], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->GetCPUDescriptorHandleForHeapStart(), deviceContext->GetCurrentBackBufferIndex(), rtvHeapDescriptorSize);
+	
+	auto rtvHandle = rtvHeap.Get(deviceContext->GetCurrentBackBufferIndex());
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
 	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);

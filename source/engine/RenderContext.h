@@ -3,6 +3,7 @@
 #include <d3d12.h>
 #include <vector>
 #include "../externals/d3dx12/d3dx12.h"
+#include "DescriptorHeap.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -32,12 +33,9 @@ public:
 	void PopulateCommandList(DeviceContext* deviceContext);
 	void ExecuteCommandList(DeviceContext* deviceContext);
 private:
-	ID3D12DescriptorHeap* rtvHeap;
-	ID3D12DescriptorHeap* dsvHeap;
-	ID3D12DescriptorHeap* cbvSrvUavHeap;
-	UINT rtvHeapDescriptorSize;
-	UINT dsvHeapDescriptorSize;
-	UINT cbvSrvUavHeapDescriptorSize;
+	DescriptorHeap rtvHeap;
+	DescriptorHeap dsvHeap;
+	DescriptorHeap cbvSrvUavHeap;
 	ID3D12CommandAllocator* commandAllocator;
 	ID3D12GraphicsCommandList* commandList;
 	// Need to get rid of this magic number
