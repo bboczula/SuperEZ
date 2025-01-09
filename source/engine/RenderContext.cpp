@@ -36,9 +36,7 @@ RenderContext::~RenderContext()
 	{
 		SafeRelease(&rootSignature);
 	}
-
-	SafeRelease(&commandList);
-	SafeRelease(&commandAllocator);
+	
 	for (int i = 0; i < FRAME_COUNT; i++)
 	{
 		SafeRelease(&backBuffer[i]);
@@ -57,15 +55,7 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 
 void RenderContext::CreateCommandBuffer(DeviceContext* deviceContext)
 {
-	OutputDebugString(L"CreateCommandBuffer\n");
-
-	ExitIfFailed(deviceContext->GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
-	commandAllocator->SetName(L"Render Context Command Allocator");
-	ExitIfFailed(deviceContext->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr, IID_PPV_ARGS(&commandList)));
-	commandList->SetName(L"Render Context Command List");
-	commandList->Close();
-
-	OutputDebugString(L"CreateCommandBuffer succeeded\n");
+	commandList.Create();
 }
 
 UINT RenderContext::CreateRenderTarget(DeviceContext* deviceContext)
@@ -362,41 +352,42 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 {
 	// This is common to all Render Passes
 	auto frameIndex = deviceContext->GetCurrentBackBufferIndex();
-	ExitIfFailed(commandAllocator->Reset());
-	ExitIfFailed(commandList->Reset(commandAllocator, pipelineStates[0]));
+	commandList.Reset(pipelineStates[0]);
+	
 
 	// This is per-pass stuff
-	commandList->SetGraphicsRootSignature(rootSignatures[0]);
-	commandList->RSSetViewports(1, &viewports[0]);
-	commandList->RSSetScissorRects(1, &scissorRects[0]);
+	commandList.GetCommandList()->SetGraphicsRootSignature(rootSignatures[0]);
+	commandList.GetCommandList()->RSSetViewports(1, &viewports[0]);
+	commandList.GetCommandList()->RSSetScissorRects(1, &scissorRects[0]);
 
 	// We could have a separate Render Target for each pass, and then finally a blit from last (or any) Render Pass
 
 	// This is blit to back buffer actually
 	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	commandList->ResourceBarrier(1, &barrierToRenderTarget);
+	commandList.GetCommandList()->ResourceBarrier(1, &barrierToRenderTarget);
 	
 	auto rtvHandle = rtvHeap.Get(deviceContext->GetCurrentBackBufferIndex());
-	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandList.GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-	commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	commandList.GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 	// This is per-pass I think, though might not necessarily be
 	// By design, I have only two types of passes, a fullscreen pass and pass that has access to game object tree
 	// Maybe this could be somehow automated
-	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-	commandList->DrawInstanced(60, 1, 0, 0);
+	commandList.GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandList.GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	commandList.GetCommandList()->DrawInstanced(60, 1, 0, 0);
 
 
 	// This is part of a blit
 	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	commandList->ResourceBarrier(1, &barrierToPresent);
-	ExitIfFailed(commandList->Close());
+	commandList.GetCommandList()->ResourceBarrier(1, &barrierToPresent);
+	
+	commandList.Close();
 }
 
 void RenderContext::ExecuteCommandList(DeviceContext* deviceContext)
 {
-	ID3D12CommandList* ppCommandLists[] = { commandList };
+	ID3D12CommandList* ppCommandLists[] = { commandList.GetCommandList() };
 	deviceContext->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 }

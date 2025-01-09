@@ -4,6 +4,7 @@
 #include <vector>
 #include "../externals/d3dx12/d3dx12.h"
 #include "DescriptorHeap.h"
+#include "CommandList.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -32,12 +33,14 @@ public:
 	ID3D12Resource* GetVertexBuffer(UINT index) { return vertexBuffers[index]; }
 	void PopulateCommandList(DeviceContext* deviceContext);
 	void ExecuteCommandList(DeviceContext* deviceContext);
+	CommandList* GetCommandList() { return &commandList; }
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
-	ID3D12CommandAllocator* commandAllocator;
-	ID3D12GraphicsCommandList* commandList;
+	CommandList commandList;
+	//ID3D12CommandAllocator* commandAllocator;
+	//ID3D12GraphicsCommandList* commandList;
 	// Need to get rid of this magic number
 	ID3D12Resource* backBuffer[2];
 private:
