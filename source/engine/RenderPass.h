@@ -20,4 +20,6 @@ protected:
 	UINT rootSignatureIndex;
 	UINT pipelineStateIndex;
 	UINT viewportAndScissorsIndex;
+	UINT commandListIndex;
+	UINT renderTargetIndex;
 };

@@ -18,6 +18,7 @@ void RenderPass::AutomaticPrepare()
 	shaderIndex = renderContext.CreateShaders(&deviceContext);
 	pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex);
 	viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
+	commandListIndex = renderContext.CreateCommandList();
 }
 
 void RenderPass::Prepare()

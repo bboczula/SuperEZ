@@ -30,8 +30,6 @@ void Engine::Initialize()
 	OutputDebugString(L"Engine::Initialize()\n");
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
-	renderContext.CreateCommandBuffer(&deviceContext);
-	renderContext.CreateTexture(&deviceContext);
 	renderGraph.Initialize();
 }
 

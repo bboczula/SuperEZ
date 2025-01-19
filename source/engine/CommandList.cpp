@@ -16,7 +16,7 @@ CommandList::~CommandList()
 
 void CommandList::Create()
 {
-	OutputDebugString(L"CreateCommandBuffer\n");
+	OutputDebugString(L"CreateCommandList\n");
 
 	ExitIfFailed(deviceContext.GetDevice()->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator)));
 	commandAllocator->SetName(L"Render Context Command Allocator");
@@ -24,13 +24,12 @@ void CommandList::Create()
 	commandList->SetName(L"Render Context Command List");
 	commandList->Close();
 
-	OutputDebugString(L"CreateCommandBuffer succeeded\n");
+	OutputDebugString(L"CreateCommandList succeeded\n");
 }
 
 void CommandList::Reset(ID3D12PipelineState* pso)
 {
 	ExitIfFailed(commandAllocator->Reset());
-	//ExitIfFailed(commandList->Reset(commandAllocator, pipelineStates[0]));
 	ExitIfFailed(commandList->Reset(commandAllocator, pso));
 }
 

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <dxgidebug.h>
+#include <d3d12.h>
 
 extern WindowContext windowContext;
 
@@ -232,10 +233,11 @@ ID3D12Resource* DeviceContext::CreateVertexBuffer(UINT size)
 		IID_PPV_ARGS(&vertexBuffer)));
 
 	return vertexBuffer;
+}
 
-	// We need to store the vertex buffer pointer
-	//vertexBuffers.push_back(vertexBuffer);
-
-	// Return the index of the vertex buffer
-	//return vertexBuffers.size() - 1;
+void DeviceContext::CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
+	D3D12_RESOURCE_STATES initResourceState, const IID &riidResource, void** ppResource)
+{
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
 }

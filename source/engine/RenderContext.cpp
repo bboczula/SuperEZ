@@ -1,6 +1,7 @@
 #include "RenderContext.h"
 #include "DeviceContext.h"
 #include "WindowContext.h"
+#include "RenderTarget.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -9,6 +10,7 @@
 #include "Utils.h"
 
 extern WindowContext windowContext;
+extern DeviceContext deviceContext;
 
 RenderContext::RenderContext()
 {
@@ -41,8 +43,6 @@ RenderContext::~RenderContext()
 	{
 		SafeRelease(&backBuffer[i]);
 	}
-
-	// Descriptor Heaps are released automatically
 }
 
 void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
@@ -53,33 +53,18 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 	cbvSrvUavHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, deviceContext);
 }
 
-void RenderContext::CreateCommandBuffer(DeviceContext* deviceContext)
+UINT RenderContext::CreateRenderTarget()
 {
-	commandList.Create();
-}
+	OutputDebugString(L"CreateRenderTarget\n");
 
-UINT RenderContext::CreateRenderTarget(DeviceContext* deviceContext)
-{
+	UINT textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight());
+	deviceContext.GetDevice()->CreateRenderTargetView(textures[textureIndex]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	// Create Texture
-	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	renderTargets.push_back(new RenderTarget(1920, 1080, textureIndex, rtvHeap.Size() - 1));
 
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	// We also need naming, for debugging purposes
 
-	// We need a flag ALLOW_RENDER_TARGET
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 1920, 1080, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-	ID3D12Resource* resource;
-	ExitIfFailed(deviceContext->GetDevice()->CreateCommittedResource(&heapProperties, heapFlags, &desc, initResourceState, nullptr, IID_PPV_ARGS(&resource)));
-
-
-	// Create RTV
-	// - get the last descriptor from the heap
-	// - call CreateRenderTargetView function
-
-	return 0;
+	return renderTargets.size() - 1;
 }
 
 void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext)
@@ -94,7 +79,11 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		IDXGISwapChain* swapChain = deviceContext->GetSwapChain();
 		ExitIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer[i])));
 		backBuffer[i]->SetName(L"Render Context Back Buffer");
+		CHAR name[] = "BackBuffer";
+		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0]));
+
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
+		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1, rtvHeap.Size() - 1));
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
@@ -208,105 +197,20 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 #define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
 #define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
 #define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
-#define COLOR_4 0.500f, 0.500f, 0.500f, 1.0f
-
-#define T1_V1 0.000f, 0.289f * ratio, 0.0f, 1.0f
-#define T1_V2 0.079f, 0.097f * ratio, 0.0f, 1.0f
-#define T1_V3 0.000f, 0.000f * ratio, 0.0f, 1.0f
-
-#define T2_V1 T1_V1
-#define T2_V2 0.168f, 0.210f * ratio, 0.0f, 1.0f
-#define T2_V3 T1_V2
-
-#define T3_V1 T1_V1
-#define T3_V2 0.079f, 0.384f * ratio, 0.0f, 1.0f
-#define T3_V3 T2_V2
-
-#define T4_V1 T1_V1
-#define T4_V2 0.000f, 0.500f * ratio, 0.0f, 1.0f
-#define T4_V3 T3_V2
 
 	float arrayVertexAndColor[][8] =
 	{
-		{ T1_V1,   COLOR_1 },
-		{ T1_V2,   COLOR_1 },
-		{ T1_V3,   COLOR_1 },
+		{ -0.200f, 0.125f * ratio, 0.0f, 1.0f,   COLOR_1 },
+		{  0.200f, 0.125f * ratio, 0.0f, 1.0f,   COLOR_1 },
+		{  0.000f, 0.000f * ratio, 0.0f, 1.0f,   COLOR_1 },
 
-		{ T2_V1,   COLOR_1 },
-		{ T2_V2,   COLOR_1 },
-		{ T2_V3,   COLOR_1 },
+		{  0.200f,  0.125f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{  0.000f, -0.250f * ratio, 0.0f, 1.0f,   COLOR_2 },
+		{  0.000f,  0.000f * ratio, 0.0f, 1.0f,   COLOR_2 },
 
-		{ T3_V1,   COLOR_1 },
-		{ T3_V2,   COLOR_1 },
-		{ T3_V3,   COLOR_1 },
-
-		{ T4_V1,   COLOR_1 },
-		{ T4_V2,   COLOR_1 },
-		{ T4_V3,   COLOR_1 },
-
-		{ 0.160f, 0.468f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ T3_V2,   COLOR_2 },
-		{ 0.000f, 0.500f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ 0.160f, 0.468f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ T3_V2,   COLOR_2 },
-
-		{ 0.160f, 0.468f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.313f, 0.531f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ 0.313f, 0.531f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_3 },
-
-		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ 0.254f, 0.413f * ratio, 0.0f, 1.0f,   COLOR_1 },
-		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_1 },
-		{ T3_V2,   COLOR_1 },
-
-		{ T3_V2,   COLOR_3 },
-		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ T2_V2,   COLOR_3 },
-
-		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_1 },
-		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_1 },
-		{ T2_V2,   COLOR_1 },
-
-		{ 0.223f, 0.278f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_3 },
-
-		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_4 },
-		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_4 },
-		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_4 },
-
-		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ 0.542f, 0.636f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ 0.473f, 0.300f * ratio, 0.0f, 1.0f,   COLOR_3 },
-
-		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.473f, 0.300f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ 0.434f, 0.365f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.307f, 0.310f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ T2_V2,   COLOR_2 },
-		{ 0.389f, 0.189f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{ 0.342f, 0.131f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ T2_V2,   COLOR_3 },
-		{ 0.342f, 0.131f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{ T2_V3,   COLOR_3 },
+		{ -0.200f, 0.125f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{  0.000f, 0.000f * ratio, 0.0f, 1.0f,   COLOR_3 },
+		{  0.000f, -0.250f * ratio, 0.0f, 1.0f,   COLOR_3 },
 	};
 	
 	const UINT colorSize = sizeof(arrayVertexAndColor);
@@ -329,65 +233,178 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	vertexBufferView.SizeInBytes = colorSize;
 }
 
-UINT RenderContext::CreateTexture(DeviceContext* deviceContext)
+UINT RenderContext::CreateEmptyTexture(UINT width, UINT height)
 {
-	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
+	OutputDebugString(L"CreateEmptyTexture\n");
 
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	// We need a flag ALLOW_RENDER_TARGET
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, 1920, 1080, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_NONE);
+
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
+
+	ID3D12Resource* resource;
+	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	resource->SetName(L"Empty Texture");
+	
+	CHAR name[] = "EmptyTexture";
+	textures.push_back(new Texture(width, height, resource, &name[0]));
+	
+	return textures.size() - 1;
+}
+
+UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height)
+{
+	OutputDebugString(L"CreateRenderTargetTexture\n");
+
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM,
+		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	ID3D12Resource* resource;
-	ExitIfFailed(deviceContext->GetDevice()->CreateCommittedResource(&heapProperties, heapFlags, &desc, initResourceState, nullptr, IID_PPV_ARGS(&resource)));
-	
+	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	resource->SetName(L"Render Target Texture");
 
-	
+	CHAR name[] = "RenderTargetTexture";
+	textures.push_back(new Texture(width, height, resource, &name[0]));
+
+	return textures.size() - 1;
+}
+
+UINT RenderContext::CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIndex)
+{
+	// Here you should copy the Render Target from the previous Render Context and copy it to the Back Buffer
+	// commandList->CopyTextureRegion();
+	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
+	destLocation.pResource = textures[destIndex]->GetResource(); //destination->GetResource();
+	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	destLocation.SubresourceIndex = 0; // Not sure if this is correct;
+
+	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+	srcLocation.pResource = textures[sourceIndex]->GetResource(); //source->GetResource();
+	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	srcLocation.SubresourceIndex = 0;
+	commandLists[cmdListIndex]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
+
 	return 0;
+}
+
+void RenderContext::BindRenderTarget(UINT cmdListIndex, UINT rtIndex)
+{
+	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+}
+
+void RenderContext::CleraRenderTarget(UINT cmdListIndex, UINT rtIndex)
+{
+	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
+	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+}
+
+void RenderContext::ResetCommandList(UINT index)
+{
+	commandLists[index]->Reset(pipelineStates[index]);
+}
+
+void RenderContext::CloseCommandList(UINT index)
+{
+	commandLists[index]->Close();
+}
+
+void RenderContext::SetupRenderPass(UINT cmdListIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex)
+{
+	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
+	commandLists[cmdListIndex]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
+	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
+}
+
+void RenderContext::BindGeometry(UINT cmdListIndex)
+{
+	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+}
+
+void RenderContext::TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOURCE_STATES state)
+{
+	if (textures[textureId]->GetCurrentState() == state)
+	{
+		return;
+	}
+
+	D3D12_RESOURCE_BARRIER barrier;
+	ZeroMemory(&barrier, sizeof(barrier));
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = textures[textureId]->GetResource();
+	barrier.Transition.StateBefore = textures[textureId]->GetCurrentState();
+	barrier.Transition.StateAfter = state;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	commandLists[cmdListIndex]->GetCommandList()->ResourceBarrier(1, &barrier);
+
+	textures[textureId]->SetCurrentState(state);
+}
+
+ID3D12Resource* RenderContext::GetCurrentBackBuffer()
+{
+	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
+	return backBuffer[frameIndex];
 }
 
 void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 {
 	// This is common to all Render Passes
-	auto frameIndex = deviceContext->GetCurrentBackBufferIndex();
-	commandList.Reset(pipelineStates[0]);
+	commandLists[0]->Reset(pipelineStates[0]);
 	
 
 	// This is per-pass stuff
-	commandList.GetCommandList()->SetGraphicsRootSignature(rootSignatures[0]);
-	commandList.GetCommandList()->RSSetViewports(1, &viewports[0]);
-	commandList.GetCommandList()->RSSetScissorRects(1, &scissorRects[0]);
+	commandLists[0]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[0]);
+	commandLists[0]->GetCommandList()->RSSetViewports(1, &viewports[0]);
+	commandLists[0]->GetCommandList()->RSSetScissorRects(1, &scissorRects[0]);
 
 	// We could have a separate Render Target for each pass, and then finally a blit from last (or any) Render Pass
 
 	// This is blit to back buffer actually
-	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	commandList.GetCommandList()->ResourceBarrier(1, &barrierToRenderTarget);
+	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	commandLists[0]->GetCommandList()->ResourceBarrier(1, &barrierToRenderTarget);
 	
 	auto rtvHandle = rtvHeap.Get(deviceContext->GetCurrentBackBufferIndex());
-	commandList.GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandLists[0]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-	commandList.GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	commandLists[0]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
 	// This is per-pass I think, though might not necessarily be
 	// By design, I have only two types of passes, a fullscreen pass and pass that has access to game object tree
 	// Maybe this could be somehow automated
-	commandList.GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandList.GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
-	commandList.GetCommandList()->DrawInstanced(60, 1, 0, 0);
+	commandLists[0]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandLists[0]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	commandLists[0]->GetCommandList()->DrawInstanced(60, 1, 0, 0);
 
 
 	// This is part of a blit
-	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer[frameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	commandList.GetCommandList()->ResourceBarrier(1, &barrierToPresent);
+	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+	commandLists[0]->GetCommandList()->ResourceBarrier(1, &barrierToPresent);
 	
-	commandList.Close();
+	commandLists[0]->Close();
 }
 
-void RenderContext::ExecuteCommandList(DeviceContext* deviceContext)
+void RenderContext::ExecuteCommandList(UINT cmdListIndex)
 {
-	ID3D12CommandList* ppCommandLists[] = { commandList.GetCommandList() };
-	deviceContext->GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	ID3D12CommandList* ppCommandLists[] = { commandLists[cmdListIndex]->GetCommandList() };
+	deviceContext.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+}
+
+UINT RenderContext::CreateCommandList()
+{
+	UINT index = commandLists.size();
+	commandLists.push_back(new CommandList());
+	commandLists[index]->Create();
+
+	return index;
 }

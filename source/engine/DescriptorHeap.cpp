@@ -33,3 +33,8 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Get(int index)
 
 	return rtvHandle;
 }
+
+UINT DescriptorHeap::Size()
+{
+	return size;
+}

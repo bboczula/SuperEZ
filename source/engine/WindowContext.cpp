@@ -72,18 +72,18 @@ void WindowContext::CreateWindowInstance()
 	}
 	OutputDebugString(L"Successfully created window\n");
 
-	button = CreateWindowEx(0,
-		WC_TREEVIEW,
-		TEXT("Tree View"),
-		WS_VISIBLE | WS_CHILD | WS_BORDER | TVS_HASLINES,
-		0,
-		0,
-		windowDimentions.first * 0.25f,
-		windowDimentions.second,
-		hwnd,
-		nullptr,
-		instance,
-		NULL);
+	//button = CreateWindowEx(0,
+	//	WC_TREEVIEW,
+	//	TEXT("Tree View"),
+	//	WS_VISIBLE | WS_CHILD | WS_BORDER | TVS_HASLINES,
+	//	0,
+	//	0,
+	//	windowDimentions.first * 0.25f,
+	//	windowDimentions.second,
+	//	hwnd,
+	//	nullptr,
+	//	instance,
+	//	NULL);
 
 	CreateMenuBar();
 }

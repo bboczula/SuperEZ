@@ -19,6 +19,8 @@ public:
 	ID3D12CommandQueue* GetCommandQueue() { return commandQueue; }
 	UINT GetCurrentBackBufferIndex() { return currentBackBufferIndex; }
 	ID3D12Resource* CreateVertexBuffer(UINT size);
+	void CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
+		D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource);
 	void Present();
 	void Flush();
 private:
@@ -36,7 +38,6 @@ private:
 	void WaitForGpu();
 	void ReportLiveObjects();
 	void SetDebugNames();
-	// Fields
 	IDXGIFactory2* dxgiFactory2;
 	IDXGIAdapter* dxgiAdapter;
 	IDXGISwapChain3* swapChain;

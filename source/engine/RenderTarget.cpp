@@ -1,9 +1,16 @@
 #include "RenderTarget.h"
+#include "RenderContext.h"
+#include "DeviceContext.h"
 
-RenderTarget::RenderTarget()
+extern RenderContext renderContext;
+extern DeviceContext deviceContext;
+
+RenderTarget::RenderTarget(UINT width, UINT height, UINT textureIndex, UINT rtvDescriptorIndex)
+	: width(width), height(height), textureIndex(textureIndex), rtvDescriptorIndex(rtvDescriptorIndex)
 {
 }
 
-void RenderTarget::Create()
+UINT RenderTarget::GetDescriptorIndex()
 {
+	return rtvDescriptorIndex;
 }
