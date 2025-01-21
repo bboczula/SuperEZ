@@ -37,7 +37,7 @@ public:
 	CommandList* GetCommandList(UINT index) { return commandLists[index]; }
 	// Textures
 	UINT CreateEmptyTexture(UINT width, UINT height);
-	UINT CreateRenderTargetTexture(UINT width, UINT height);
+	UINT CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	UINT CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIndex);
 	// Binding
 	void BindRenderTarget(UINT cmdListIndex, UINT rtIndex);

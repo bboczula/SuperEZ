@@ -3,7 +3,7 @@
 class RenderTarget
 {
 public:
-	RenderTarget(UINT width, UINT height, UINT textureIndex, UINT rtvDescriptorIndex);
+	RenderTarget(UINT width, UINT height, UINT textureIndex, UINT rtvDescriptorIndex, const char* name);
 	UINT GetDescriptorIndex();
 private:
 	char name[32];

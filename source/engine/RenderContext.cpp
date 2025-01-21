@@ -57,10 +57,10 @@ UINT RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	UINT textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight());
+	UINT textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
 	deviceContext.GetDevice()->CreateRenderTargetView(textures[textureIndex]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	renderTargets.push_back(new RenderTarget(1920, 1080, textureIndex, rtvHeap.Size() - 1));
+	renderTargets.push_back(new RenderTarget(1920, 1080, textureIndex, rtvHeap.Size() - 1, "RT_Custom"));
 
 	// We also need naming, for debugging purposes
 
@@ -83,7 +83,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0]));
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
-		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1, rtvHeap.Size() - 1));
+		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1, rtvHeap.Size() - 1, "RT_BackBuffer"));
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
@@ -254,7 +254,7 @@ UINT RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	return textures.size() - 1;
 }
 
-UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height)
+UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
@@ -267,10 +267,13 @@ UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height)
 
 	ID3D12Resource* resource;
 	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-	resource->SetName(L"Render Target Texture");
 
-	CHAR name[] = "RenderTargetTexture";
-	textures.push_back(new Texture(width, height, resource, &name[0]));
+	CHAR tempName[32];
+	strcpy_s(tempName, name);
+	WCHAR wName[32];
+	mbstowcs(wName, tempName, 32);
+	resource->SetName(wName);
+	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 
 	return textures.size() - 1;
 }
