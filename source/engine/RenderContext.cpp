@@ -273,7 +273,7 @@ UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHA
 	WCHAR wName[32];
 	mbstowcs(wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0]));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
 
 	return textures.size() - 1;
 }

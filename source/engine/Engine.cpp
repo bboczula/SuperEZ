@@ -57,7 +57,7 @@ void Engine::Run()
 		{
 			if (msg.message == WM_QUIT)
 			{
-				OutputDebugString(L"Sapphire::WindowApplication::Run() - WM_QUIT received\n");
+				OutputDebugString(L"Engine::Run() - WM_QUIT received\n");
 				exit(0);
 			}
 

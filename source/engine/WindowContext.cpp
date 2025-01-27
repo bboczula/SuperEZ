@@ -4,8 +4,8 @@
 #include "Utils.h"
 #include "CommCtrl.h"
 
-#define WINDOW_CLASS_NAME L"SapphireMyWindowWin32Class"
-#define WINDOW_TITLE L"SapphireEngine"
+#define WINDOW_CLASS_NAME L"SuperEZMyWindowWin32Class"
+#define WINDOW_TITLE L"SuperEZ Engine v1.1"
 #define DEFAULT_WINDOW_STYLE WS_VISIBLE | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_BORDER
 
 #define ID_FILE_ABOUT 1
