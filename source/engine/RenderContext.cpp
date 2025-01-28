@@ -354,6 +354,12 @@ void RenderContext::TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOUR
 	textures[textureId]->SetCurrentState(state);
 }
 
+void RenderContext::TransitionBack(UINT cmdListIndex, UINT textureId)
+{
+	auto previousState = textures[textureId]->GetPreviousState();
+	TransitionTo(cmdListIndex, textureId, previousState);
+}
+
 ID3D12Resource* RenderContext::GetCurrentBackBuffer()
 {
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();

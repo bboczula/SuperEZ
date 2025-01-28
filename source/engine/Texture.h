@@ -12,13 +12,19 @@ public:
 	{
 		return currentState;
 	}
+	D3D12_RESOURCE_STATES GetPreviousState()
+	{
+		return previousState;
+	}
 	void SetCurrentState(D3D12_RESOURCE_STATES state)
 	{
+		previousState = currentState;
 		currentState = state;
 	}
 private:
 	ID3D12Resource* resource;
 	D3D12_RESOURCE_STATES currentState;
+	D3D12_RESOURCE_STATES previousState;
 	CHAR name[32];
 	UINT width;
 	UINT height;

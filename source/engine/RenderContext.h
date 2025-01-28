@@ -48,6 +48,7 @@ public:
 	void BindGeometry(UINT cmdListIndex);
 	// Barriers
 	void TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOURCE_STATES state);
+	void TransitionBack(UINT cmdListIndex, UINT textureId);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;

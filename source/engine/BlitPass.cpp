@@ -27,6 +27,8 @@ void BlitPass::Execute()
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
 	renderContext.TransitionTo(commandListIndex, frameIndex, D3D12_RESOURCE_STATE_COPY_DEST);
 	renderContext.CopyTexture(commandListIndex, 2, frameIndex);
+
+	renderContext.TransitionBack(commandListIndex, 2);
 	renderContext.TransitionTo(commandListIndex, frameIndex, D3D12_RESOURCE_STATE_PRESENT);
 
 	renderContext.CloseCommandList(commandListIndex);
