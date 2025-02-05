@@ -30,7 +30,7 @@ void TestPass::Execute()
 	renderContext.BindGeometry(commandListIndex);
 
 	auto commandList = renderContext.GetCommandList(commandListIndex);
-	commandList->GetCommandList()->DrawInstanced(60, 1, 0, 0);
+	commandList->GetCommandList()->DrawInstanced(36, 1, 0, 0);
 
 	renderContext.CloseCommandList(commandListIndex);
 	renderContext.ExecuteCommandList(commandListIndex);

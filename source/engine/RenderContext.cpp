@@ -212,8 +212,60 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 		{  0.000f, 0.000f * ratio, 0.0f, 1.0f,   COLOR_3 },
 		{  0.000f, -0.250f * ratio, 0.0f, 1.0f,   COLOR_3 },
 	};
+
+	float cube[][8] =
+	{
+		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //0
+		{  0.200,  0.200 * ratio, 0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //1
+		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //2
+
+		{  0.200,  0.200 * ratio, 0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //1
+		{  0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //3
+		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //2
+
+		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //4
+		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //5
+		{  0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //6
+
+		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //5
+		{  0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //7
+		{  0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //6
+
+		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //0
+		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //2
+		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //4
+
+		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //2
+		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //5
+		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //4
+
+		{  0.200,  0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //1
+		{  0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //6
+		{  0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //3
+
+		{  0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //7
+		{  0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f }, //3
+		{  0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //6
+
+		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //0
+		{  0.200,  0.200 * ratio, 0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //1
+		{  0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //6
+
+		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //0
+		{  0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //6
+		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //4
+
+		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //2
+		{  0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //7
+		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //5
+
+		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f }, //2
+		{  0.200, -0.200 * ratio, 0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f }, //3
+		{  0.200, -0.200 * ratio, -0.200, 1.0f,   0.0f, 1.0f, 0.0f, 1.0f } //7
+	};
 	
-	const UINT colorSize = sizeof(arrayVertexAndColor);
+	//const UINT colorSize = sizeof(arrayVertexAndColor);
+	const UINT colorSize = sizeof(cube);
 
 	auto buffer = deviceContext->CreateVertexBuffer(colorSize);
 	vertexBuffers.push_back(buffer);
@@ -224,7 +276,8 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	
 	auto vb = vertexBuffers[0];
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, arrayVertexAndColor, sizeof(arrayVertexAndColor));
+	//memcpy(pVertexDataBegin, arrayVertexAndColor, sizeof(arrayVertexAndColor));
+	memcpy(pVertexDataBegin, cube, sizeof(cube));
 	vb->Unmap(0, nullptr);
 	
 	// Initialize the vertex buffer view.
