@@ -39,6 +39,8 @@ public:
 	UINT CreateEmptyTexture(UINT width, UINT height);
 	UINT CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	UINT CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIndex);
+	// Constants
+	void SetInlineConstants(UINT cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
 	void BindRenderTarget(UINT cmdListIndex, UINT rtIndex);
 	void CleraRenderTarget(UINT cmdListIndex, UINT rtIndex);

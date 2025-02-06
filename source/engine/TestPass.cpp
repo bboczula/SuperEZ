@@ -29,6 +29,14 @@ void TestPass::Execute()
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
 	renderContext.BindGeometry(commandListIndex);
 
+	float cameraMatrix[16] = {
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+	renderContext.SetInlineConstants(commandListIndex, 16, cameraMatrix);
+
 	auto commandList = renderContext.GetCommandList(commandListIndex);
 	commandList->GetCommandList()->DrawInstanced(36, 1, 0, 0);
 

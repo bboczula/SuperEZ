@@ -92,8 +92,16 @@ UINT RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
+	// Build Common Root Signature
+	D3D12_ROOT_PARAMETER rootParameter;
+	rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParameter.Constants.Num32BitValues = 16;
+	rootParameter.Constants.RegisterSpace = 0;
+	rootParameter.Constants.ShaderRegister = 0;
+	rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	rootSignatureDesc.Init(1, &rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ID3DBlob* signature;
 	ID3DBlob* error;
@@ -347,6 +355,11 @@ UINT RenderContext::CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIn
 	commandLists[cmdListIndex]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 
 	return 0;
+}
+
+void RenderContext::SetInlineConstants(UINT cmdListIndex, UINT numOfConstants, void* data)
+{
+	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
 }
 
 void RenderContext::BindRenderTarget(UINT cmdListIndex, UINT rtIndex)
