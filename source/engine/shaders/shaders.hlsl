@@ -8,6 +8,10 @@
 // PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
 //
 //*********************************************************
+cbuffer CameraData : register(b0)
+{
+	float4x4 viewProjection;
+};
 
 struct PSInput
 {
@@ -20,7 +24,7 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 {
     PSInput result;
 
-    result.position = position;
+    result.position = mul(position, viewProjection);
     result.color = color;
 
     return result;
