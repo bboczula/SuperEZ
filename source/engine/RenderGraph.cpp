@@ -21,6 +21,7 @@ void RenderGraph::Execute()
 {
 	for (RenderPass* renderPass : renderPasses)
 	{
+		renderPass->Update();
 		renderPass->Execute();
 	}
 }

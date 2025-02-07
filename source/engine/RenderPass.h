@@ -13,6 +13,7 @@ public:
 	~RenderPass();
 	void AutomaticPrepare();
 	virtual void Prepare();
+	virtual void Update();
 	virtual void Execute() = 0;
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
 protected:

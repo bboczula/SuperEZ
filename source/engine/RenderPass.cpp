@@ -30,3 +30,7 @@ void RenderPass::Prepare()
 	// Setting up vertex buffers
 	// Resource bindings
 }
+
+void RenderPass::Update()
+{
+}

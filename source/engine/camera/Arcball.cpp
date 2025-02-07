@@ -1,7 +1,7 @@
 #include "Arcball.h"
 #include "Camera.h"
 
-Sapphire::Arcball::Arcball(Camera* camera) : radius(5.0f), target(0.0f, 0.0f, 0.0f)
+Arcball::Arcball(Camera* camera) : radius(2.0f), target(0.0f, 0.0f, 0.0f)
 {
 	SetCamera(camera);
 	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
@@ -9,11 +9,11 @@ Sapphire::Arcball::Arcball(Camera* camera) : radius(5.0f), target(0.0f, 0.0f, 0.
 	camera->forward.Normalize();
 }
 
-Sapphire::Arcball::~Arcball()
+Arcball::~Arcball()
 {
 }
 
-void Sapphire::Arcball::MoveForward(float step)
+void Arcball::MoveForward(float step)
 {
 	radius += 0.1;
 	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
@@ -21,7 +21,7 @@ void Sapphire::Arcball::MoveForward(float step)
 	camera->forward.Normalize();
 }
 
-void Sapphire::Arcball::MoveBackward(float step)
+void Arcball::MoveBackward(float step)
 {
 	radius -= 0.1;
 	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
@@ -29,15 +29,15 @@ void Sapphire::Arcball::MoveBackward(float step)
 	camera->forward.Normalize();
 }
 
-void Sapphire::Arcball::MoveRight(float step)
+void Arcball::MoveRight(float step)
 {
 }
 
-void Sapphire::Arcball::MoveLeft(float step)
+void Arcball::MoveLeft(float step)
 {
 }
 
-void Sapphire::Arcball::Rotate(float x, float y, float z)
+void Arcball::Rotate(float x, float y, float z)
 {
 	float radiansX = x * 3.1415f / 180.0f;
 	float radiansY = y * 3.1415f / 180.0f;

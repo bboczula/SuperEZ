@@ -1,12 +1,12 @@
 #include "PerspectiveCamera.h"
 
-Sapphire::PerspectiveCamera::PerspectiveCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
+PerspectiveCamera::PerspectiveCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
 	: Camera(), aspectRatio(aspectRatio)
 {
 	CalculateViewProjectionMatrix();
 }
 
-void Sapphire::PerspectiveCamera::CalculateViewProjectionMatrix()
+void PerspectiveCamera::CalculateViewProjectionMatrix()
 {
 	auto target = position + forward;
 	auto view = DirectX::SimpleMath::Matrix::CreateLookAt(position, target, up);

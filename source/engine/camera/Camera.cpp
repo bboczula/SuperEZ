@@ -1,39 +1,39 @@
 #include "Camera.h"
 
-Sapphire::Camera::Camera()
+Camera::Camera()
 	: position(0.0f, 5.0f, 0.0f), rotation(0.0f, 0.0f, 0.0f),
 	forward(DEFAULT_FORWARD), up(DEFAULT_UP),	right(DEFAULT_RIGTH)
 {
 	LogInfo();
 }
 
-DirectX::SimpleMath::Matrix* Sapphire::Camera::GetViewProjectionMatrixPtr()
+DirectX::SimpleMath::Matrix* Camera::GetViewProjectionMatrixPtr()
 {
 	CalculateViewProjectionMatrix();
 	return &viewProjection;
 }
 
-void Sapphire::Camera::SetPosition(DirectX::SimpleMath::Vector3 position)
+void Camera::SetPosition(DirectX::SimpleMath::Vector3 position)
 {
 	this->position = position;
 }
 
-DirectX::SimpleMath::Vector3 Sapphire::Camera::GetPosition()
+DirectX::SimpleMath::Vector3 Camera::GetPosition()
 {
 	return position;
 }
 
-void Sapphire::Camera::SetRotation(DirectX::SimpleMath::Vector3 rotation)
+void Camera::SetRotation(DirectX::SimpleMath::Vector3 rotation)
 {
 	this->rotation = rotation;
 }
 
-DirectX::SimpleMath::Vector3 Sapphire::Camera::GetRotation()
+DirectX::SimpleMath::Vector3 Camera::GetRotation()
 {
 	return rotation;
 }
 
-void Sapphire::Camera::LogInfo()
+void Camera::LogInfo()
 {
 	//Sapphire::Logger::GetInstance().Log("CAMERA:\n");
 	//Sapphire::Logger::GetInstance().Log("Position: %f %f %f\n", position.x, position.y, position.z);
