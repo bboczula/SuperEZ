@@ -2,6 +2,7 @@
 #include "DeviceContext.h"
 #include "WindowContext.h"
 #include "RenderTarget.h"
+#include "DepthBuffer.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -65,6 +66,18 @@ UINT RenderContext::CreateRenderTarget()
 	// We also need naming, for debugging purposes
 
 	return renderTargets.size() - 1;
+}
+
+UINT RenderContext::CreateDepthBuffer()
+{
+	OutputDebugString(L"CreateDepthBuffer\n");
+
+	UINT depthIndex = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
+	deviceContext.GetDevice()->CreateDepthStencilView(textures[depthIndex]->GetResource(), nullptr, dsvHeap.Allocate());
+
+	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depthIndex, dsvHeap.Size() - 1, "DB_Custom"));
+
+	return depthBuffers.size() - 1;
 }
 
 void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext)
@@ -167,8 +180,9 @@ UINT RenderContext::CreatePipelineState(DeviceContext* deviceContext, UINT rootS
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState.DepthEnable = FALSE;
-	psoDesc.DepthStencilState.StencilEnable = FALSE;
+	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	//psoDesc.DepthStencilState.DepthEnable = FALSE;
+	//psoDesc.DepthStencilState.StencilEnable = FALSE;
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
@@ -315,6 +329,32 @@ UINT RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	return textures.size() - 1;
 }
 
+UINT RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
+{
+	OutputDebugString(L"CreateDepthTexture\n");
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
+		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+
+	ID3D12Resource* resource;
+	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	resource->SetName(L"Depth Texture");
+
+	CHAR tempName[32];
+	strcpy_s(tempName, name);
+	WCHAR wName[32];
+	mbstowcs(wName, tempName, 32);
+	resource->SetName(wName);
+	textures.push_back(new Texture(width, height, resource, &tempName[0]));
+
+	return textures.size() - 1;
+
+	return 0;
+}
+
 UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
@@ -387,9 +427,10 @@ void RenderContext::CloseCommandList(UINT index)
 	commandLists[index]->Close();
 }
 
-void RenderContext::SetupRenderPass(UINT cmdListIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex)
+void RenderContext::SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
+	commandLists[cmdListIndex]->GetCommandList()->SetPipelineState(pipelineStates[psoIndex]);
 	commandLists[cmdListIndex]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
 	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }

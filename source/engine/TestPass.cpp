@@ -21,6 +21,7 @@ TestPass::~TestPass()
 void TestPass::Prepare()
 {
 	renderTargetIndex = renderContext.CreateRenderTarget();
+	auto depthBufferIndex = renderContext.CreateDepthBuffer();
 	renderContext.CreateVertexBuffer(&deviceContext);
 	deviceContext.Flush();
 }
@@ -33,7 +34,7 @@ void TestPass::Update()
 void TestPass::Execute()
 {
 	renderContext.ResetCommandList(commandListIndex);
-	renderContext.SetupRenderPass(commandListIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
+	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
 	renderContext.BindRenderTarget(commandListIndex, renderTargetIndex);
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
 	renderContext.BindGeometry(commandListIndex);
