@@ -10,6 +10,7 @@
 
 class DeviceContext;
 class RenderTarget;
+class DepthBuffer;
 class Texture;
 
 class RenderContext
@@ -18,7 +19,6 @@ public:
 	RenderContext();
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
-	UINT CreateRenderTarget();
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	UINT CreateRootSignature(DeviceContext* deviceContext);
 	UINT CreateShaders(DeviceContext* deviceContext);
@@ -35,19 +35,26 @@ public:
 	void ExecuteCommandList(UINT cmdListIndex);
 	UINT CreateCommandList();
 	CommandList* GetCommandList(UINT index) { return commandLists[index]; }
+	// High Level
+	UINT CreateRenderTarget();
+	UINT CreateDepthBuffer();
 	// Textures
 	UINT CreateEmptyTexture(UINT width, UINT height);
+	UINT CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	UINT CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	UINT CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIndex);
 	// Constants
 	void SetInlineConstants(UINT cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
 	void BindRenderTarget(UINT cmdListIndex, UINT rtIndex);
-	void CleraRenderTarget(UINT cmdListIndex, UINT rtIndex);
+	void BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, UINT depthIndex);
 	void ResetCommandList(UINT index);
 	void CloseCommandList(UINT index);
-	void SetupRenderPass(UINT cmdListIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex);
+	void SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex);
 	void BindGeometry(UINT cmdListIndex);
+	// Clearing
+	void CleraRenderTarget(UINT cmdListIndex, UINT rtIndex);
+	void ClearDepthBuffer(UINT cmdListIndex, UINT depthIndex);
 	// Barriers
 	void TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOURCE_STATES state);
 	void TransitionBack(UINT cmdListIndex, UINT textureId);
@@ -58,6 +65,7 @@ private:
 	ID3D12Resource* backBuffer[2];
 private:
 	std::vector<RenderTarget*> renderTargets;
+	std::vector<DepthBuffer*> depthBuffers;
 	std::vector<CommandList*> commandLists;
 	std::vector<Texture*> textures;
 	std::vector<ID3DBlob*> vertexShaders;
