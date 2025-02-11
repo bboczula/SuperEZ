@@ -21,7 +21,7 @@ TestPass::~TestPass()
 void TestPass::Prepare()
 {
 	renderTargetIndex = renderContext.CreateRenderTarget();
-	auto depthBufferIndex = renderContext.CreateDepthBuffer();
+	depthBufferIndex = renderContext.CreateDepthBuffer();
 	renderContext.CreateVertexBuffer(&deviceContext);
 	deviceContext.Flush();
 }
@@ -35,8 +35,9 @@ void TestPass::Execute()
 {
 	renderContext.ResetCommandList(commandListIndex);
 	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
-	renderContext.BindRenderTarget(commandListIndex, renderTargetIndex);
+	renderContext.BindRenderTargetWithDepth(commandListIndex, renderTargetIndex, depthBufferIndex);
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
+	renderContext.ClearDepthBuffer(commandListIndex, depthBufferIndex);
 	renderContext.BindGeometry(commandListIndex);
 
 	renderContext.SetInlineConstants(commandListIndex, 16, camera->GetViewProjectionMatrixPtr());

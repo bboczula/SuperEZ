@@ -23,4 +23,5 @@ protected:
 	UINT viewportAndScissorsIndex;
 	UINT commandListIndex;
 	UINT renderTargetIndex;
+	UINT depthBufferIndex;
 };

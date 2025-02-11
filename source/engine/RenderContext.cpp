@@ -187,6 +187,7 @@ UINT RenderContext::CreatePipelineState(DeviceContext* deviceContext, UINT rootS
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	psoDesc.SampleDesc.Count = 1;
 	ID3D12PipelineState* pipelineState;
 	ExitIfFailed(deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)));
@@ -409,12 +410,28 @@ void RenderContext::BindRenderTarget(UINT cmdListIndex, UINT rtIndex)
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 }
 
+void RenderContext::BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, UINT depthIndex)
+{
+	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
+	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
+	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+}
+
 void RenderContext::CleraRenderTarget(UINT cmdListIndex, UINT rtIndex)
 {
 	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
 	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+}
+
+void RenderContext::ClearDepthBuffer(UINT cmdListIndex, UINT depthIndex)
+{
+	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
+	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
+	commandLists[cmdListIndex]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 void RenderContext::ResetCommandList(UINT index)

@@ -47,11 +47,14 @@ public:
 	void SetInlineConstants(UINT cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
 	void BindRenderTarget(UINT cmdListIndex, UINT rtIndex);
-	void CleraRenderTarget(UINT cmdListIndex, UINT rtIndex);
+	void BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, UINT depthIndex);
 	void ResetCommandList(UINT index);
 	void CloseCommandList(UINT index);
 	void SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex);
 	void BindGeometry(UINT cmdListIndex);
+	// Clearing
+	void CleraRenderTarget(UINT cmdListIndex, UINT rtIndex);
+	void ClearDepthBuffer(UINT cmdListIndex, UINT depthIndex);
 	// Barriers
 	void TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOURCE_STATES state);
 	void TransitionBack(UINT cmdListIndex, UINT textureId);
