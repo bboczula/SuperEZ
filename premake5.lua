@@ -25,7 +25,8 @@ project "Engine"
 	}
     files
 	{
-		"source/engine/**.h", "source/engine/**.cpp"
+		"source/engine/**.h", "source/engine/**.cpp",
+		"source/engine/shaders/**.hlsl"
 	}
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"
@@ -33,6 +34,8 @@ project "Engine"
 		postbuildcommands { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/shaders.hlsl] %[%{!cfg.targetdir}]" }
 	filter "configurations:Debug"
 		defines { "DEBUG" }
+	filter("files:**.hlsl")
+		flags("ExcludeFromBuild")
 	
 project "Game"
     kind "ConsoleApp"
