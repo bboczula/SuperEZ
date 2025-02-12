@@ -31,7 +31,8 @@ project "Engine"
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"
 		defines { "FINAL" }
-		postbuildcommands { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/shaders.hlsl] %[%{!cfg.targetdir}]" }
+		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]" } -- Runs before the compilation
+		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- Technically creates a dummy file to track execution, but I've never found this file
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 	filter("files:**.hlsl")
