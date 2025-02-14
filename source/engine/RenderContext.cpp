@@ -129,7 +129,7 @@ UINT RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	return index;
 }
 
-UINT RenderContext::CreateShaders(DeviceContext* deviceContext)
+UINT RenderContext::CreateShaders(LPCWSTR shaderName)
 {
 	OutputDebugString(L"CreateShaders\n");
 
@@ -143,13 +143,24 @@ UINT RenderContext::CreateShaders(DeviceContext* deviceContext)
 	ID3DBlob* vertexShader;
 	ID3DBlob* pixelShader;
 #if defined(DEBUG)
+	// Concatenate the directory and the file name
+	LPCWSTR shaderDir = L"../source/engine/shaders/";
+	size_t shaderNameLength = wcslen(shaderName);
+	size_t shaderDirLength = wcslen(shaderDir);
+	size_t fullPathLength = shaderNameLength + shaderDirLength + 1;
+	wchar_t* fullPath = new wchar_t[fullPathLength];
+	wcscpy_s(fullPath, fullPathLength, shaderDir);
+	wcscat_s(fullPath, fullPathLength, shaderName);
+
 	// If you run from VS, the working directory is build, so we need to go up one level
-	ExitIfFailed(D3DCompileFromFile(L"../source/engine/shaders/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ExitIfFailed(D3DCompileFromFile(L"../source/engine/shaders/shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(fullPath, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(fullPath, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+
+	delete[] fullPath;
 #else
 	// In final we will copy shaders to the bin directory
-	ExitIfFailed(D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ExitIfFailed(D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 #endif
 	UINT index = vertexShaders.size();
 	vertexShaders.push_back(vertexShader);

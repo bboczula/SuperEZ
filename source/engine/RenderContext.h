@@ -21,7 +21,7 @@ public:
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	UINT CreateRootSignature(DeviceContext* deviceContext);
-	UINT CreateShaders(DeviceContext* deviceContext);
+	UINT CreateShaders(LPCWSTR shaderName);
 	UINT CreatePipelineState(DeviceContext* deviceContext, UINT rootSignatureIndex, UINT shaderIndex);
 	UINT CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	void CreateVertexBuffer(DeviceContext* deviceContext);
