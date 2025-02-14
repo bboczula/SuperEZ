@@ -24,4 +24,5 @@ protected:
 	UINT commandListIndex;
 	UINT renderTargetIndex;
 	UINT depthBufferIndex;
+	LPCWSTR shaderSourceFileName;
 };
