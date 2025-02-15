@@ -21,12 +21,21 @@ project "Engine"
 	includedirs
 	{
 		"source/external/d3dx12",
-		"source/external/SimpleMath"
+		"source/external/SimpleMath",
+		"source/externals/PixEvents/include"
+	}
+	libdirs
+	{
+		"source/externals/PixEvents/lib"
 	}
     files
 	{
 		"source/engine/**.h", "source/engine/**.cpp",
 		"source/engine/shaders/**.hlsl"
+	}
+	links
+	{
+		"WinPixEventRuntime.lib"
 	}
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"

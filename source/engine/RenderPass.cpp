@@ -1,5 +1,6 @@
 #include "RenderPass.h"
 #include "RenderContext.h"
+#include "pix.h"
 
 #include <assert.h>
 
