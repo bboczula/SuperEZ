@@ -9,12 +9,14 @@ class RenderContext;
 class RenderPass
 {
 public:
-	RenderPass();
+	RenderPass(PCWSTR name);
 	~RenderPass();
 	void AutomaticPrepare();
 	virtual void Prepare();
 	virtual void Update();
+	void PreExecute();
 	virtual void Execute() = 0;
+	void PostExecute();
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
 protected:
 	UINT shaderIndex;
@@ -25,4 +27,5 @@ protected:
 	UINT renderTargetIndex;
 	UINT depthBufferIndex;
 	LPCWSTR shaderSourceFileName;
+	PCWSTR name;
 };

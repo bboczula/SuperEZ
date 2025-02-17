@@ -153,8 +153,8 @@ UINT RenderContext::CreateShaders(LPCWSTR shaderName)
 	wcscat_s(fullPath, fullPathLength, shaderName);
 
 	// If you run from VS, the working directory is build, so we need to go up one level
-	ExitIfFailed(D3DCompileFromFile(fullPath, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ExitIfFailed(D3DCompileFromFile(fullPath, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 
 	delete[] fullPath;
 #else

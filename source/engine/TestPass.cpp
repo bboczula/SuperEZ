@@ -3,10 +3,12 @@
 #include "RenderContext.h"
 #include "DeviceContext.h"
 
+#include <pix3.h>
+
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-TestPass::TestPass()
+TestPass::TestPass() : RenderPass(L"Test")
 {
 	camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
 	camera->SetPosition(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 1.0f));
@@ -33,7 +35,8 @@ void TestPass::Update()
 
 void TestPass::Execute()
 {
-	renderContext.ResetCommandList(commandListIndex);
+	//renderContext.ResetCommandList(commandListIndex);
+	//PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, L"Test Pass");
 	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
 	renderContext.BindRenderTargetWithDepth(commandListIndex, renderTargetIndex, depthBufferIndex);
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
@@ -44,9 +47,10 @@ void TestPass::Execute()
 
 	auto commandList = renderContext.GetCommandList(commandListIndex);
 	commandList->GetCommandList()->DrawInstanced(36, 1, 0, 0);
-
-	renderContext.CloseCommandList(commandListIndex);
-	renderContext.ExecuteCommandList(commandListIndex);
+	//PIXEndEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList());
+//
+	//renderContext.CloseCommandList(commandListIndex);
+	//renderContext.ExecuteCommandList(commandListIndex);
 }
 
 void TestPass::Allocate(DeviceContext* deviceContext)
