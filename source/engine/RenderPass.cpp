@@ -1,13 +1,17 @@
 #include "RenderPass.h"
 #include "RenderContext.h"
-#include "pix.h"
+
+#ifdef DEBUG
+#define USE_PIX
+#endif
+#include "pix3.h"
 
 #include <assert.h>
 
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
 
-RenderPass::RenderPass() : shaderSourceFileName(L"shaders.hlsl")
+RenderPass::RenderPass(PCWSTR name) : shaderSourceFileName(L"shaders.hlsl"), name(name)
 {
 }
 
@@ -21,6 +25,7 @@ void RenderPass::AutomaticPrepare()
 	shaderIndex = renderContext.CreateShaders(shaderSourceFileName);
 	pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex);
 	viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
+
 	commandListIndex = renderContext.CreateCommandList();
 }
 
@@ -36,4 +41,17 @@ void RenderPass::Prepare()
 
 void RenderPass::Update()
 {
+}
+
+void RenderPass::PreExecute()
+{
+	renderContext.ResetCommandList(commandListIndex);
+	PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, name);
+}
+
+void RenderPass::PostExecute()
+{
+	PIXEndEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList());
+	renderContext.CloseCommandList(commandListIndex);
+	renderContext.ExecuteCommandList(commandListIndex);
 }

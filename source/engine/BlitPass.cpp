@@ -7,7 +7,7 @@
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-BlitPass::BlitPass()
+BlitPass::BlitPass() : RenderPass(L"Blit")
 {
 }
 
@@ -21,9 +21,9 @@ void BlitPass::Prepare()
 
 void BlitPass::Execute()
 {
-	renderContext.ResetCommandList(commandListIndex);
+	//renderContext.ResetCommandList(commandListIndex);
 
-	PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, L"Blit Pass");
+	//PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, L"Blit Pass");
 	renderContext.TransitionTo(commandListIndex, 2, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
@@ -32,10 +32,10 @@ void BlitPass::Execute()
 
 	renderContext.TransitionBack(commandListIndex, 2);
 	renderContext.TransitionTo(commandListIndex, frameIndex, D3D12_RESOURCE_STATE_PRESENT);
-	PIXEndEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList());
-
-	renderContext.CloseCommandList(commandListIndex);
-	renderContext.ExecuteCommandList(commandListIndex);
+	//PIXEndEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList());
+	//
+	//renderContext.CloseCommandList(commandListIndex);
+	//renderContext.ExecuteCommandList(commandListIndex);
 }
 
 void BlitPass::Allocate(DeviceContext* deviceContext)

@@ -22,7 +22,9 @@ void RenderGraph::Execute()
 	for (RenderPass* renderPass : renderPasses)
 	{
 		renderPass->Update();
+		renderPass->PreExecute();
 		renderPass->Execute();
+		renderPass->PostExecute();
 	}
 }
 
