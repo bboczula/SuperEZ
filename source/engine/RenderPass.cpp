@@ -11,7 +11,7 @@
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
 
-RenderPass::RenderPass(PCWSTR name) : shaderSourceFileName(L"shaders.hlsl"), name(name)
+RenderPass::RenderPass(PCWSTR name, Type type) : shaderSourceFileName(L"shaders.hlsl"), name(name), type(type)
 {
 }
 
@@ -21,10 +21,13 @@ RenderPass::~RenderPass()
 
 void RenderPass::AutomaticPrepare()
 {
-	rootSignatureIndex = renderContext.CreateRootSignature(&deviceContext);
-	shaderIndex = renderContext.CreateShaders(shaderSourceFileName);
-	pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex);
-	viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
+	if (GetType() == Type::Default)
+	{
+		rootSignatureIndex = renderContext.CreateRootSignature(&deviceContext);
+		shaderIndex = renderContext.CreateShaders(shaderSourceFileName);
+		pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex);
+		viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
+	}
 
 	commandListIndex = renderContext.CreateCommandList();
 }
@@ -45,7 +48,14 @@ void RenderPass::Update()
 
 void RenderPass::PreExecute()
 {
-	renderContext.ResetCommandList(commandListIndex);
+	if (GetType() == Type::Default)
+	{
+		renderContext.ResetCommandList(commandListIndex, pipelineStateIndex);
+	}
+	else if (GetType() == Type::Drawless)
+	{
+		renderContext.ResetCommandList(commandListIndex);
+	}
 	PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, name);
 }
 

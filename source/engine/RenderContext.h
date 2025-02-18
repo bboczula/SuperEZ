@@ -48,6 +48,7 @@ public:
 	// Binding
 	void BindRenderTarget(UINT cmdListIndex, UINT rtIndex);
 	void BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, UINT depthIndex);
+	void ResetCommandList(UINT index, UINT psoIndex);
 	void ResetCommandList(UINT index);
 	void CloseCommandList(UINT index);
 	void SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex);
