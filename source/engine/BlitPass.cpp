@@ -7,7 +7,7 @@
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-BlitPass::BlitPass() : RenderPass(L"Blit")
+BlitPass::BlitPass() : RenderPass(L"Blit", Type::Drawless)
 {
 }
 

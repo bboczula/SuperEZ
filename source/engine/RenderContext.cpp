@@ -153,8 +153,8 @@ UINT RenderContext::CreateShaders(LPCWSTR shaderName)
 	wcscat_s(fullPath, fullPathLength, shaderName);
 
 	// If you run from VS, the working directory is build, so we need to go up one level
-	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(fullPath, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+	ExitIfFailed(D3DCompileFromFile(fullPath, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 
 	delete[] fullPath;
 #else
@@ -445,9 +445,14 @@ void RenderContext::ClearDepthBuffer(UINT cmdListIndex, UINT depthIndex)
 	commandLists[cmdListIndex]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
+void RenderContext::ResetCommandList(UINT cmdListindex, UINT psoIndex)
+{
+	commandLists[cmdListindex]->Reset(pipelineStates[psoIndex]);
+}
+
 void RenderContext::ResetCommandList(UINT index)
 {
-	commandLists[index]->Reset(pipelineStates[index]);
+	commandLists[index]->Reset(nullptr);
 }
 
 void RenderContext::CloseCommandList(UINT index)

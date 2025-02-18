@@ -8,7 +8,7 @@
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-TestPass::TestPass() : RenderPass(L"Test")
+TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
 	camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
 	camera->SetPosition(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 1.0f));

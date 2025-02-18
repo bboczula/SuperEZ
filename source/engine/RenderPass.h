@@ -9,7 +9,12 @@ class RenderContext;
 class RenderPass
 {
 public:
-	RenderPass(PCWSTR name);
+	enum Type
+	{
+		Default,
+		Drawless
+	};
+	RenderPass(PCWSTR name, RenderPass::Type type);
 	~RenderPass();
 	void AutomaticPrepare();
 	virtual void Prepare();
@@ -18,7 +23,9 @@ public:
 	virtual void Execute() = 0;
 	void PostExecute();
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
+	RenderPass::Type GetType() const { return type; }
 protected:
+	RenderPass::Type type;
 	UINT shaderIndex;
 	UINT rootSignatureIndex;
 	UINT pipelineStateIndex;
