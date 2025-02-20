@@ -11,7 +11,48 @@ workspace "SuperEZ"
 	location(LOCATION_DIRECTORY_NAME)
 	project "Engine"
 	project "Game"
-
+	
+project "GoogleTest"
+	kind "StaticLib"
+	language "C++"
+	cppdialect "C++17"
+	targetdir "bin/%{cfg.buildcfg}"
+	files
+	{
+		"source/externals/googletest/googletest/src/**.h",
+		"source/externals/googletest/googletest/src/**.cc"
+	}
+	includedirs
+	{
+		"source/externals/googletest/googletest/include",
+		"source/externals/googletest/googletest" -- For file src/gtest-internal-inl.h
+	}
+	filter{}
+	filter "configurations:Debug"
+		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter{}
+	filter "configurations:PreRelease"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter{}
+	filter "configurations:Release"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter{}
+	filter "system:Windows"
+		buildoptions {
+			"-GS", "-W4", "-WX", "-wd4251", "-wd4275", "-nologo", "-J",
+			"-D_UNICODE", "-DUNICODE", "-DWIN32", "-D_WIN32",
+			"-EHs-c-", "-D_HAS_EXCEPTIONS=0", "-GR-", "-wd4702", "-utf-8"
+		}
+		defines {
+			"GTEST_OS_WINDOWS"
+		}
+		
 project "Engine"
     kind "StaticLib"
     language "C++"
