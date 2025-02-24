@@ -11,7 +11,72 @@ workspace "SuperEZ"
 	location(LOCATION_DIRECTORY_NAME)
 	project "Engine"
 	project "Game"
-
+	
+project "GoogleTest"
+	staticruntime "on" --This will set the /MT in Visual Studio and not the default /MD (which stands for DLL)
+	kind "StaticLib"
+	language "C++"
+	cppdialect "C++17"
+	targetdir "bin/%{cfg.buildcfg}"
+	files
+	{
+		"source/externals/googletest/googletest/src/**.h",
+		"source/externals/googletest/googletest/src/**.cc"
+	}
+	includedirs
+	{
+		"source/externals/googletest/googletest/include",
+		"source/externals/googletest/googletest" -- For file src/gtest-internal-inl.h
+	}
+	filter "configurations:Debug"
+		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:PreRelease"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter "configurations:Release"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter "system:Windows"
+		buildoptions {
+			"-GS", "-W4", "-WX", "-wd4251", "-wd4275", "-nologo", "-J",
+			"-D_UNICODE", "-DUNICODE", "-DWIN32", "-D_WIN32",
+			"-EHs-c-", "-D_HAS_EXCEPTIONS=0", "-GR-", "-wd4702", "-utf-8"
+		}
+		defines {
+			"GTEST_OS_WINDOWS"
+		}
+		
+project "UnitTest"
+	staticruntime "on"
+	kind "ConsoleApp"
+	cppdialect "C++17"
+	files
+	{
+		"source/tests/**.h",
+		"source/tests/**.cpp"
+	}
+	includedirs
+	{
+		"source/externals/googletest/googletest/include"
+	}
+	links { "GoogleTest", "Engine" }
+	filter "configurations:Debug"
+		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:PreRelease"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter "configurations:Release"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+		
 project "Engine"
     kind "StaticLib"
     language "C++"
