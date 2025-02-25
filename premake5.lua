@@ -78,6 +78,7 @@ project "UnitTest"
 		optimize "on"
 		
 project "Engine"
+	staticruntime "on" --This will set the /MT in Visual Studio and not the default /MD (which stands for DLL)
     kind "StaticLib"
     language "C++"
 	cppdialect "C++20"
@@ -105,14 +106,24 @@ project "Engine"
 		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- Technically creates a dummy file to track execution, but I've never found this file
 	filter "configurations:Debug"
 		defines { "DEBUG" }
+		runtime "Debug"
 		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]" } -- This really only applies to Debug builds
 		buildoutputs { "%{!cfg.targetdir}/WinPixEventRuntime.dll" } -- Technically creates a dummy file to track execution, but I've never found this file
 		buildmessage("Copying the PIX Event runtime...")
 		links { "WinPixEventRuntime.lib" }
+	filter "configurations:PreRelease"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter "configurations:Release"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
 	filter("files:**.hlsl")
 		flags("ExcludeFromBuild")
 	
 project "Game"
+	staticruntime "on" --This will set the /MT in Visual Studio and not the default /MD (which stands for DLL)
     kind "ConsoleApp"
     language "C++"
 	cppdialect "C++20"
@@ -125,3 +136,15 @@ project "Game"
     files {
 		"source/game/**.h", "source/game/**.cpp"
 	}
+	filter "configurations:Debug"
+		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:PreRelease"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter "configurations:Release"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
