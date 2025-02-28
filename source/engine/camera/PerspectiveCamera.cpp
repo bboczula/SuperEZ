@@ -3,6 +3,7 @@
 PerspectiveCamera::PerspectiveCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
 	: Camera(), aspectRatio(aspectRatio)
 {
+	SetPosition(position);
 	CalculateViewProjectionMatrix();
 }
 

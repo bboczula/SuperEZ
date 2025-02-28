@@ -45,9 +45,9 @@ namespace CameraUnitTest
 	{
 		OrthographicCamera* camera = new OrthographicCamera(DirectX::SimpleMath::Vector3(3.0f, 2.0f, 1.0f));
 		auto positionTest = camera->GetPosition();
-		ASSERT_EQ(positionTest.x, 0.0f);
-		ASSERT_EQ(positionTest.y, 0.0f);
-		ASSERT_EQ(positionTest.z, 0.0f);
+		ASSERT_EQ(positionTest.x, 3.0f);
+		ASSERT_EQ(positionTest.y, 2.0f);
+		ASSERT_EQ(positionTest.z, 1.0f);
 	}
 
 	TEST(OrthographicCameraSuite, ConstructorRotation_1)
