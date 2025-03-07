@@ -21,7 +21,7 @@ public:
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
-	Camera* camera;
-	//OrthographicCamera* orthoCamera;
+	PerspectiveCamera* perspectiveCamera;
+	OrthographicCamera* orthoCamera;
 	Arcball* arcballCamera;
 };

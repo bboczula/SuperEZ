@@ -1,7 +1,7 @@
 #include "Arcball.h"
 #include "Camera.h"
 
-Arcball::Arcball(Camera* camera) : radius(2.0f), target(0.0f, 0.0f, 0.0f)
+Arcball::Arcball(Camera* camera) : radius(camera->GetPosition().z), target(0.0f, 0.0f, 0.0f)
 {
 	SetCamera(camera);
 	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
@@ -39,19 +39,10 @@ void Arcball::MoveLeft(float step)
 
 void Arcball::Rotate(float x, float y, float z)
 {
-	float radiansX = x * 3.1415f / 180.0f;
-	float radiansY = y * 3.1415f / 180.0f;
-	float radianzZ = z * 3.1415f / 180.0f;
+	camera->rotation.x = DirectX::XMConvertToRadians(x);
+	camera->rotation.y = DirectX::XMConvertToRadians(y);
+	camera->rotation.z = DirectX::XMConvertToRadians(z);
 
-	if ((camera->rotation.x == radiansX) && (camera->rotation.y == radiansY))
-	{
-		// Why was this here in the first place?
-		//return;
-	}
-
-	camera->rotation.x = x * 3.1415f / 180.0f;
-	camera->rotation.y = y * 3.1415f / 180.0f;
-	camera->rotation.z = z * 3.1415f / 180.0f;
 	DirectX::SimpleMath::Matrix cameraRotationX = DirectX::SimpleMath::Matrix::CreateRotationX(camera->rotation.x);
 	DirectX::SimpleMath::Matrix cameraRotationY = DirectX::SimpleMath::Matrix::CreateRotationY(camera->rotation.y);
 	DirectX::SimpleMath::Matrix cameraRotationZ = DirectX::SimpleMath::Matrix::CreateRotationZ(camera->rotation.z);

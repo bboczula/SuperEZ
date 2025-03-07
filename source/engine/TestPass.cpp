@@ -16,16 +16,21 @@ extern RenderContext renderContext;
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
 #if USE_PERSPECTIVE_CAMERA
-	camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	perspectiveCamera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	arcballCamera = new Arcball(perspectiveCamera);
 #else
-	camera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	orthoCamera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	arcballCamera = new Arcball(orthoCamera);
 #endif
-	arcballCamera = new Arcball(camera);
 }
 
 TestPass::~TestPass()
 {
-	delete camera;
+#if USE_PERSPECTIVE_CAMERA
+	delete perspectiveCamera;
+#else
+	delete orthoCamera;
+#endif
 }
 
 void TestPass::Prepare()
@@ -49,7 +54,11 @@ void TestPass::Execute()
 	renderContext.ClearDepthBuffer(commandListIndex, depthBufferIndex);
 	renderContext.BindGeometry(commandListIndex);
 
-	renderContext.SetInlineConstants(commandListIndex, 16, camera->GetViewProjectionMatrixPtr());
+#if USE_PERSPECTIVE_CAMERA
+	renderContext.SetInlineConstants(commandListIndex, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
+#else
+	renderContext.SetInlineConstants(commandListIndex, 16, orthoCamera->GetViewProjectionMatrixPtr());
+#endif
 
 	auto commandList = renderContext.GetCommandList(commandListIndex);
 	commandList->GetCommandList()->DrawInstanced(36, 1, 0, 0);
