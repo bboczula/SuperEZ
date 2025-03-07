@@ -19,7 +19,17 @@ TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 	perspectiveCamera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
 	arcballCamera = new Arcball(perspectiveCamera);
 #else
+	float aspectRatio = 1.0f;
+	float distanceToPlane = 2.0f;
+	float fov = DirectX::XMConvertToRadians(36.0f);
+	float height = tan(fov * 0.5f) * distanceToPlane;
+	float width = height * aspectRatio;
+	width *= 2.0f;
+	height *= 2.0f;
+
 	orthoCamera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	orthoCamera->SetWidth(width);
+	orthoCamera->SetHeight(height);
 	arcballCamera = new Arcball(orthoCamera);
 #endif
 }

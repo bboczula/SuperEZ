@@ -62,11 +62,23 @@ namespace CameraUnitTest
 
 	TEST(OrthographicCameraSuite, DefaultWidthAndHeight)
 	{
+		// Default width and height are 1.0f, if they are 0.0f, there will be a crash
 		OrthographicCamera* camera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
 		auto width = camera->GetWidth();
 		auto height = camera->GetHeight();
-		ASSERT_EQ(width, 0.0f);
-		ASSERT_EQ(height, 0.0f);
+		ASSERT_EQ(width, 1.0f);
+		ASSERT_EQ(height, 1.0f);
+	}
+
+	TEST(OrthographicCameraSuite, SetWidthAndHeight)
+	{
+		OrthographicCamera* camera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 0.0f));
+		camera->SetWidth(10.0f);
+		camera->SetHeight(5.0f);
+		auto width = camera->GetWidth();
+		auto height = camera->GetHeight();
+		ASSERT_EQ(width, 10.0f);
+		ASSERT_EQ(height, 5.0f);
 	}
 
 	TEST(ArballCameraSuite, RotateYRight90Degrees)
