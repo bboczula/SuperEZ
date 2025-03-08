@@ -2,22 +2,45 @@
 
 #include "RenderContext.h"
 #include "DeviceContext.h"
+#include "camera/PerspectiveCamera.h"
+#include "camera/OrthographicCamera.h"
+#include "camera/Arcball.h"
 
 #include <pix3.h>
 
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
+#define USE_PERSPECTIVE_CAMERA 0
+
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
-	camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
-	camera->SetPosition(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 1.0f));
-	arcballCamera = new Arcball(camera);
+#if USE_PERSPECTIVE_CAMERA
+	perspectiveCamera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	arcballCamera = new Arcball(perspectiveCamera);
+#else
+	float aspectRatio = 1.0f;
+	float distanceToPlane = 2.0f;
+	float fov = DirectX::XMConvertToRadians(36.0f);
+	float height = tan(fov * 0.5f) * distanceToPlane;
+	float width = height * aspectRatio;
+	width *= 2.0f;
+	height *= 2.0f;
+
+	orthoCamera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	orthoCamera->SetWidth(width);
+	orthoCamera->SetHeight(height);
+	arcballCamera = new Arcball(orthoCamera);
+#endif
 }
 
 TestPass::~TestPass()
 {
-	delete camera;
+#if USE_PERSPECTIVE_CAMERA
+	delete perspectiveCamera;
+#else
+	delete orthoCamera;
+#endif
 }
 
 void TestPass::Prepare()
@@ -35,22 +58,20 @@ void TestPass::Update()
 
 void TestPass::Execute()
 {
-	//renderContext.ResetCommandList(commandListIndex);
-	//PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, L"Test Pass");
 	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
 	renderContext.BindRenderTargetWithDepth(commandListIndex, renderTargetIndex, depthBufferIndex);
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
 	renderContext.ClearDepthBuffer(commandListIndex, depthBufferIndex);
 	renderContext.BindGeometry(commandListIndex);
 
-	renderContext.SetInlineConstants(commandListIndex, 16, camera->GetViewProjectionMatrixPtr());
+#if USE_PERSPECTIVE_CAMERA
+	renderContext.SetInlineConstants(commandListIndex, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
+#else
+	renderContext.SetInlineConstants(commandListIndex, 16, orthoCamera->GetViewProjectionMatrixPtr());
+#endif
 
 	auto commandList = renderContext.GetCommandList(commandListIndex);
 	commandList->GetCommandList()->DrawInstanced(36, 1, 0, 0);
-	//PIXEndEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList());
-//
-	//renderContext.CloseCommandList(commandListIndex);
-	//renderContext.ExecuteCommandList(commandListIndex);
 }
 
 void TestPass::Allocate(DeviceContext* deviceContext)

@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 Camera::Camera()
-	: position(0.0f, 5.0f, 0.0f), rotation(0.0f, 0.0f, 0.0f),
+	: position(0.0f, 0.0f, 0.0f), rotation(0.0f, 0.0f, 0.0f),
 	forward(DEFAULT_FORWARD), up(DEFAULT_UP),	right(DEFAULT_RIGTH)
 {
 	LogInfo();

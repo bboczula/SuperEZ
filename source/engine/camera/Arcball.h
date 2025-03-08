@@ -15,7 +15,9 @@ public:
 	void MoveLeft(float step) override;
 	// Rotate
 	void Rotate(float x, float y, float z) override;
+	// Custom
+	void SetRadius(float radius);
+	float GetRadius();
 private:
 	DirectX::SimpleMath::Vector3 target;
-	float radius;
 };

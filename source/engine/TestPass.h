@@ -1,11 +1,15 @@
 #pragma once
 
 #include "RenderPass.h"
-#include "camera/PerspectiveCamera.h"
-#include "camera/Arcball.h"
+
 
 // The test pass first will create its own Render Target and Vertex Buffer,
 // and then it will render a triangle to the screen.
+
+class PerspectiveCamera;
+class OrthographicCamera;
+class Arcball;
+class Camera;
 
 class TestPass : public RenderPass
 {
@@ -17,6 +21,7 @@ public:
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
-	PerspectiveCamera* camera;
+	PerspectiveCamera* perspectiveCamera;
+	OrthographicCamera* orthoCamera;
 	Arcball* arcballCamera;
 };

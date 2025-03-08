@@ -18,7 +18,7 @@ public:
 protected:
 	virtual void CalculateViewProjectionMatrix() = 0;
 	const DirectX::SimpleMath::Vector3 DEFAULT_UP = { 0.0f, 1.0f, 0.0f };
-	const DirectX::SimpleMath::Vector3 DEFAULT_FORWARD = { 0.0f, 0.0f, -1.0f };
+	const DirectX::SimpleMath::Vector3 DEFAULT_FORWARD = { 0.0f, 0.0f, 1.0f };
 	const DirectX::SimpleMath::Vector3 DEFAULT_RIGTH = { 1.0f, 0.0f, 0.0f };
 	// Points
 	DirectX::SimpleMath::Vector3 position;
