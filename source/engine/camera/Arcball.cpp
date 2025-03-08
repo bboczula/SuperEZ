@@ -1,10 +1,9 @@
 #include "Arcball.h"
 #include "Camera.h"
 
-Arcball::Arcball(Camera* camera) : radius(camera->GetPosition().z), target(0.0f, 0.0f, 0.0f)
+Arcball::Arcball(Camera* camera) : target(0.0f, 0.0f, 0.0f)
 {
 	SetCamera(camera);
-	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
 	camera->forward = target - camera->position;
 	camera->forward.Normalize();
 }
@@ -15,18 +14,10 @@ Arcball::~Arcball()
 
 void Arcball::MoveForward(float step)
 {
-	radius += 0.1;
-	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
-	camera->forward = target - camera->position;
-	camera->forward.Normalize();
 }
 
 void Arcball::MoveBackward(float step)
 {
-	radius -= 0.1;
-	camera->position = target + DirectX::SimpleMath::Vector3(0.0f, 0.0f, radius);
-	camera->forward = target - camera->position;
-	camera->forward.Normalize();
 }
 
 void Arcball::MoveRight(float step)
@@ -60,4 +51,19 @@ void Arcball::Rotate(float x, float y, float z)
 	camera->up = camera->right.Cross(camera->forward);
 	camera->up.Normalize();
 	camera->up *= -1.0f;
+}
+
+void Arcball::SetRadius(float radius)
+{
+	DirectX::SimpleMath::Vector3 radiusVector = camera->position - target;
+	radiusVector.Normalize();
+	camera->position = target + (radiusVector * radius);
+	camera->forward = target - camera->position;
+	camera->forward.Normalize();
+}
+
+float Arcball::GetRadius()
+{
+	DirectX::SimpleMath::Vector3 radiusVector = camera->position - target;
+	return radiusVector.Length();
 }
