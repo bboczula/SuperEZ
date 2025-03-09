@@ -102,13 +102,20 @@ project "Engine"
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"
 		defines { "FINAL" }
-		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]" } -- Runs before the compilation		
+		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]" } -- Runs before the compilation
 		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- Technically creates a dummy file to track execution, but I've never found this file
 	filter "configurations:Debug"
 		defines { "DEBUG" }
 		runtime "Debug"
-		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]" } -- This really only applies to Debug builds
-		buildoutputs { "%{!cfg.targetdir}/WinPixEventRuntime.dll" } -- Technically creates a dummy file to track execution, but I've never found this file
+		buildcommands
+		{
+			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]", -- Copy shaders
+			"{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]" -- This really only applies to Debug builds
+		}
+		buildoutputs
+		{
+			"%{!cfg.targetdir}/WinPixEventRuntime.dll"  -- Technically creates a dummy file to track execution, but I've never found this file
+		}
 		buildmessage("Copying the PIX Event runtime...")
 		links { "WinPixEventRuntime.lib" }
 	filter "configurations:PreRelease"
@@ -119,6 +126,8 @@ project "Engine"
 		defines "NDEBUG"
 		runtime "Release"
 		optimize "on"
+		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]" } -- Runs before the compilation
+		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- This will trigger buildcommands all the time
 	filter("files:**.hlsl")
 		flags("ExcludeFromBuild")
 	
@@ -129,6 +138,7 @@ project "Game"
 	cppdialect "C++20"
 	location(LOCATION_DIRECTORY_NAME)
     targetdir "bin/%{cfg.buildcfg}"
+	debugdir "bin/%{cfg.buildcfg}"
 	links
 	{
 		"Engine"
