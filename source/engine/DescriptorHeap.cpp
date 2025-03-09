@@ -26,7 +26,7 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Allocate()
 	return rtvHandle;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Get(int index)
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Get(size_t index)
 {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(heap->GetCPUDescriptorHandleForHeapStart());
 	rtvHandle.Offset(index, descriptorSize);

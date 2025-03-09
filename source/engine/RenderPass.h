@@ -26,13 +26,13 @@ public:
 	RenderPass::Type GetType() const { return type; }
 protected:
 	RenderPass::Type type;
-	UINT shaderIndex;
-	UINT rootSignatureIndex;
-	UINT pipelineStateIndex;
-	UINT viewportAndScissorsIndex;
-	UINT commandListIndex;
-	UINT renderTargetIndex;
-	UINT depthBufferIndex;
+	size_t shaderIndex;
+	size_t rootSignatureIndex;
+	size_t pipelineStateIndex;
+	size_t viewportAndScissorsIndex;
+	size_t commandListIndex;
+	size_t renderTargetIndex;
+	size_t depthBufferIndex;
 	LPCWSTR shaderSourceFileName;
 	PCWSTR name;
 };

@@ -3,12 +3,12 @@
 class DepthBuffer
 {
 public:
-	DepthBuffer(UINT width, UINT height, UINT textureIndex, UINT dsvDescriptorIndex, const char* name);
-	UINT GetDescriptorIndex();
+	DepthBuffer(UINT width, UINT height, size_t textureIndex, size_t dsvDescriptorIndex, const char* name);
+	size_t GetDescriptorIndex();
 private:
 	char name[32];
-	UINT textureIndex;
-	UINT dsvDescriptorIndex;
+	size_t textureIndex;
+	size_t dsvDescriptorIndex;
 	UINT width;
 	UINT height;
 };

@@ -8,7 +8,7 @@ class DescriptorHeap
 public:
 	void Create(D3D12_DESCRIPTOR_HEAP_TYPE type, DeviceContext* deviceContext);
 	CD3DX12_CPU_DESCRIPTOR_HANDLE Allocate();
-	D3D12_CPU_DESCRIPTOR_HANDLE Get(int index);
+	D3D12_CPU_DESCRIPTOR_HANDLE Get(size_t index);
 	UINT Size();
 private:
 	ID3D12DescriptorHeap* heap;

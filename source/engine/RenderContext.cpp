@@ -54,11 +54,11 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 	cbvSrvUavHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, deviceContext);
 }
 
-UINT RenderContext::CreateRenderTarget()
+size_t RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	UINT textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
+	size_t textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
 	deviceContext.GetDevice()->CreateRenderTargetView(textures[textureIndex]->GetResource(), nullptr, rtvHeap.Allocate());
 
 	renderTargets.push_back(new RenderTarget(1920, 1080, textureIndex, rtvHeap.Size() - 1, "RT_Custom"));
@@ -68,11 +68,11 @@ UINT RenderContext::CreateRenderTarget()
 	return renderTargets.size() - 1;
 }
 
-UINT RenderContext::CreateDepthBuffer()
+size_t RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
-	UINT depthIndex = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
+	size_t depthIndex = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
 	deviceContext.GetDevice()->CreateDepthStencilView(textures[depthIndex]->GetResource(), nullptr, dsvHeap.Allocate());
 
 	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depthIndex, dsvHeap.Size() - 1, "DB_Custom"));
@@ -101,7 +101,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 	}
 }
 
-UINT RenderContext::CreateRootSignature(DeviceContext* deviceContext)
+size_t RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
@@ -123,13 +123,12 @@ UINT RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	ExitIfFailed(deviceContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
 	rootSignature->SetName(L"Render Context Root Signature");
 	
-	UINT index = rootSignatures.size();
 	rootSignatures.push_back(rootSignature);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
-	return index;
+	return rootSignatures.size() - 1;
 }
 
-UINT RenderContext::CreateShaders(LPCWSTR shaderName)
+size_t RenderContext::CreateShaders(LPCWSTR shaderName)
 {
 	OutputDebugString(L"CreateShaders\n");
 
@@ -147,16 +146,14 @@ UINT RenderContext::CreateShaders(LPCWSTR shaderName)
 	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
 	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 
-	UINT index = vertexShaders.size();
 	vertexShaders.push_back(vertexShader);
 	pixelShaders.push_back(pixelShader);
-
-	return index;
-
 	OutputDebugString(L"CreateShaders succeeded\n");
+
+	return vertexShaders.size() - 1;
 }
 
-UINT RenderContext::CreatePipelineState(DeviceContext* deviceContext, UINT rootSignatureIndex, UINT shaderIndex)
+size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
@@ -189,24 +186,21 @@ UINT RenderContext::CreatePipelineState(DeviceContext* deviceContext, UINT rootS
 	ExitIfFailed(deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)));
 	pipelineState->SetName(L"Render Context Pipeline State");
 
-	UINT index = pipelineStates.size();
 	pipelineStates.push_back(pipelineState);
 
 	OutputDebugString(L"CreatePipelineState succeeded\n");
-	return index;
+	return pipelineStates.size() - 1;
 }
 
-UINT RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
+size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateViewportAndScissorRect\n");
-
-	UINT index = viewports.size();
 
 	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(windowContext.GetWidth()), static_cast<float>(windowContext.GetHeight())));
 	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight())));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
 
-	return index;
+	return viewports.size() - 1;
 }
 
 void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
@@ -305,7 +299,7 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	vertexBufferView.SizeInBytes = colorSize;
 }
 
-UINT RenderContext::CreateEmptyTexture(UINT width, UINT height)
+size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -326,7 +320,7 @@ UINT RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	return textures.size() - 1;
 }
 
-UINT RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
+size_t RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateDepthTexture\n");
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
@@ -348,11 +342,9 @@ UINT RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name
 	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 
 	return textures.size() - 1;
-
-	return 0;
 }
 
-UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
+size_t RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
@@ -376,7 +368,7 @@ UINT RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHA
 	return textures.size() - 1;
 }
 
-UINT RenderContext::CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIndex)
+UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex)
 {
 	// Here you should copy the Render Target from the previous Render Context and copy it to the Back Buffer
 	// commandList->CopyTextureRegion();
@@ -394,19 +386,19 @@ UINT RenderContext::CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIn
 	return 0;
 }
 
-void RenderContext::SetInlineConstants(UINT cmdListIndex, UINT numOfConstants, void* data)
+void RenderContext::SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data)
 {
 	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
 }
 
-void RenderContext::BindRenderTarget(UINT cmdListIndex, UINT rtIndex)
+void RenderContext::BindRenderTarget(size_t cmdListIndex, size_t rtIndex)
 {
 	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 }
 
-void RenderContext::BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, UINT depthIndex)
+void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, size_t rtIndex, size_t depthIndex)
 {
 	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
@@ -415,7 +407,7 @@ void RenderContext::BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, U
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
-void RenderContext::CleraRenderTarget(UINT cmdListIndex, UINT rtIndex)
+void RenderContext::CleraRenderTarget(size_t cmdListIndex, size_t rtIndex)
 {
 	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
@@ -423,29 +415,29 @@ void RenderContext::CleraRenderTarget(UINT cmdListIndex, UINT rtIndex)
 	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 }
 
-void RenderContext::ClearDepthBuffer(UINT cmdListIndex, UINT depthIndex)
+void RenderContext::ClearDepthBuffer(size_t cmdListIndex, size_t depthIndex)
 {
 	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
 	commandLists[cmdListIndex]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
-void RenderContext::ResetCommandList(UINT cmdListindex, UINT psoIndex)
+void RenderContext::ResetCommandList(size_t cmdListindex, size_t psoIndex)
 {
 	commandLists[cmdListindex]->Reset(pipelineStates[psoIndex]);
 }
 
-void RenderContext::ResetCommandList(UINT index)
+void RenderContext::ResetCommandList(size_t index)
 {
 	commandLists[index]->Reset(nullptr);
 }
 
-void RenderContext::CloseCommandList(UINT index)
+void RenderContext::CloseCommandList(size_t index)
 {
 	commandLists[index]->Close();
 }
 
-void RenderContext::SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex)
+void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
 	commandLists[cmdListIndex]->GetCommandList()->SetPipelineState(pipelineStates[psoIndex]);
@@ -453,13 +445,13 @@ void RenderContext::SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootS
 	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }
 
-void RenderContext::BindGeometry(UINT cmdListIndex)
+void RenderContext::BindGeometry(size_t cmdListIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
 }
 
-void RenderContext::TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOURCE_STATES state)
+void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state)
 {
 	if (textures[textureId]->GetCurrentState() == state)
 	{
@@ -479,7 +471,7 @@ void RenderContext::TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOUR
 	textures[textureId]->SetCurrentState(state);
 }
 
-void RenderContext::TransitionBack(UINT cmdListIndex, UINT textureId)
+void RenderContext::TransitionBack(size_t cmdListIndex, size_t textureId)
 {
 	auto previousState = textures[textureId]->GetPreviousState();
 	TransitionTo(cmdListIndex, textureId, previousState);
@@ -528,15 +520,15 @@ void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
 	commandLists[0]->Close();
 }
 
-void RenderContext::ExecuteCommandList(UINT cmdListIndex)
+void RenderContext::ExecuteCommandList(size_t cmdListIndex)
 {
 	ID3D12CommandList* ppCommandLists[] = { commandLists[cmdListIndex]->GetCommandList() };
 	deviceContext.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 }
 
-UINT RenderContext::CreateCommandList()
+size_t RenderContext::CreateCommandList()
 {
-	UINT index = commandLists.size();
+	size_t index = commandLists.size();
 	commandLists.push_back(new CommandList());
 	commandLists[index]->Create();
 

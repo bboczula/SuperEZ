@@ -20,45 +20,45 @@ public:
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
-	UINT CreateRootSignature(DeviceContext* deviceContext);
-	UINT CreateShaders(LPCWSTR shaderName);
-	UINT CreatePipelineState(DeviceContext* deviceContext, UINT rootSignatureIndex, UINT shaderIndex);
-	UINT CreateViewportAndScissorRect(DeviceContext* deviceContext);
+	size_t CreateRootSignature(DeviceContext* deviceContext);
+	size_t CreateShaders(LPCWSTR shaderName);
+	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex);
+	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	void CreateVertexBuffer(DeviceContext* deviceContext);
 	void CreateIndexBuffer(DeviceContext* deviceContext);
 	void CreateConstantBuffer(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
 	void CreateShader(DeviceContext* deviceContext);
-	ID3D12Resource* GetVertexBuffer(UINT index) { return vertexBuffers[index]; }
+	ID3D12Resource* GetVertexBuffer(size_t index) { return vertexBuffers[index]; }
 	ID3D12Resource* GetCurrentBackBuffer();
 	void PopulateCommandList(DeviceContext* deviceContext);
-	void ExecuteCommandList(UINT cmdListIndex);
-	UINT CreateCommandList();
-	CommandList* GetCommandList(UINT index) { return commandLists[index]; }
+	void ExecuteCommandList(size_t cmdListIndex);
+	size_t CreateCommandList();
+	CommandList* GetCommandList(size_t index) { return commandLists[index]; }
 	// High Level
-	UINT CreateRenderTarget();
-	UINT CreateDepthBuffer();
+	size_t CreateRenderTarget();
+	size_t CreateDepthBuffer();
 	// Textures
-	UINT CreateEmptyTexture(UINT width, UINT height);
-	UINT CreateDepthTexture(UINT width, UINT height, const CHAR* name);
-	UINT CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
-	UINT CopyTexture(UINT cmdListIndex, UINT sourceIndex, UINT destIndex);
+	size_t CreateEmptyTexture(UINT width, UINT height);
+	size_t CreateDepthTexture(UINT width, UINT height, const CHAR* name);
+	size_t CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
+	UINT CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex);
 	// Constants
-	void SetInlineConstants(UINT cmdListIndex, UINT numOfConstants, void* data);
+	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
-	void BindRenderTarget(UINT cmdListIndex, UINT rtIndex);
-	void BindRenderTargetWithDepth(UINT cmdListIndex, UINT rtIndex, UINT depthIndex);
-	void ResetCommandList(UINT index, UINT psoIndex);
-	void ResetCommandList(UINT index);
-	void CloseCommandList(UINT index);
-	void SetupRenderPass(UINT cmdListIndex, UINT psoIndex, UINT rootSignatureIndex, UINT viewportIndex, UINT scissorsIndex);
-	void BindGeometry(UINT cmdListIndex);
+	void BindRenderTarget(size_t cmdListIndex, size_t rtIndex);
+	void BindRenderTargetWithDepth(size_t cmdListIndex, size_t rtIndex, size_t depthIndex);
+	void ResetCommandList(size_t index, size_t psoIndex);
+	void ResetCommandList(size_t index);
+	void CloseCommandList(size_t index);
+	void SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
+	void BindGeometry(size_t cmdListIndex);
 	// Clearing
-	void CleraRenderTarget(UINT cmdListIndex, UINT rtIndex);
-	void ClearDepthBuffer(UINT cmdListIndex, UINT depthIndex);
+	void CleraRenderTarget(size_t cmdListIndex, size_t rtIndex);
+	void ClearDepthBuffer(size_t cmdListIndex, size_t depthIndex);
 	// Barriers
-	void TransitionTo(UINT cmdListIndex, UINT textureId, D3D12_RESOURCE_STATES state);
-	void TransitionBack(UINT cmdListIndex, UINT textureId);
+	void TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state);
+	void TransitionBack(size_t cmdListIndex, size_t textureId);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;

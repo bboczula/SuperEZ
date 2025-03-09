@@ -5,13 +5,13 @@
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
 
-RenderTarget::RenderTarget(UINT width, UINT height, UINT textureIndex, UINT rtvDescriptorIndex, const char* name)
+RenderTarget::RenderTarget(UINT width, UINT height, size_t textureIndex, size_t rtvDescriptorIndex, const char* name)
 	: width(width), height(height), textureIndex(textureIndex), rtvDescriptorIndex(rtvDescriptorIndex)
 {
 	strcpy_s(this->name, name);
 }
 
-UINT RenderTarget::GetDescriptorIndex()
+size_t RenderTarget::GetDescriptorIndex()
 {
 	return rtvDescriptorIndex;
 }
