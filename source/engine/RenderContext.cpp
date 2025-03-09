@@ -228,53 +228,53 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 
 	float cube[][8] =
 	{
-		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //0
-		{  0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //1
-		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //2
+		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //0
+		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //1
+		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //2
 
-		{  0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //1
-		{  0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //3
-		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //2
+		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //1
+		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //3
+		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //2
 
-		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_2 }, //4
-		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_2 }, //5
-		{  0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_2 }, //6
+		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //4
+		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //5
+		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //6
 
-		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_2 }, //5
-		{  0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_2 }, //7
-		{  0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_2 }, //6
+		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //5
+		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //7
+		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //6
 
-		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //0
-		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //2
-		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //4
+		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //0
+		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
+		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //4
 
-		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //2
-		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //5
-		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //4
+		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
+		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //5
+		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //4
 
-		{  0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //1
-		{  0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //6
-		{  0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //3
+		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //1
+		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //6
+		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //3
 
-		{  0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //7
-		{  0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //3
-		{  0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //6
+		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //7
+		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //3
+		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //6
 
-		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //0
-		{  0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //1
-		{  0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_1 }, //6
+		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //0
+		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //1
+		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_1 }, //6
 
-		{ -0.200,  0.200 * ratio, 0.200, 1.0f,   COLOR_1 }, //0
-		{  0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_1 }, //6
-		{ -0.200,  0.200 * ratio, -0.200, 1.0f,   COLOR_1 }, //4
+		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //0
+		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_1 }, //6
+		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_1 }, //4
 
-		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //2
-		{  0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //7
-		{ -0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_3 }, //5
+		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
+		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //7
+		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //5
 
-		{ -0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //2
-		{  0.200, -0.200 * ratio, 0.200, 1.0f,   COLOR_3 }, //3
-		{  0.200, -0.200 * ratio, -0.200, 1.0f,   COLOR_3 } //7
+		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
+		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //3
+		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 } //7
 	};
 	
 	//const UINT colorSize = sizeof(arrayVertexAndColor);
@@ -337,7 +337,8 @@ size_t RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* na
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
 	WCHAR wName[32];
-	mbstowcs(wName, tempName, 32);
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 
@@ -361,7 +362,8 @@ size_t RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const C
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
 	WCHAR wName[32];
-	mbstowcs(wName, tempName, 32);
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
 
