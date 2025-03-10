@@ -11,7 +11,7 @@
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-#define USE_PERSPECTIVE_CAMERA 0
+#define USE_PERSPECTIVE_CAMERA 1
 
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {

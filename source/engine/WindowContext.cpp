@@ -5,7 +5,7 @@
 #include "CommCtrl.h"
 
 #define WINDOW_CLASS_NAME L"SuperEZMyWindowWin32Class"
-#define WINDOW_TITLE L"SuperEZ Engine v1.1"
+#define WINDOW_TITLE L"SuperEZ Engine v1.2"
 #define DEFAULT_WINDOW_STYLE WS_VISIBLE | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_BORDER
 
 #define ID_FILE_ABOUT 1
@@ -24,7 +24,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	return 0;
 }
 
-WindowContext::WindowContext() : width(800), height(600), instance(GetModuleHandle(nullptr))
+WindowContext::WindowContext() : width(1920), height(1080), instance(GetModuleHandle(nullptr))
 {
 	OutputDebugString(L"WindowContext Constructor\n");
 	RegisterWindowClass();
