@@ -20,3 +20,4 @@ https://github.com/user-attachments/assets/3d5a925d-879f-41e0-9e4b-0d4df87d5d1c
   - Added PIX markers support to improve debugging and performance analysis within PIX.
 - Basic Shader Pipeline
   - Refactored the shader creation process, extracting it from the Render Context for better modularity and maintainability.
+- More info on the DevLog: https://bboczula.pl/2025/03/16/superez-1-2-devlog/ 
