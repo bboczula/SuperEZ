@@ -88,16 +88,26 @@ project "Engine"
 	{
 		"source/external/d3dx12",
 		"source/external/SimpleMath",
-		"source/externals/PixEvents/include"
+		"source/externals/PixEvents/include",
+		"source/externals/AssetSuite/inc"
 	}
 	libdirs
 	{
-		"source/externals/PixEvents/lib"
+		"source/externals/PixEvents/lib",
+		"source/externals/AssetSuite/lib"
 	}
     files
 	{
 		"source/engine/**.h", "source/engine/**.cpp",
 		"source/engine/shaders/**.hlsl"
+	}
+	links
+	{
+		"assetsuite_r.lib"
+	}
+	buildcommands
+	{
+		"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
 	}
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"

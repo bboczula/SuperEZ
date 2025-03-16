@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <d3dcompiler.h>
 #include "../externals/SimpleMath/SimpleMath.h"
+#include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "debugapi.h"
 #include "Utils.h"
 
