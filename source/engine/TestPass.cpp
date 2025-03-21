@@ -71,7 +71,7 @@ void TestPass::Execute()
 #endif
 
 	auto commandList = renderContext.GetCommandList(commandListIndex);
-	commandList->GetCommandList()->DrawInstanced(36, 1, 0, 0);
+	commandList->GetCommandList()->DrawInstanced(2901, 1, 0, 0);
 }
 
 void TestPass::Allocate(DeviceContext* deviceContext)

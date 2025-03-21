@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <d3dcompiler.h>
 #include "../externals/SimpleMath/SimpleMath.h"
+#include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "debugapi.h"
 #include "Utils.h"
 
@@ -171,7 +172,7 @@ size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t r
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 	//psoDesc.DepthStencilState.DepthEnable = FALSE;
@@ -211,76 +212,30 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 #define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
 #define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
 
-	float arrayVertexAndColor[][8] =
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	currentPath.append("monkey.obj");
+
+	AssetSuite::Manager assetManager;
+	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+
+	std::vector<FLOAT> meshOutput;
+	AssetSuite::MeshDescriptor meshDescriptor;
+	auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+
+	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
+	float* meshPositionAndColor = new float[meshOutput.size() * 2];
+	const float color[] = { COLOR_1, COLOR_2, COLOR_3 };
+	for (int i = 0; i < meshOutput.size(); i+= 4)
 	{
-		{ -0.200f, 0.125f * ratio, 0.0f, 1.0f,   COLOR_1 },
-		{  0.200f, 0.125f * ratio, 0.0f, 1.0f,   COLOR_1 },
-		{  0.000f, 0.000f * ratio, 0.0f, 1.0f,   COLOR_1 },
-
-		{  0.200f,  0.125f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{  0.000f, -0.250f * ratio, 0.0f, 1.0f,   COLOR_2 },
-		{  0.000f,  0.000f * ratio, 0.0f, 1.0f,   COLOR_2 },
-
-		{ -0.200f, 0.125f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{  0.000f, 0.000f * ratio, 0.0f, 1.0f,   COLOR_3 },
-		{  0.000f, -0.250f * ratio, 0.0f, 1.0f,   COLOR_3 },
-	};
-
-	float cube[][8] =
-	{
-		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //0
-		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //1
-		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //2
-
-		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //1
-		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //3
-		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //2
-
-		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //4
-		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //5
-		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //6
-
-		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //5
-		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //7
-		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_2 }, //6
-
-		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //0
-		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
-		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //4
-
-		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
-		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //5
-		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //4
-
-		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //1
-		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //6
-		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //3
-
-		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //7
-		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //3
-		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //6
-
-		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //0
-		{  0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //1
-		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_1 }, //6
-
-		{ -0.200f,  0.200f * ratio, 0.200f, 1.0f,   COLOR_1 }, //0
-		{  0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_1 }, //6
-		{ -0.200f,  0.200f * ratio, -0.200f, 1.0f,   COLOR_1 }, //4
-
-		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
-		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //7
-		{ -0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 }, //5
-
-		{ -0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //2
-		{  0.200f, -0.200f * ratio, 0.200f, 1.0f,   COLOR_3 }, //3
-		{  0.200f, -0.200f * ratio, -0.200f, 1.0f,   COLOR_3 } //7
-	};
+		// This loop copies vertices (not triangles) and adds color to them
+		memcpy(&meshPositionAndColor[i * 2], &meshOutput[i], 4 * sizeof(FLOAT));
+		const unsigned int colorIndex = (i / 12) % 3;
+		memcpy(&meshPositionAndColor[i * 2 + 4], &color[colorIndex * 4], 4 * sizeof(FLOAT));
+	}
 	
-	//const UINT colorSize = sizeof(arrayVertexAndColor);
-	const UINT colorSize = sizeof(cube);
+	const UINT vbSizeInBytes = meshOutput.size() * 2 * sizeof(float);
 
-	auto buffer = deviceContext->CreateVertexBuffer(colorSize);
+	auto buffer = deviceContext->CreateVertexBuffer(vbSizeInBytes);
 	vertexBuffers.push_back(buffer);
 	
 	// Copy the triangle data to the vertex buffer.
@@ -289,14 +244,13 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	
 	auto vb = vertexBuffers[0];
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	//memcpy(pVertexDataBegin, arrayVertexAndColor, sizeof(arrayVertexAndColor));
-	memcpy(pVertexDataBegin, cube, sizeof(cube));
+	memcpy(pVertexDataBegin, meshPositionAndColor, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
 	
 	// Initialize the vertex buffer view.
 	vertexBufferView.BufferLocation = vb->GetGPUVirtualAddress();
 	vertexBufferView.StrideInBytes = 8 * sizeof(float);
-	vertexBufferView.SizeInBytes = colorSize;
+	vertexBufferView.SizeInBytes = vbSizeInBytes;
 }
 
 size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
