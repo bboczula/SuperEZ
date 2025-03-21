@@ -13,7 +13,6 @@ workspace "SuperEZ"
 	project "Game"
 	
 project "GoogleTest"
-	staticruntime "on" --This will set the /MT in Visual Studio and not the default /MD (which stands for DLL)
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
@@ -51,7 +50,6 @@ project "GoogleTest"
 		}
 		
 project "UnitTest"
-	staticruntime "on"
 	kind "ConsoleApp"
 	cppdialect "C++17"
 	files
@@ -78,7 +76,6 @@ project "UnitTest"
 		optimize "on"
 		
 project "Engine"
-	staticruntime "on" --This will set the /MT in Visual Studio and not the default /MD (which stands for DLL)
     kind "StaticLib"
     language "C++"
 	cppdialect "C++20"
@@ -101,10 +98,6 @@ project "Engine"
 		"source/engine/**.h", "source/engine/**.cpp",
 		"source/engine/shaders/**.hlsl"
 	}
-	links
-	{
-		"assetsuite_r.lib"
-	}
 	buildcommands
 	{
 		"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
@@ -112,7 +105,15 @@ project "Engine"
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"
 		defines { "FINAL" }
-		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]" } -- Runs before the compilation
+		buildcommands
+		{
+			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]",
+			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
+		} -- Runs before the compilation
+		links
+		{
+			"assetsuite_r.lib"
+		}
 		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- Technically creates a dummy file to track execution, but I've never found this file
 	filter "configurations:Debug"
 		defines { "DEBUG" }
@@ -120,14 +121,19 @@ project "Engine"
 		buildcommands
 		{
 			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]", -- Copy shaders
-			"{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]" -- This really only applies to Debug builds
+			"{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]", -- This really only applies to Debug builds
+			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_d.dll] %[%{!cfg.targetdir}]" -- Copy AssetSuite DLL
 		}
 		buildoutputs
 		{
 			"%{!cfg.targetdir}/WinPixEventRuntime.dll"  -- Technically creates a dummy file to track execution, but I've never found this file
 		}
 		buildmessage("Copying the PIX Event runtime...")
-		links { "WinPixEventRuntime.lib" }
+		links
+		{
+			"WinPixEventRuntime.lib",
+			"assetsuite_d.lib"
+		}
 	filter "configurations:PreRelease"
 		defines "NDEBUG"
 		runtime "Release"
@@ -136,13 +142,20 @@ project "Engine"
 		defines "NDEBUG"
 		runtime "Release"
 		optimize "on"
-		buildcommands  { "{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]" } -- Runs before the compilation
+		buildcommands
+		{
+			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]",
+			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
+		} -- Runs before the compilation
 		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- This will trigger buildcommands all the time
+		links
+		{
+			"assetsuite_r.lib"
+		}
 	filter("files:**.hlsl")
 		flags("ExcludeFromBuild")
 	
 project "Game"
-	staticruntime "on" --This will set the /MT in Visual Studio and not the default /MD (which stands for DLL)
     kind "ConsoleApp"
     language "C++"
 	cppdialect "C++20"
