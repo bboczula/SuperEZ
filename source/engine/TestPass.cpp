@@ -70,8 +70,7 @@ void TestPass::Execute()
 	renderContext.SetInlineConstants(commandListIndex, 16, orthoCamera->GetViewProjectionMatrixPtr());
 #endif
 
-	auto commandList = renderContext.GetCommandList(commandListIndex);
-	commandList->GetCommandList()->DrawInstanced(11808, 1, 0, 0);
+	renderContext.DrawMesh(commandListIndex, 0);
 }
 
 void TestPass::Allocate(DeviceContext* deviceContext)

@@ -62,6 +62,8 @@ public:
 	// Barriers
 	void TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state);
 	void TransitionBack(size_t cmdListIndex, size_t textureId);
+	// Drawing
+	void DrawMesh(size_t cmdListIndex, size_t meshIndex);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;

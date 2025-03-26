@@ -6,7 +6,7 @@
 class VertexBuffer
 {
 public:
-	VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, const char* name);
+	VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, UINT numOfVertices, const char* name);
 	~VertexBuffer();
 	ID3D12Resource* GetResource()
 	{
@@ -16,8 +16,13 @@ public:
 	{
 		return sizeInBytes;
 	}
+	UINT GetNumOfVertices()
+	{
+		return numOfVertices;
+	}
 private:
 	ID3D12Resource* resource;
 	CHAR name[32];
 	UINT sizeInBytes;
+	UINT numOfVertices;
 };

@@ -215,14 +215,16 @@ size_t RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 #define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
 
 	std::filesystem::path currentPath = std::filesystem::current_path();
-	currentPath.append("monkey.obj");
+	//currentPath.append("monkey.obj");
+	currentPath.append("teapot.obj");
 
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
 
 	std::vector<FLOAT> meshOutput;
 	AssetSuite::MeshDescriptor meshDescriptor;
-	auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
 
 	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
 	float* meshPositionAndColor = new float[meshOutput.size() * 2];
@@ -248,14 +250,7 @@ size_t RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	ID3D12Resource* vertexBuffer;
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 	deviceContext->CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
-	//ExitIfFailed(device->CreateCommittedResource(
-	//	&heapProperties,
-	//	D3D12_HEAP_FLAG_NONE,
-	//	&resourceDesc,
-	//	D3D12_RESOURCE_STATE_GENERIC_READ,
-	//	nullptr,
-	//	IID_PPV_ARGS(&vertexBuffer)));
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, "VB_Default"));
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, meshDescriptor.numOfVertices, "VB_Default"));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -369,7 +364,8 @@ size_t RenderContext::CreateMesh()
 	vbv.StrideInBytes = 8 * sizeof(float);
 	vbv.SizeInBytes = vertexBuffers[meshIndex]->GetSizeInBytes();
 
-	meshes.push_back(new Mesh(meshIndex, vbv, "DefalutMesh"));
+	UINT vertexCount = vertexBuffers[meshIndex]->GetNumOfVertices() * 3;
+	meshes.push_back(new Mesh(meshIndex, vbv, vertexCount, "DefalutMesh"));
 
 	return 0;
 }
@@ -464,6 +460,12 @@ void RenderContext::TransitionBack(size_t cmdListIndex, size_t textureId)
 {
 	auto previousState = textures[textureId]->GetPreviousState();
 	TransitionTo(cmdListIndex, textureId, previousState);
+}
+
+void RenderContext::DrawMesh(size_t cmdListIndex, size_t meshIndex)
+{
+	UINT vertexCount = meshes[meshIndex]->GetVertexCount();
+	commandLists[cmdListIndex]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
 }
 
 ID3D12Resource* RenderContext::GetVertexBuffer(size_t index)

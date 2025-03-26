@@ -1,7 +1,7 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, const char* name)
-	: resource(resource), sizeInBytes(sizeInBytes)
+VertexBuffer::VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, UINT numOfVertices, const char* name)
+	: resource(resource), sizeInBytes(sizeInBytes), numOfVertices(numOfVertices)
 {
 	strcpy_s(this->name, name);
 }
