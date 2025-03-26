@@ -3,6 +3,8 @@
 #include "WindowContext.h"
 #include "RenderTarget.h"
 #include "DepthBuffer.h"
+#include "Mesh.h"
+#include "VertexBuffer.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -204,7 +206,7 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	return viewports.size() - 1;
 }
 
-void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
+size_t RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 {
 	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 
@@ -235,22 +237,36 @@ void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	
 	const UINT vbSizeInBytes = meshOutput.size() * 2 * sizeof(float);
 
-	auto buffer = deviceContext->CreateVertexBuffer(vbSizeInBytes);
-	vertexBuffers.push_back(buffer);
+	//auto buffer = deviceContext->CreateVertexBuffer(vbSizeInBytes);
+	// Note: using upload heaps to transfer static data like vert buffers is not 
+	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
+	// over. Please read up on Default Heap usage. An upload heap is used here for 
+	// code simplicity and because there are very few verts to actually transfer.
+	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
+	ID3D12Resource* vertexBuffer;
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	deviceContext->CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
+	//ExitIfFailed(device->CreateCommittedResource(
+	//	&heapProperties,
+	//	D3D12_HEAP_FLAG_NONE,
+	//	&resourceDesc,
+	//	D3D12_RESOURCE_STATE_GENERIC_READ,
+	//	nullptr,
+	//	IID_PPV_ARGS(&vertexBuffer)));
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, "VB_Default"));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 	
-	auto vb = vertexBuffers[0];
+	auto vb = vertexBuffers[0]->GetResource();
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
 	memcpy(pVertexDataBegin, meshPositionAndColor, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
-	
-	// Initialize the vertex buffer view.
-	vertexBufferView.BufferLocation = vb->GetGPUVirtualAddress();
-	vertexBufferView.StrideInBytes = 8 * sizeof(float);
-	vertexBufferView.SizeInBytes = vbSizeInBytes;
+
+	return vertexBuffers.size() - 1;
 }
 
 size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
@@ -342,6 +358,22 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t 
 	return 0;
 }
 
+size_t RenderContext::CreateMesh()
+{
+	OutputDebugString(L"CreateMesh\n");
+
+	size_t meshIndex = CreateVertexBuffer(&deviceContext);
+	
+	D3D12_VERTEX_BUFFER_VIEW vbv;
+	vbv.BufferLocation = vertexBuffers[meshIndex]->GetResource()->GetGPUVirtualAddress();
+	vbv.StrideInBytes = 8 * sizeof(float);
+	vbv.SizeInBytes = vertexBuffers[meshIndex]->GetSizeInBytes();
+
+	meshes.push_back(new Mesh(meshIndex, vbv, "DefalutMesh"));
+
+	return 0;
+}
+
 void RenderContext::SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data)
 {
 	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
@@ -404,7 +436,8 @@ void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t
 void RenderContext::BindGeometry(size_t cmdListIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	auto vbv = meshes[0]->GetVertexBufferView();
+	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vbv);
 }
 
 void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state)
@@ -433,47 +466,15 @@ void RenderContext::TransitionBack(size_t cmdListIndex, size_t textureId)
 	TransitionTo(cmdListIndex, textureId, previousState);
 }
 
+ID3D12Resource* RenderContext::GetVertexBuffer(size_t index)
+{
+	return vertexBuffers[index]->GetResource();
+}
+
 ID3D12Resource* RenderContext::GetCurrentBackBuffer()
 {
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
 	return backBuffer[frameIndex];
-}
-
-void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
-{
-	// This is common to all Render Passes
-	commandLists[0]->Reset(pipelineStates[0]);
-	
-
-	// This is per-pass stuff
-	commandLists[0]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[0]);
-	commandLists[0]->GetCommandList()->RSSetViewports(1, &viewports[0]);
-	commandLists[0]->GetCommandList()->RSSetScissorRects(1, &scissorRects[0]);
-
-	// We could have a separate Render Target for each pass, and then finally a blit from last (or any) Render Pass
-
-	// This is blit to back buffer actually
-	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	commandLists[0]->GetCommandList()->ResourceBarrier(1, &barrierToRenderTarget);
-	
-	auto rtvHandle = rtvHeap.Get(deviceContext->GetCurrentBackBufferIndex());
-	commandLists[0]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-	commandLists[0]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-	// This is per-pass I think, though might not necessarily be
-	// By design, I have only two types of passes, a fullscreen pass and pass that has access to game object tree
-	// Maybe this could be somehow automated
-	commandLists[0]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandLists[0]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
-	commandLists[0]->GetCommandList()->DrawInstanced(60, 1, 0, 0);
-
-
-	// This is part of a blit
-	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	commandLists[0]->GetCommandList()->ResourceBarrier(1, &barrierToPresent);
-	
-	commandLists[0]->Close();
 }
 
 void RenderContext::ExecuteCommandList(size_t cmdListIndex)

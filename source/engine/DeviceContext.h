@@ -21,6 +21,8 @@ public:
 	ID3D12Resource* CreateVertexBuffer(UINT size);
 	void CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
 		D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource);
+	void CreateUploadResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
+		D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource);
 	void Present();
 	void Flush();
 private:

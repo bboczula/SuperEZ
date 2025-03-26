@@ -12,6 +12,8 @@ class DeviceContext;
 class RenderTarget;
 class DepthBuffer;
 class Texture;
+class VertexBuffer;
+class Mesh;
 
 class RenderContext
 {
@@ -24,25 +26,26 @@ public:
 	size_t CreateShaders(LPCWSTR shaderName);
 	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex);
 	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
-	void CreateVertexBuffer(DeviceContext* deviceContext);
 	void CreateIndexBuffer(DeviceContext* deviceContext);
 	void CreateConstantBuffer(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
 	void CreateShader(DeviceContext* deviceContext);
-	ID3D12Resource* GetVertexBuffer(size_t index) { return vertexBuffers[index]; }
+	ID3D12Resource* GetVertexBuffer(size_t index);
 	ID3D12Resource* GetCurrentBackBuffer();
-	void PopulateCommandList(DeviceContext* deviceContext);
 	void ExecuteCommandList(size_t cmdListIndex);
 	size_t CreateCommandList();
 	CommandList* GetCommandList(size_t index) { return commandLists[index]; }
 	// High Level
 	size_t CreateRenderTarget();
 	size_t CreateDepthBuffer();
+	size_t CreateMesh();
 	// Textures
 	size_t CreateEmptyTexture(UINT width, UINT height);
 	size_t CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	size_t CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	UINT CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex);
+	// Geometry
+	size_t CreateVertexBuffer(DeviceContext* deviceContext);
 	// Constants
 	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
@@ -69,12 +72,12 @@ private:
 	std::vector<DepthBuffer*> depthBuffers;
 	std::vector<CommandList*> commandLists;
 	std::vector<Texture*> textures;
+	std::vector<VertexBuffer*> vertexBuffers;
+	std::vector<Mesh*> meshes;
 	std::vector<ID3DBlob*> vertexShaders;
 	std::vector<ID3DBlob*> pixelShaders;
 	std::vector<ID3D12RootSignature*> rootSignatures;
 	std::vector<ID3D12PipelineState*> pipelineStates;
 	std::vector<CD3DX12_VIEWPORT> viewports;
 	std::vector<CD3DX12_RECT> scissorRects;
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-	std::vector<ID3D12Resource*> vertexBuffers;
 };

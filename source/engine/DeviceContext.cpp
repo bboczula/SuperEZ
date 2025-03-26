@@ -241,3 +241,10 @@ void DeviceContext::CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOU
 	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
 	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
 }
+
+void DeviceContext::CreateUploadResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
+	D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource)
+{
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_UPLOAD);
+	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
+}
