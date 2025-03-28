@@ -206,51 +206,24 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	return viewports.size() - 1;
 }
 
-size_t RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
+size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData)
 {
-	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-
-#define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
-#define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
-#define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
-
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	//currentPath.append("monkey.obj");
-	currentPath.append("teapot.obj");
-
-	AssetSuite::Manager assetManager;
-	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
-
-	std::vector<FLOAT> meshOutput;
-	AssetSuite::MeshDescriptor meshDescriptor;
-	//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-
-	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
-	float* meshPositionAndColor = new float[meshOutput.size() * 2];
-	const float color[] = { COLOR_1, COLOR_2, COLOR_3 };
-	for (int i = 0; i < meshOutput.size(); i+= 4)
-	{
-		// This loop copies vertices (not triangles) and adds color to them
-		memcpy(&meshPositionAndColor[i * 2], &meshOutput[i], 4 * sizeof(FLOAT));
-		const unsigned int colorIndex = (i / 12) % 3;
-		memcpy(&meshPositionAndColor[i * 2 + 4], &color[colorIndex * 4], 4 * sizeof(FLOAT));
-	}
+	OutputDebugString(L"CreateVertexBuffer\n");
 	
-	const UINT vbSizeInBytes = meshOutput.size() * 2 * sizeof(float);
+	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
+	const UINT vbSizeInBytes = numOfVertices * 8 * sizeof(float);
 
-	//auto buffer = deviceContext->CreateVertexBuffer(vbSizeInBytes);
 	// Note: using upload heaps to transfer static data like vert buffers is not 
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
 	// over. Please read up on Default Heap usage. An upload heap is used here for 
 	// code simplicity and because there are very few verts to actually transfer.
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
+	const D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
 	ID3D12Resource* vertexBuffer;
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
-	deviceContext->CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, meshDescriptor.numOfVertices, "VB_Default"));
+	deviceContext.CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, "VB_Default"));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -258,7 +231,7 @@ size_t RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
 	
 	auto vb = vertexBuffers[0]->GetResource();
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, meshPositionAndColor, vbSizeInBytes);
+	memcpy(pVertexDataBegin, meshData, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
 
 	return vertexBuffers.size() - 1;
@@ -357,7 +330,41 @@ size_t RenderContext::CreateMesh()
 {
 	OutputDebugString(L"CreateMesh\n");
 
-	size_t meshIndex = CreateVertexBuffer(&deviceContext);
+	// Load Mesh
+	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
+
+#define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
+#define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
+#define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
+
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	currentPath.append("monkey.obj");
+	//currentPath.append("teapot.obj");
+	//currentPath.append("cube.obj");
+
+	AssetSuite::Manager assetManager;
+	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+
+	std::vector<FLOAT> meshOutput;
+	AssetSuite::MeshDescriptor meshDescriptor;
+	auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+
+	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
+	float* meshPositionAndColor = new float[meshOutput.size() * 2];
+	const float color[] = { COLOR_1, COLOR_2, COLOR_3 };
+	for (int i = 0; i < meshOutput.size(); i += 4)
+	{
+		// This loop copies vertices (not triangles) and adds color to them
+		memcpy(&meshPositionAndColor[i * 2], &meshOutput[i], 4 * sizeof(FLOAT));
+		const unsigned int colorIndex = (i / 12) % 3;
+		memcpy(&meshPositionAndColor[i * 2 + 4], &color[colorIndex * 4], 4 * sizeof(FLOAT));
+	}
+
+	const auto numOfTriangles = meshDescriptor.numOfVertices;
+
+	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, meshPositionAndColor);
 	
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	vbv.BufferLocation = vertexBuffers[meshIndex]->GetResource()->GetGPUVirtualAddress();

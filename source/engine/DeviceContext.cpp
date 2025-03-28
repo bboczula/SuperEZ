@@ -215,26 +215,6 @@ void DeviceContext::SetDebugNames()
 	ExitIfFailed(fence->SetName(L"Device Context Fence"));
 }
 
-ID3D12Resource* DeviceContext::CreateVertexBuffer(UINT size)
-{
-	// Note: using upload heaps to transfer static data like vert buffers is not 
-	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
-	// over. Please read up on Default Heap usage. An upload heap is used here for 
-	// code simplicity and because there are very few verts to actually transfer.
-	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
-	ID3D12Resource* vertexBuffer;
-	ExitIfFailed(device->CreateCommittedResource(
-		&heapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&resourceDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&vertexBuffer)));
-
-	return vertexBuffer;
-}
-
 void DeviceContext::CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
 	D3D12_RESOURCE_STATES initResourceState, const IID &riidResource, void** ppResource)
 {

@@ -45,7 +45,7 @@ public:
 	size_t CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	UINT CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex);
 	// Geometry
-	size_t CreateVertexBuffer(DeviceContext* deviceContext);
+	size_t CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData);
 	// Constants
 	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
