@@ -2,6 +2,7 @@
 
 #include "RenderContext.h"
 #include "DeviceContext.h"
+#include "WindowContext.h"
 #include "camera/PerspectiveCamera.h"
 #include "camera/OrthographicCamera.h"
 #include "camera/Arcball.h"
@@ -10,16 +11,17 @@
 
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
+extern WindowContext windowContext;
 
 #define USE_PERSPECTIVE_CAMERA 1
 
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
+	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 #if USE_PERSPECTIVE_CAMERA
-	perspectiveCamera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	perspectiveCamera = new PerspectiveCamera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
 	arcballCamera = new Arcball(perspectiveCamera);
 #else
-	float aspectRatio = 1.0f;
 	float distanceToPlane = 2.0f;
 	float fov = DirectX::XMConvertToRadians(36.0f);
 	float height = tan(fov * 0.5f) * distanceToPlane;
