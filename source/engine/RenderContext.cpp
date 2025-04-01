@@ -228,12 +228,13 @@ size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData)
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 	
-	auto vb = vertexBuffers[0]->GetResource();
+	const auto index = vertexBuffers.size() - 1;
+	auto vb = vertexBuffers[index]->GetResource();
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
 	memcpy(pVertexDataBegin, meshData, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
 
-	return vertexBuffers.size() - 1;
+	return index;
 }
 
 size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)

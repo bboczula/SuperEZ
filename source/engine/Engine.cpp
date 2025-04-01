@@ -43,24 +43,45 @@ void Engine::CreateRenderResources()
 
 void Engine::LoadAssets()
 {
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	//currentPath.append("monkey.obj");
-	currentPath.append("teapot.obj");
-	//currentPath.append("cube.obj");
+	{
+		std::filesystem::path currentPath = std::filesystem::current_path();
+		//currentPath.append("monkey.obj");
+		//currentPath.append("teapot.obj");
+		currentPath.append("cube.obj");
 
-	AssetSuite::Manager assetManager;
-	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+		AssetSuite::Manager assetManager;
+		assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
 
-	std::vector<FLOAT> meshOutput;
-	AssetSuite::MeshDescriptor meshDescriptor;
-	//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+		std::vector<FLOAT> meshOutput;
+		AssetSuite::MeshDescriptor meshDescriptor;
+		//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+		//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+		auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
 
-	const auto numOfTriangles = meshDescriptor.numOfVertices;
+		const auto numOfTriangles = meshDescriptor.numOfVertices;
 
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-	//deviceContext.Flush();
+		renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+	}
+
+	{
+		std::filesystem::path currentPath = std::filesystem::current_path();
+		currentPath.append("monkey.obj");
+		//currentPath.append("teapot.obj");
+		//currentPath.append("cube.obj");
+
+		AssetSuite::Manager assetManager;
+		assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+
+		std::vector<FLOAT> meshOutput;
+		AssetSuite::MeshDescriptor meshDescriptor;
+		auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+		//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+		//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+
+		const auto numOfTriangles = meshDescriptor.numOfVertices;
+
+		renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+	}
 }
 
 void Engine::Tick()
