@@ -7,6 +7,7 @@ public:
 	~Engine();
 	void Initialize();
 	void CreateRenderResources();
+	void LoadAssets();
 	void Tick();
 	void Run();
 };

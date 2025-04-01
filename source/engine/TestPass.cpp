@@ -49,7 +49,6 @@ void TestPass::Prepare()
 {
 	renderTargetIndex = renderContext.CreateRenderTarget();
 	depthBufferIndex = renderContext.CreateDepthBuffer();
-	renderContext.CreateMesh();
 	deviceContext.Flush();
 }
 

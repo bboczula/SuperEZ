@@ -38,7 +38,7 @@ public:
 	// High Level
 	size_t CreateRenderTarget();
 	size_t CreateDepthBuffer();
-	size_t CreateMesh();
+	size_t CreateMesh(float* data, size_t size, UINT numOfTriangles);
 	// Textures
 	size_t CreateEmptyTexture(UINT width, UINT height);
 	size_t CreateDepthTexture(UINT width, UINT height, const CHAR* name);

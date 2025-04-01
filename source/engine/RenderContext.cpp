@@ -9,7 +9,6 @@
 #include <Windows.h>
 #include <d3dcompiler.h>
 #include "../externals/SimpleMath/SimpleMath.h"
-#include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "debugapi.h"
 #include "Utils.h"
 
@@ -326,43 +325,24 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t 
 	return 0;
 }
 
-size_t RenderContext::CreateMesh()
+size_t RenderContext::CreateMesh(float* data, size_t size, UINT numOfTriangles)
 {
 	OutputDebugString(L"CreateMesh\n");
-
-	// Load Mesh
-	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 
 #define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
 #define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
 #define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
 
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	currentPath.append("monkey.obj");
-	//currentPath.append("teapot.obj");
-	//currentPath.append("cube.obj");
-
-	AssetSuite::Manager assetManager;
-	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
-
-	std::vector<FLOAT> meshOutput;
-	AssetSuite::MeshDescriptor meshDescriptor;
-	auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-
 	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
-	float* meshPositionAndColor = new float[meshOutput.size() * 2];
+	float* meshPositionAndColor = new float[size * 2];
 	const float color[] = { COLOR_1, COLOR_2, COLOR_3 };
-	for (int i = 0; i < meshOutput.size(); i += 4)
+	for (int i = 0; i < size; i += 4)
 	{
 		// This loop copies vertices (not triangles) and adds color to them
-		memcpy(&meshPositionAndColor[i * 2], &meshOutput[i], 4 * sizeof(FLOAT));
+		memcpy(&meshPositionAndColor[i * 2], &data[i], 4 * sizeof(FLOAT));
 		const unsigned int colorIndex = (i / 12) % 3;
 		memcpy(&meshPositionAndColor[i * 2 + 4], &color[colorIndex * 4], 4 * sizeof(FLOAT));
 	}
-
-	const auto numOfTriangles = meshDescriptor.numOfVertices;
 
 	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, meshPositionAndColor);
 	
