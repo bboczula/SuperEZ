@@ -19,7 +19,7 @@ TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 #if USE_PERSPECTIVE_CAMERA
-	perspectiveCamera = new PerspectiveCamera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
+	perspectiveCamera = new PerspectiveCamera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
 	arcballCamera = new Arcball(perspectiveCamera);
 #else
 	float distanceToPlane = 2.0f;
@@ -63,7 +63,6 @@ void TestPass::Execute()
 	renderContext.BindRenderTargetWithDepth(commandListIndex, renderTargetIndex, depthBufferIndex);
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
 	renderContext.ClearDepthBuffer(commandListIndex, depthBufferIndex);
-	renderContext.BindGeometry(commandListIndex);
 
 #if USE_PERSPECTIVE_CAMERA
 	renderContext.SetInlineConstants(commandListIndex, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
@@ -71,7 +70,11 @@ void TestPass::Execute()
 	renderContext.SetInlineConstants(commandListIndex, 16, orthoCamera->GetViewProjectionMatrixPtr());
 #endif
 
-	renderContext.DrawMesh(commandListIndex, 0);
+	for (int i = 0; i < 8; i++)
+	{
+		renderContext.BindGeometry(commandListIndex, i);
+		renderContext.DrawMesh(commandListIndex, i);
+	}
 }
 
 void TestPass::Allocate(DeviceContext* deviceContext)

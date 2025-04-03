@@ -43,45 +43,51 @@ void Engine::CreateRenderResources()
 
 void Engine::LoadAssets()
 {
-	{
-		std::filesystem::path currentPath = std::filesystem::current_path();
-		//currentPath.append("monkey.obj");
-		//currentPath.append("teapot.obj");
-		currentPath.append("cube.obj");
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	//currentPath.append("monkey.obj");
+	//currentPath.append("teapot.obj");
+	//currentPath.append("cube.obj");
+	currentPath.append("temple.obj");
 
-		AssetSuite::Manager assetManager;
-		assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+	AssetSuite::Manager assetManager;
+	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
 
-		std::vector<FLOAT> meshOutput;
-		AssetSuite::MeshDescriptor meshDescriptor;
-		//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-		//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-		auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	std::vector<FLOAT> meshOutput;
+	AssetSuite::MeshDescriptor meshDescriptor;
+	//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	auto errorCode = assetManager.MeshGet("Building_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	auto numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-		const auto numOfTriangles = meshDescriptor.numOfVertices;
+	errorCode = assetManager.MeshGet("RoofBase_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-		renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-	}
+	errorCode = assetManager.MeshGet("ColumnOne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-	{
-		std::filesystem::path currentPath = std::filesystem::current_path();
-		currentPath.append("monkey.obj");
-		//currentPath.append("teapot.obj");
-		//currentPath.append("cube.obj");
+	errorCode = assetManager.MeshGet("ColumnTwo_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-		AssetSuite::Manager assetManager;
-		assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+	errorCode = assetManager.MeshGet("ColumnThree_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-		std::vector<FLOAT> meshOutput;
-		AssetSuite::MeshDescriptor meshDescriptor;
-		auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-		//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-		//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	errorCode = assetManager.MeshGet("ColumnFour_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-		const auto numOfTriangles = meshDescriptor.numOfVertices;
+	errorCode = assetManager.MeshGet("Roof_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-		renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-	}
+	errorCode = assetManager.MeshGet("RoofEdge_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 }
 
 void Engine::Tick()

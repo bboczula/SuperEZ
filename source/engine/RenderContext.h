@@ -55,7 +55,7 @@ public:
 	void ResetCommandList(size_t index);
 	void CloseCommandList(size_t index);
 	void SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
-	void BindGeometry(size_t cmdListIndex);
+	void BindGeometry(size_t cmdListIndex, size_t meshIndex);
 	// Clearing
 	void CleraRenderTarget(size_t cmdListIndex, size_t rtIndex);
 	void ClearDepthBuffer(size_t cmdListIndex, size_t depthIndex);

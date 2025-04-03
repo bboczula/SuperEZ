@@ -330,19 +330,56 @@ size_t RenderContext::CreateMesh(float* data, size_t size, UINT numOfTriangles)
 {
 	OutputDebugString(L"CreateMesh\n");
 
-#define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
-#define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
-#define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
+#define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
+#define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
+#define COLOR_3 173.0f / 255.0f, 223.0f / 255.0f, 44.0f / 255.0f, 1.0f
+
+#define COLOR_4 161.0f / 255.0f, 92.0f / 255.0f, 208.0f / 255.0f, 1.0f
+#define COLOR_5 166.0f / 255.0f, 96.0f / 255.0f, 213.0f / 255.0f, 1.0f
+#define COLOR_6 179.0f / 255.0f, 110.0f / 255.0f, 227.0f / 255.0f, 1.0f
+
+#define COLOR_7 191.0f / 255.0f, 111.0f / 255.0f, 29.0f / 255.0f, 1.0f
+#define COLOR_8 202.0f / 255.0f, 122.0f / 255.0f, 37.0f / 255.0f, 1.0f
+#define COLOR_9 225.0f / 255.0f, 152.0f / 255.0f, 58.0f / 255.0f, 1.0f
+
+#define COLOR_10 17.0f / 255.0f, 85.0f / 255.0f, 60.0f / 255.0f, 1.0f
+#define COLOR_11 39.0f / 255.0f, 112.0f / 255.0f, 85.0f / 255.0f, 1.0f
+#define COLOR_12 85.0f / 255.0f, 154.0f / 255.0f, 119.0f / 255.0f, 1.0f
+
+#define COLOR_13 86.0f / 255.0f, 126.0f / 255.0f, 145.0f / 255.0f, 1.0f
+#define COLOR_14 112.0f / 255.0f, 153.0f / 255.0f, 172.0f / 255.0f, 1.0f
+#define COLOR_15 138.0f / 255.0f, 180.0f / 255.0f, 200.0f / 255.0f, 1.0f
+
+#define COLOR_16 162.0f / 255.0f, 208.0f / 255.0f, 181.0f / 255.0f, 1.0f
+#define COLOR_17 170.0f / 255.0f, 214.0f / 255.0f, 188.0f / 255.0f, 1.0f
+#define COLOR_18 179.0f / 255.0f, 220.0f / 255.0f, 195.0f / 255.0f, 1.0f
+
+#define COLOR_19 24.0f / 255.0f, 207.0f / 255.0f, 45.0f / 255.0f, 1.0f
+#define COLOR_20 37.0f / 255.0f, 219.0f / 255.0f, 55.0f / 255.0f, 1.0f
+#define COLOR_21 51.0f / 255.0f, 231.0f / 255.0f, 66.0f / 255.0f, 1.0f
+
+#define COLOR_22 199.0f / 255.0f, 53.0f / 255.0f, 52.0f / 255.0f, 1.0f
+#define COLOR_23 208.0f / 255.0f, 64.0f / 255.0f, 62.0f / 255.0f, 1.0f
+#define COLOR_24 218.0f / 255.0f, 75.0f / 255.0f, 73.0f / 255.0f, 1.0f
 
 	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
 	float* meshPositionAndColor = new float[size * 2];
-	const float color[] = { COLOR_1, COLOR_2, COLOR_3 };
+	float color[] = { COLOR_1, COLOR_2, COLOR_3,
+		COLOR_4, COLOR_5, COLOR_6,
+		COLOR_7, COLOR_8, COLOR_9,
+		COLOR_10, COLOR_11, COLOR_12,
+		COLOR_13, COLOR_14, COLOR_15,
+		COLOR_16, COLOR_17, COLOR_18,
+		COLOR_19, COLOR_20, COLOR_21,
+		COLOR_22, COLOR_23, COLOR_24
+	};
+	size_t colorOffset = (meshes.size() % 8) * 12;
 	for (int i = 0; i < size; i += 4)
 	{
 		// This loop copies vertices (not triangles) and adds color to them
 		memcpy(&meshPositionAndColor[i * 2], &data[i], 4 * sizeof(FLOAT));
 		const unsigned int colorIndex = (i / 12) % 3;
-		memcpy(&meshPositionAndColor[i * 2 + 4], &color[colorIndex * 4], 4 * sizeof(FLOAT));
+		memcpy(&meshPositionAndColor[i * 2 + 4], &color[(colorIndex * 4) + colorOffset], 4 * sizeof(FLOAT));
 	}
 
 	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, meshPositionAndColor);
@@ -417,10 +454,10 @@ void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t
 	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }
 
-void RenderContext::BindGeometry(size_t cmdListIndex)
+void RenderContext::BindGeometry(size_t cmdListIndex, size_t meshIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	auto vbv = meshes[0]->GetVertexBufferView();
+	auto vbv = meshes[meshIndex]->GetVertexBufferView();
 	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vbv);
 }
 
