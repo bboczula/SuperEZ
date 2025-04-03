@@ -3,11 +3,12 @@
 #include "WindowContext.h"
 #include "RenderTarget.h"
 #include "DepthBuffer.h"
+#include "Mesh.h"
+#include "VertexBuffer.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
 #include "../externals/SimpleMath/SimpleMath.h"
-#include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "debugapi.h"
 #include "Utils.h"
 
@@ -204,53 +205,36 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	return viewports.size() - 1;
 }
 
-void RenderContext::CreateVertexBuffer(DeviceContext* deviceContext)
+size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData)
 {
-	float ratio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-
-#define COLOR_1 0.890f, 0.430f, 0.070f, 1.0f
-#define COLOR_2 0.816f, 0.324f, 0.070f, 1.0f
-#define COLOR_3 0.972f, 0.632f, 0.214f, 1.0f
-
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	currentPath.append("monkey.obj");
-
-	AssetSuite::Manager assetManager;
-	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
-
-	std::vector<FLOAT> meshOutput;
-	AssetSuite::MeshDescriptor meshDescriptor;
-	auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-
-	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
-	float* meshPositionAndColor = new float[meshOutput.size() * 2];
-	const float color[] = { COLOR_1, COLOR_2, COLOR_3 };
-	for (int i = 0; i < meshOutput.size(); i+= 4)
-	{
-		// This loop copies vertices (not triangles) and adds color to them
-		memcpy(&meshPositionAndColor[i * 2], &meshOutput[i], 4 * sizeof(FLOAT));
-		const unsigned int colorIndex = (i / 12) % 3;
-		memcpy(&meshPositionAndColor[i * 2 + 4], &color[colorIndex * 4], 4 * sizeof(FLOAT));
-	}
+	OutputDebugString(L"CreateVertexBuffer\n");
 	
-	const UINT vbSizeInBytes = meshOutput.size() * 2 * sizeof(float);
+	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
+	const UINT vbSizeInBytes = numOfVertices * 8 * sizeof(float);
 
-	auto buffer = deviceContext->CreateVertexBuffer(vbSizeInBytes);
-	vertexBuffers.push_back(buffer);
+	// Note: using upload heaps to transfer static data like vert buffers is not 
+	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
+	// over. Please read up on Default Heap usage. An upload heap is used here for 
+	// code simplicity and because there are very few verts to actually transfer.
+	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
+	const D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
+	ID3D12Resource* vertexBuffer;
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	deviceContext.CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, "VB_Default"));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 	
-	auto vb = vertexBuffers[0];
+	const auto index = vertexBuffers.size() - 1;
+	auto vb = vertexBuffers[index]->GetResource();
 	ExitIfFailed(vb->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-	memcpy(pVertexDataBegin, meshPositionAndColor, vbSizeInBytes);
+	memcpy(pVertexDataBegin, meshData, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
-	
-	// Initialize the vertex buffer view.
-	vertexBufferView.BufferLocation = vb->GetGPUVirtualAddress();
-	vertexBufferView.StrideInBytes = 8 * sizeof(float);
-	vertexBufferView.SizeInBytes = vbSizeInBytes;
+
+	return index;
 }
 
 size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
@@ -342,6 +326,75 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t 
 	return 0;
 }
 
+size_t RenderContext::CreateMesh(float* data, size_t size, UINT numOfTriangles)
+{
+	OutputDebugString(L"CreateMesh\n");
+
+#define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
+#define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
+#define COLOR_3 173.0f / 255.0f, 223.0f / 255.0f, 44.0f / 255.0f, 1.0f
+
+#define COLOR_4 161.0f / 255.0f, 92.0f / 255.0f, 208.0f / 255.0f, 1.0f
+#define COLOR_5 166.0f / 255.0f, 96.0f / 255.0f, 213.0f / 255.0f, 1.0f
+#define COLOR_6 179.0f / 255.0f, 110.0f / 255.0f, 227.0f / 255.0f, 1.0f
+
+#define COLOR_7 191.0f / 255.0f, 111.0f / 255.0f, 29.0f / 255.0f, 1.0f
+#define COLOR_8 202.0f / 255.0f, 122.0f / 255.0f, 37.0f / 255.0f, 1.0f
+#define COLOR_9 225.0f / 255.0f, 152.0f / 255.0f, 58.0f / 255.0f, 1.0f
+
+#define COLOR_10 17.0f / 255.0f, 85.0f / 255.0f, 60.0f / 255.0f, 1.0f
+#define COLOR_11 39.0f / 255.0f, 112.0f / 255.0f, 85.0f / 255.0f, 1.0f
+#define COLOR_12 85.0f / 255.0f, 154.0f / 255.0f, 119.0f / 255.0f, 1.0f
+
+#define COLOR_13 86.0f / 255.0f, 126.0f / 255.0f, 145.0f / 255.0f, 1.0f
+#define COLOR_14 112.0f / 255.0f, 153.0f / 255.0f, 172.0f / 255.0f, 1.0f
+#define COLOR_15 138.0f / 255.0f, 180.0f / 255.0f, 200.0f / 255.0f, 1.0f
+
+#define COLOR_16 162.0f / 255.0f, 208.0f / 255.0f, 181.0f / 255.0f, 1.0f
+#define COLOR_17 170.0f / 255.0f, 214.0f / 255.0f, 188.0f / 255.0f, 1.0f
+#define COLOR_18 179.0f / 255.0f, 220.0f / 255.0f, 195.0f / 255.0f, 1.0f
+
+#define COLOR_19 24.0f / 255.0f, 207.0f / 255.0f, 45.0f / 255.0f, 1.0f
+#define COLOR_20 37.0f / 255.0f, 219.0f / 255.0f, 55.0f / 255.0f, 1.0f
+#define COLOR_21 51.0f / 255.0f, 231.0f / 255.0f, 66.0f / 255.0f, 1.0f
+
+#define COLOR_22 199.0f / 255.0f, 53.0f / 255.0f, 52.0f / 255.0f, 1.0f
+#define COLOR_23 208.0f / 255.0f, 64.0f / 255.0f, 62.0f / 255.0f, 1.0f
+#define COLOR_24 218.0f / 255.0f, 75.0f / 255.0f, 73.0f / 255.0f, 1.0f
+
+	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
+	float* meshPositionAndColor = new float[size * 2];
+	float color[] = { COLOR_1, COLOR_2, COLOR_3,
+		COLOR_4, COLOR_5, COLOR_6,
+		COLOR_7, COLOR_8, COLOR_9,
+		COLOR_10, COLOR_11, COLOR_12,
+		COLOR_13, COLOR_14, COLOR_15,
+		COLOR_16, COLOR_17, COLOR_18,
+		COLOR_19, COLOR_20, COLOR_21,
+		COLOR_22, COLOR_23, COLOR_24
+	};
+	size_t colorOffset = (meshes.size() % 8) * 12;
+	for (int i = 0; i < size; i += 4)
+	{
+		// This loop copies vertices (not triangles) and adds color to them
+		memcpy(&meshPositionAndColor[i * 2], &data[i], 4 * sizeof(FLOAT));
+		const unsigned int colorIndex = (i / 12) % 3;
+		memcpy(&meshPositionAndColor[i * 2 + 4], &color[(colorIndex * 4) + colorOffset], 4 * sizeof(FLOAT));
+	}
+
+	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, meshPositionAndColor);
+	
+	D3D12_VERTEX_BUFFER_VIEW vbv;
+	vbv.BufferLocation = vertexBuffers[meshIndex]->GetResource()->GetGPUVirtualAddress();
+	vbv.StrideInBytes = 8 * sizeof(float);
+	vbv.SizeInBytes = vertexBuffers[meshIndex]->GetSizeInBytes();
+
+	UINT vertexCount = vertexBuffers[meshIndex]->GetNumOfVertices() * 3;
+	meshes.push_back(new Mesh(meshIndex, vbv, vertexCount, "DefalutMesh"));
+
+	return 0;
+}
+
 void RenderContext::SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data)
 {
 	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
@@ -401,10 +454,11 @@ void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t
 	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }
 
-void RenderContext::BindGeometry(size_t cmdListIndex)
+void RenderContext::BindGeometry(size_t cmdListIndex, size_t meshIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
+	auto vbv = meshes[meshIndex]->GetVertexBufferView();
+	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vbv);
 }
 
 void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state)
@@ -433,47 +487,21 @@ void RenderContext::TransitionBack(size_t cmdListIndex, size_t textureId)
 	TransitionTo(cmdListIndex, textureId, previousState);
 }
 
+void RenderContext::DrawMesh(size_t cmdListIndex, size_t meshIndex)
+{
+	UINT vertexCount = meshes[meshIndex]->GetVertexCount();
+	commandLists[cmdListIndex]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
+}
+
+ID3D12Resource* RenderContext::GetVertexBuffer(size_t index)
+{
+	return vertexBuffers[index]->GetResource();
+}
+
 ID3D12Resource* RenderContext::GetCurrentBackBuffer()
 {
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
 	return backBuffer[frameIndex];
-}
-
-void RenderContext::PopulateCommandList(DeviceContext* deviceContext)
-{
-	// This is common to all Render Passes
-	commandLists[0]->Reset(pipelineStates[0]);
-	
-
-	// This is per-pass stuff
-	commandLists[0]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[0]);
-	commandLists[0]->GetCommandList()->RSSetViewports(1, &viewports[0]);
-	commandLists[0]->GetCommandList()->RSSetScissorRects(1, &scissorRects[0]);
-
-	// We could have a separate Render Target for each pass, and then finally a blit from last (or any) Render Pass
-
-	// This is blit to back buffer actually
-	auto barrierToRenderTarget = CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	commandLists[0]->GetCommandList()->ResourceBarrier(1, &barrierToRenderTarget);
-	
-	auto rtvHandle = rtvHeap.Get(deviceContext->GetCurrentBackBufferIndex());
-	commandLists[0]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-	float clearColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-	commandLists[0]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-	// This is per-pass I think, though might not necessarily be
-	// By design, I have only two types of passes, a fullscreen pass and pass that has access to game object tree
-	// Maybe this could be somehow automated
-	commandLists[0]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandLists[0]->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferView);
-	commandLists[0]->GetCommandList()->DrawInstanced(60, 1, 0, 0);
-
-
-	// This is part of a blit
-	auto barrierToPresent = CD3DX12_RESOURCE_BARRIER::Transition(GetCurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-	commandLists[0]->GetCommandList()->ResourceBarrier(1, &barrierToPresent);
-	
-	commandLists[0]->Close();
 }
 
 void RenderContext::ExecuteCommandList(size_t cmdListIndex)

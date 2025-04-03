@@ -5,6 +5,9 @@
 #include "RenderContext.h"
 #include "RenderGraph.h"
 #include "Settings.h"
+#include "../externals/AssetSuite/inc/AssetSuite.h"
+
+#include <filesystem>
 
 #define FRAME_COUNT 2
 
@@ -38,6 +41,55 @@ void Engine::CreateRenderResources()
 	// Here we can make engine speciffic allocations
 }
 
+void Engine::LoadAssets()
+{
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	//currentPath.append("monkey.obj");
+	//currentPath.append("teapot.obj");
+	//currentPath.append("cube.obj");
+	currentPath.append("temple.obj");
+
+	AssetSuite::Manager assetManager;
+	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
+
+	std::vector<FLOAT> meshOutput;
+	AssetSuite::MeshDescriptor meshDescriptor;
+	//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	auto errorCode = assetManager.MeshGet("Building_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	auto numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("RoofBase_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("ColumnOne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("ColumnTwo_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("ColumnThree_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("ColumnFour_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("Roof_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+
+	errorCode = assetManager.MeshGet("RoofEdge_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+	numOfTriangles = meshDescriptor.numOfVertices;
+	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+}
+
 void Engine::Tick()
 {
 	renderGraph.Execute();
@@ -49,6 +101,8 @@ void Engine::Tick()
 void Engine::Run()
 {
 	Initialize();
+
+	LoadAssets();
 
 	MSG msg{ 0 };
 	while (1)
