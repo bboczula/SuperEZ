@@ -5,6 +5,7 @@
 #include "DepthBuffer.h"
 #include "Mesh.h"
 #include "VertexBuffer.h"
+#include "InputLayout.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -159,16 +160,13 @@ size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t r
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
-	// Define the vertex input layout.
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-	{
-	    { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-	    { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
+	// Create the Input Layout
+	inputLayout = new InputLayout();
+	inputLayout->AppendElementT(VertexStream::Position, VertexStream::Color);
 
 	// Describe and create the graphics pipeline state object (PSO).
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+	psoDesc.InputLayout = inputLayout->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
@@ -205,12 +203,12 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	return viewports.size() - 1;
 }
 
-size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData)
+size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData)
 {
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
 	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
-	const UINT vbSizeInBytes = numOfVertices * 8 * sizeof(float);
+	const UINT vbSizeInBytes = numOfVertices * numOfFloatsPerVertex * sizeof(float);
 
 	// Note: using upload heaps to transfer static data like vert buffers is not 
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
@@ -235,6 +233,67 @@ size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData)
 	vb->Unmap(0, nullptr);
 
 	return index;
+}
+
+size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles)
+{
+#define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
+#define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
+#define COLOR_3 173.0f / 255.0f, 223.0f / 255.0f, 44.0f / 255.0f, 1.0f
+
+#define COLOR_4 161.0f / 255.0f, 92.0f / 255.0f, 208.0f / 255.0f, 1.0f
+#define COLOR_5 166.0f / 255.0f, 96.0f / 255.0f, 213.0f / 255.0f, 1.0f
+#define COLOR_6 179.0f / 255.0f, 110.0f / 255.0f, 227.0f / 255.0f, 1.0f
+
+#define COLOR_7 191.0f / 255.0f, 111.0f / 255.0f, 29.0f / 255.0f, 1.0f
+#define COLOR_8 202.0f / 255.0f, 122.0f / 255.0f, 37.0f / 255.0f, 1.0f
+#define COLOR_9 225.0f / 255.0f, 152.0f / 255.0f, 58.0f / 255.0f, 1.0f
+
+#define COLOR_10 17.0f / 255.0f, 85.0f / 255.0f, 60.0f / 255.0f, 1.0f
+#define COLOR_11 39.0f / 255.0f, 112.0f / 255.0f, 85.0f / 255.0f, 1.0f
+#define COLOR_12 85.0f / 255.0f, 154.0f / 255.0f, 119.0f / 255.0f, 1.0f
+
+#define COLOR_13 86.0f / 255.0f, 126.0f / 255.0f, 145.0f / 255.0f, 1.0f
+#define COLOR_14 112.0f / 255.0f, 153.0f / 255.0f, 172.0f / 255.0f, 1.0f
+#define COLOR_15 138.0f / 255.0f, 180.0f / 255.0f, 200.0f / 255.0f, 1.0f
+
+#define COLOR_16 162.0f / 255.0f, 208.0f / 255.0f, 181.0f / 255.0f, 1.0f
+#define COLOR_17 170.0f / 255.0f, 214.0f / 255.0f, 188.0f / 255.0f, 1.0f
+#define COLOR_18 179.0f / 255.0f, 220.0f / 255.0f, 195.0f / 255.0f, 1.0f
+
+#define COLOR_19 24.0f / 255.0f, 207.0f / 255.0f, 45.0f / 255.0f, 1.0f
+#define COLOR_20 37.0f / 255.0f, 219.0f / 255.0f, 55.0f / 255.0f, 1.0f
+#define COLOR_21 51.0f / 255.0f, 231.0f / 255.0f, 66.0f / 255.0f, 1.0f
+
+#define COLOR_22 199.0f / 255.0f, 53.0f / 255.0f, 52.0f / 255.0f, 1.0f
+#define COLOR_23 208.0f / 255.0f, 64.0f / 255.0f, 62.0f / 255.0f, 1.0f
+#define COLOR_24 218.0f / 255.0f, 75.0f / 255.0f, 73.0f / 255.0f, 1.0f
+
+	// We need a buffer of the same size as the original mesh
+	float* meshPositionAndColor = new float[size];
+	float color[] = { COLOR_1, COLOR_2, COLOR_3,
+		COLOR_4, COLOR_5, COLOR_6,
+		COLOR_7, COLOR_8, COLOR_9,
+		COLOR_10, COLOR_11, COLOR_12,
+		COLOR_13, COLOR_14, COLOR_15,
+		COLOR_16, COLOR_17, COLOR_18,
+		COLOR_19, COLOR_20, COLOR_21,
+		COLOR_22, COLOR_23, COLOR_24
+	};
+	// Currently we handle seven colors, each color has 12 "elements" (three positions of four floats)
+	size_t colorOffset = (meshes.size() % 8) * 12;
+	for (int i = 0; i < size; i += 4)
+	{
+		// This loop copies vertices (not triangles) and adds color to them
+		// We don't need to copy the position, we just need to add the color
+		//memcpy(&meshPositionAndColor[i * 2], &data[i], 4 * sizeof(FLOAT));
+		const unsigned int colorIndex = (i / 12) % 3;
+		memcpy(&meshPositionAndColor[i], &color[(colorIndex * 4) + colorOffset], 4 * sizeof(FLOAT));
+	}
+
+	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor);
+
+	return meshIndex;
 }
 
 size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
@@ -326,71 +385,22 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t 
 	return 0;
 }
 
-size_t RenderContext::CreateMesh(float* data, size_t size, UINT numOfTriangles)
+size_t RenderContext::CreateMesh(size_t vbIndexPosition, size_t vbIndexColor)
 {
 	OutputDebugString(L"CreateMesh\n");
 
-#define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
-#define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
-#define COLOR_3 173.0f / 255.0f, 223.0f / 255.0f, 44.0f / 255.0f, 1.0f
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition;
+	vbvPosition.BufferLocation = vertexBuffers[vbIndexPosition]->GetResource()->GetGPUVirtualAddress();
+	vbvPosition.StrideInBytes = 4 * sizeof(float);
+	vbvPosition.SizeInBytes = vertexBuffers[vbIndexPosition]->GetSizeInBytes();
 
-#define COLOR_4 161.0f / 255.0f, 92.0f / 255.0f, 208.0f / 255.0f, 1.0f
-#define COLOR_5 166.0f / 255.0f, 96.0f / 255.0f, 213.0f / 255.0f, 1.0f
-#define COLOR_6 179.0f / 255.0f, 110.0f / 255.0f, 227.0f / 255.0f, 1.0f
+	D3D12_VERTEX_BUFFER_VIEW vbvColor;
+	vbvColor.BufferLocation = vertexBuffers[vbIndexColor]->GetResource()->GetGPUVirtualAddress();
+	vbvColor.StrideInBytes = 4 * sizeof(float);
+	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor]->GetSizeInBytes();
 
-#define COLOR_7 191.0f / 255.0f, 111.0f / 255.0f, 29.0f / 255.0f, 1.0f
-#define COLOR_8 202.0f / 255.0f, 122.0f / 255.0f, 37.0f / 255.0f, 1.0f
-#define COLOR_9 225.0f / 255.0f, 152.0f / 255.0f, 58.0f / 255.0f, 1.0f
-
-#define COLOR_10 17.0f / 255.0f, 85.0f / 255.0f, 60.0f / 255.0f, 1.0f
-#define COLOR_11 39.0f / 255.0f, 112.0f / 255.0f, 85.0f / 255.0f, 1.0f
-#define COLOR_12 85.0f / 255.0f, 154.0f / 255.0f, 119.0f / 255.0f, 1.0f
-
-#define COLOR_13 86.0f / 255.0f, 126.0f / 255.0f, 145.0f / 255.0f, 1.0f
-#define COLOR_14 112.0f / 255.0f, 153.0f / 255.0f, 172.0f / 255.0f, 1.0f
-#define COLOR_15 138.0f / 255.0f, 180.0f / 255.0f, 200.0f / 255.0f, 1.0f
-
-#define COLOR_16 162.0f / 255.0f, 208.0f / 255.0f, 181.0f / 255.0f, 1.0f
-#define COLOR_17 170.0f / 255.0f, 214.0f / 255.0f, 188.0f / 255.0f, 1.0f
-#define COLOR_18 179.0f / 255.0f, 220.0f / 255.0f, 195.0f / 255.0f, 1.0f
-
-#define COLOR_19 24.0f / 255.0f, 207.0f / 255.0f, 45.0f / 255.0f, 1.0f
-#define COLOR_20 37.0f / 255.0f, 219.0f / 255.0f, 55.0f / 255.0f, 1.0f
-#define COLOR_21 51.0f / 255.0f, 231.0f / 255.0f, 66.0f / 255.0f, 1.0f
-
-#define COLOR_22 199.0f / 255.0f, 53.0f / 255.0f, 52.0f / 255.0f, 1.0f
-#define COLOR_23 208.0f / 255.0f, 64.0f / 255.0f, 62.0f / 255.0f, 1.0f
-#define COLOR_24 218.0f / 255.0f, 75.0f / 255.0f, 73.0f / 255.0f, 1.0f
-
-	// Basically, each vertex has 4 floats, and we need to add 4 more for the color
-	float* meshPositionAndColor = new float[size * 2];
-	float color[] = { COLOR_1, COLOR_2, COLOR_3,
-		COLOR_4, COLOR_5, COLOR_6,
-		COLOR_7, COLOR_8, COLOR_9,
-		COLOR_10, COLOR_11, COLOR_12,
-		COLOR_13, COLOR_14, COLOR_15,
-		COLOR_16, COLOR_17, COLOR_18,
-		COLOR_19, COLOR_20, COLOR_21,
-		COLOR_22, COLOR_23, COLOR_24
-	};
-	size_t colorOffset = (meshes.size() % 8) * 12;
-	for (int i = 0; i < size; i += 4)
-	{
-		// This loop copies vertices (not triangles) and adds color to them
-		memcpy(&meshPositionAndColor[i * 2], &data[i], 4 * sizeof(FLOAT));
-		const unsigned int colorIndex = (i / 12) % 3;
-		memcpy(&meshPositionAndColor[i * 2 + 4], &color[(colorIndex * 4) + colorOffset], 4 * sizeof(FLOAT));
-	}
-
-	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, meshPositionAndColor);
-	
-	D3D12_VERTEX_BUFFER_VIEW vbv;
-	vbv.BufferLocation = vertexBuffers[meshIndex]->GetResource()->GetGPUVirtualAddress();
-	vbv.StrideInBytes = 8 * sizeof(float);
-	vbv.SizeInBytes = vertexBuffers[meshIndex]->GetSizeInBytes();
-
-	UINT vertexCount = vertexBuffers[meshIndex]->GetNumOfVertices() * 3;
-	meshes.push_back(new Mesh(meshIndex, vbv, vertexCount, "DefalutMesh"));
+	UINT vertexCount = vertexBuffers[vbIndexPosition]->GetNumOfVertices() * 3;
+	meshes.push_back(new Mesh(vbIndexPosition, vbvPosition, vbIndexColor, vbvColor, vertexCount, "DefalutMesh"));
 
 	return 0;
 }
@@ -457,8 +467,12 @@ void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t
 void RenderContext::BindGeometry(size_t cmdListIndex, size_t meshIndex)
 {
 	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	auto vbv = meshes[meshIndex]->GetVertexBufferView();
-	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 1, &vbv);
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
+	{
+		meshes[meshIndex]->GetPositionVertexBufferView(),
+		meshes[meshIndex]->GetColorVertexBufferView()
+	};
+	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
 }
 
 void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state)

@@ -14,6 +14,7 @@ class DepthBuffer;
 class Texture;
 class VertexBuffer;
 class Mesh;
+class InputLayout;
 
 class RenderContext
 {
@@ -38,14 +39,15 @@ public:
 	// High Level
 	size_t CreateRenderTarget();
 	size_t CreateDepthBuffer();
-	size_t CreateMesh(float* data, size_t size, UINT numOfTriangles);
+	size_t CreateMesh(size_t vbIndexPosition, size_t vbIndexColor);
 	// Textures
 	size_t CreateEmptyTexture(UINT width, UINT height);
 	size_t CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	size_t CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	UINT CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex);
 	// Geometry
-	size_t CreateVertexBuffer(UINT numOfVertices, FLOAT* meshData);
+	size_t CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData);
+	size_t GenerateColors(float* data, size_t size, UINT numOfTriangles);
 	// Constants
 	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
@@ -68,6 +70,7 @@ private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
+	InputLayout* inputLayout;
 	ID3D12Resource* backBuffer[2];
 private:
 	std::vector<RenderTarget*> renderTargets;
