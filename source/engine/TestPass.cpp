@@ -62,7 +62,7 @@ void TestPass::Prepare()
 
 void TestPass::Update()
 {
-	arcballCamera->Rotate(0.0f, 1.0f, 0.0f);
+	arcballCamera->Rotate(0.0f, 0.25f, 0.0f);
 }
 
 void TestPass::Execute()
@@ -78,7 +78,7 @@ void TestPass::Execute()
 	renderContext.SetInlineConstants(commandListIndex, 16, orthoCamera->GetViewProjectionMatrixPtr());
 #endif
 
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < 33; i++)
 	{
 		renderContext.BindGeometry(commandListIndex, i);
 		renderContext.DrawMesh(commandListIndex, i);
