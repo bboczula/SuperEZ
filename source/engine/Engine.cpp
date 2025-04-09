@@ -80,9 +80,11 @@ void Engine::LoadAssets()
 			continue;
 		}
 		auto numOfTriangles = meshDescriptor.numOfVertices;
-		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data());
-		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles);
-		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor);
+		CHAR tempName[64];
+		snprintf(tempName, sizeof(tempName), "POSITION_%s", meshName.c_str());
+		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
+		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles, meshName.c_str());
+		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor,meshName.c_str());
 	}
 }
 

@@ -210,7 +210,7 @@ size_t RenderContext::CreateInputLayout()
 	return inputLayouts.size() - 1;
 }
 
-size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData)
+size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
 {
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
@@ -227,7 +227,15 @@ size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPer
 	ID3D12Resource* vertexBuffer;
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 	deviceContext.CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, "VB_Default"));
+
+	CHAR tempName[64];
+	snprintf(tempName, sizeof(tempName), "VB_%s", name);
+	WCHAR wName[64];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	vertexBuffer->SetName(wName);
+
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -242,7 +250,7 @@ size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPer
 	return index;
 }
 
-size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles)
+size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
 {
 #define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
 #define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
@@ -298,7 +306,10 @@ size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangl
 		memcpy(&meshPositionAndColor[i], &color[(colorIndex * 4) + colorOffset], 4 * sizeof(FLOAT));
 	}
 
-	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor);
+	CHAR tempName[64];
+	snprintf(tempName, sizeof(tempName), "COLOR_%s", name);
+
+	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
 
 	return meshIndex;
 }
@@ -392,7 +403,7 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t 
 	return 0;
 }
 
-size_t RenderContext::CreateMesh(size_t vbIndexPosition, size_t vbIndexColor)
+size_t RenderContext::CreateMesh(size_t vbIndexPosition, size_t vbIndexColor, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -407,7 +418,7 @@ size_t RenderContext::CreateMesh(size_t vbIndexPosition, size_t vbIndexColor)
 	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor]->GetSizeInBytes();
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition]->GetNumOfVertices() * 3;
-	meshes.push_back(new Mesh(vbIndexPosition, vbvPosition, vbIndexColor, vbvColor, vertexCount, "DefalutMesh"));
+	meshes.push_back(new Mesh(vbIndexPosition, vbvPosition, vbIndexColor, vbvColor, vertexCount, name));
 
 	return 0;
 }
