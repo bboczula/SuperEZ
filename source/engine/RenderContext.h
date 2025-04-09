@@ -25,8 +25,10 @@ public:
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	size_t CreateRootSignature(DeviceContext* deviceContext);
 	size_t CreateShaders(LPCWSTR shaderName);
-	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex);
+	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, size_t inputLayoutIndex);
 	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
+	size_t CreateInputLayout();
+	InputLayout* GetInputLayout(size_t index) { return inputLayouts[index]; }
 	void CreateIndexBuffer(DeviceContext* deviceContext);
 	void CreateConstantBuffer(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
@@ -70,7 +72,6 @@ private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
-	InputLayout* inputLayout;
 	ID3D12Resource* backBuffer[2];
 private:
 	std::vector<RenderTarget*> renderTargets;
@@ -85,4 +86,5 @@ private:
 	std::vector<ID3D12PipelineState*> pipelineStates;
 	std::vector<CD3DX12_VIEWPORT> viewports;
 	std::vector<CD3DX12_RECT> scissorRects;
+	std::vector<InputLayout*> inputLayouts;
 };

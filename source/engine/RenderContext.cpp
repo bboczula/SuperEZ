@@ -156,17 +156,17 @@ size_t RenderContext::CreateShaders(LPCWSTR shaderName)
 	return vertexShaders.size() - 1;
 }
 
-size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex)
+size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, size_t inputLayoutIndex)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
 	// Create the Input Layout
-	inputLayout = new InputLayout();
-	inputLayout->AppendElementT(VertexStream::Position, VertexStream::Color);
+	//inputLayout = new InputLayout();
+	//inputLayout->AppendElementT(VertexStream::Position, VertexStream::Color);
 
 	// Describe and create the graphics pipeline state object (PSO).
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = inputLayout->GetInputLayoutDesc();
+	psoDesc.InputLayout = inputLayouts[inputLayoutIndex]->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
@@ -201,6 +201,13 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
 
 	return viewports.size() - 1;
+}
+
+size_t RenderContext::CreateInputLayout()
+{
+	OutputDebugString(L"CreateInputLayout\n");
+	inputLayouts.push_back(new InputLayout());
+	return inputLayouts.size() - 1;
 }
 
 size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData)

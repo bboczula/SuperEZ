@@ -3,6 +3,7 @@
 #include "RenderContext.h"
 #include "DeviceContext.h"
 #include "WindowContext.h"
+#include "InputLayout.h"
 #include "camera/PerspectiveCamera.h"
 #include "camera/OrthographicCamera.h"
 #include "camera/Arcball.h"
@@ -43,6 +44,13 @@ TestPass::~TestPass()
 #else
 	delete orthoCamera;
 #endif
+}
+
+void TestPass::ConfigurePipelineState()
+{
+	// Pre-AutomaticPrepare Procedure
+	inputLayoutIndex = renderContext.CreateInputLayout();
+	renderContext.GetInputLayout(inputLayoutIndex)->AppendElementT(VertexStream::Position, VertexStream::Color);
 }
 
 void TestPass::Prepare()

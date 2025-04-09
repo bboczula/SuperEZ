@@ -32,6 +32,7 @@ void RenderGraph::Initialize()
 {
 	for (RenderPass* renderPass : renderPasses)
 	{
+		renderPass->ConfigurePipelineState();
 		renderPass->AutomaticPrepare();
 		renderPass->Prepare();
 	}

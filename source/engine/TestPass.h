@@ -16,6 +16,7 @@ class TestPass : public RenderPass
 public:
 	TestPass();
 	~TestPass();
+	void ConfigurePipelineState() override;
 	void Prepare() override;
 	void Update() override;
 	void Execute() override;

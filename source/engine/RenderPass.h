@@ -16,6 +16,7 @@ public:
 	};
 	RenderPass(PCWSTR name, RenderPass::Type type);
 	~RenderPass();
+	virtual void ConfigurePipelineState() = 0;
 	void AutomaticPrepare();
 	virtual void Prepare();
 	virtual void Update();
@@ -28,6 +29,7 @@ protected:
 	RenderPass::Type type;
 	size_t shaderIndex;
 	size_t rootSignatureIndex;
+	size_t inputLayoutIndex;
 	size_t pipelineStateIndex;
 	size_t viewportAndScissorsIndex;
 	size_t commandListIndex;
