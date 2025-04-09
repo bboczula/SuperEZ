@@ -57,37 +57,35 @@ void Engine::LoadAssets()
 	//auto errorCode = assetManager.MeshGet("Suzanne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
 	//auto errorCode = assetManager.MeshGet("teapot_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
 	//auto errorCode = assetManager.MeshGet("Cube_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	auto errorCode = assetManager.MeshGet("Building_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	auto numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
 
-	errorCode = assetManager.MeshGet("RoofBase_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+	std::vector<std::string> meshNames = {
+		"Building_Mesh",
+		"RoofBase_Mesh",
+		"ColumnOne_Mesh",
+		"ColumnTwo_Mesh",
+		"ColumnThree_Mesh",
+		"ColumnFour_Mesh",
+		"Roof_Mesh",
+		"RoofEdge_Mesh"
+	};
 
-	errorCode = assetManager.MeshGet("ColumnOne_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-
-	errorCode = assetManager.MeshGet("ColumnTwo_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-
-	errorCode = assetManager.MeshGet("ColumnThree_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-
-	errorCode = assetManager.MeshGet("ColumnFour_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-
-	errorCode = assetManager.MeshGet("Roof_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
-
-	errorCode = assetManager.MeshGet("RoofEdge_Mesh", AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-	numOfTriangles = meshDescriptor.numOfVertices;
-	renderContext.CreateMesh(meshOutput.data(), meshOutput.size(), numOfTriangles);
+	for (const auto& meshName : meshNames)
+	{
+		auto errorCode = assetManager.MeshGet(meshName.c_str(), AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
+		if (errorCode != AssetSuite::ErrorCode::OK)
+		{
+			OutputDebugString(L"Failed to load mesh: ");
+			OutputDebugStringA(meshName.c_str());
+			OutputDebugString(L"\n");
+			continue;
+		}
+		auto numOfTriangles = meshDescriptor.numOfVertices;
+		CHAR tempName[64];
+		snprintf(tempName, sizeof(tempName), "POSITION_%s", meshName.c_str());
+		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
+		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles, meshName.c_str());
+		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor,meshName.c_str());
+	}
 }
 
 void Engine::Tick()

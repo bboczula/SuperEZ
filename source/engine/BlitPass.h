@@ -9,6 +9,7 @@ class BlitPass : public RenderPass
 public:
 	BlitPass();
 	~BlitPass();
+	void ConfigurePipelineState() override;
 	void Prepare() override;
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;

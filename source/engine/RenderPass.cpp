@@ -1,5 +1,6 @@
 #include "RenderPass.h"
 #include "RenderContext.h"
+#include "InputLayout.h"
 
 #ifdef DEBUG
 #define USE_PIX
@@ -25,7 +26,7 @@ void RenderPass::AutomaticPrepare()
 	{
 		rootSignatureIndex = renderContext.CreateRootSignature(&deviceContext);
 		shaderIndex = renderContext.CreateShaders(shaderSourceFileName);
-		pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex);
+		pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex, inputLayoutIndex);
 		viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
 	}
 
