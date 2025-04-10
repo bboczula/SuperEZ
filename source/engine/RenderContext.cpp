@@ -61,10 +61,10 @@ size_t RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	size_t textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
-	deviceContext.GetDevice()->CreateRenderTargetView(textures[textureIndex]->GetResource(), nullptr, rtvHeap.Allocate());
+	TextureHandle texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
+	deviceContext.GetDevice()->CreateRenderTargetView(textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	renderTargets.push_back(new RenderTarget(1920, 1080, textureIndex, rtvHeap.Size() - 1, "RT_Custom"));
+	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, "RT_Custom"));
 
 	// We also need naming, for debugging purposes
 
@@ -75,10 +75,10 @@ size_t RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
-	size_t depthIndex = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
-	deviceContext.GetDevice()->CreateDepthStencilView(textures[depthIndex]->GetResource(), nullptr, dsvHeap.Allocate());
+	TextureHandle depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
+	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate());
 
-	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depthIndex, dsvHeap.Size() - 1, "DB_Custom"));
+	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size() - 1, "DB_Custom"));
 
 	return depthBuffers.size() - 1;
 }
@@ -210,7 +210,7 @@ size_t RenderContext::CreateInputLayout()
 	return inputLayouts.size() - 1;
 }
 
-size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
+VertexBufferHandle RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
 {
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
@@ -247,10 +247,10 @@ size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPer
 	memcpy(pVertexDataBegin, meshData, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
 
-	return index;
+	return VertexBufferHandle(index);
 }
 
-size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
+VertexBufferHandle RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
 {
 #define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
 #define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
@@ -309,12 +309,12 @@ size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangl
 	CHAR tempName[64];
 	snprintf(tempName, sizeof(tempName), "COLOR_%s", name);
 
-	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
+	VertexBufferHandle vertexBuffer = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
 
-	return meshIndex;
+	return vertexBuffer;
 }
 
-size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
+TextureHandle RenderContext::CreateEmptyTexture(UINT width, UINT height)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -332,10 +332,10 @@ size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	CHAR name[] = "EmptyTexture";
 	textures.push_back(new Texture(width, height, resource, &name[0]));
 	
-	return textures.size() - 1;
+	return TextureHandle(textures.size() - 1);
 }
 
-size_t RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
+TextureHandle RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateDepthTexture\n");
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
@@ -357,10 +357,10 @@ size_t RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* na
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 
-	return textures.size() - 1;
+	return TextureHandle(textures.size() - 1);
 }
 
-size_t RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
+TextureHandle RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
@@ -382,20 +382,18 @@ size_t RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const C
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
 
-	return textures.size() - 1;
+	return TextureHandle(textures.size() - 1);
 }
 
-UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex)
+UINT RenderContext::CopyTexture(size_t cmdListIndex, TextureHandle source, TextureHandle destination)
 {
-	// Here you should copy the Render Target from the previous Render Context and copy it to the Back Buffer
-	// commandList->CopyTextureRegion();
 	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
-	destLocation.pResource = textures[destIndex]->GetResource(); //destination->GetResource();
+	destLocation.pResource = textures[destination.Index()]->GetResource();
 	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	destLocation.SubresourceIndex = 0; // Not sure if this is correct;
+	destLocation.SubresourceIndex = 0;
 
 	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-	srcLocation.pResource = textures[sourceIndex]->GetResource(); //source->GetResource();
+	srcLocation.pResource = textures[source.Index()]->GetResource();
 	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 	srcLocation.SubresourceIndex = 0;
 	commandLists[cmdListIndex]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
@@ -403,22 +401,22 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t 
 	return 0;
 }
 
-size_t RenderContext::CreateMesh(size_t vbIndexPosition, size_t vbIndexColor, const CHAR* name)
+size_t RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition;
-	vbvPosition.BufferLocation = vertexBuffers[vbIndexPosition]->GetResource()->GetGPUVirtualAddress();
+	vbvPosition.BufferLocation = vertexBuffers[vbIndexPosition.Index()]->GetResource()->GetGPUVirtualAddress();
 	vbvPosition.StrideInBytes = 4 * sizeof(float);
-	vbvPosition.SizeInBytes = vertexBuffers[vbIndexPosition]->GetSizeInBytes();
+	vbvPosition.SizeInBytes = vertexBuffers[vbIndexPosition.Index()]->GetSizeInBytes();
 
 	D3D12_VERTEX_BUFFER_VIEW vbvColor;
-	vbvColor.BufferLocation = vertexBuffers[vbIndexColor]->GetResource()->GetGPUVirtualAddress();
+	vbvColor.BufferLocation = vertexBuffers[vbIndexColor.Index()]->GetResource()->GetGPUVirtualAddress();
 	vbvColor.StrideInBytes = 4 * sizeof(float);
-	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor]->GetSizeInBytes();
+	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor.Index()]->GetSizeInBytes();
 
-	UINT vertexCount = vertexBuffers[vbIndexPosition]->GetNumOfVertices() * 3;
-	meshes.push_back(new Mesh(vbIndexPosition, vbvPosition, vbIndexColor, vbvColor, vertexCount, name));
+	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices() * 3;
+	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
 
 	return 0;
 }

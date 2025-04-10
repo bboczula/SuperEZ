@@ -5,6 +5,7 @@
 #include "../externals/d3dx12/d3dx12.h"
 #include "DescriptorHeap.h"
 #include "CommandList.h"
+#include "Handle.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -41,15 +42,15 @@ public:
 	// High Level
 	size_t CreateRenderTarget();
 	size_t CreateDepthBuffer();
-	size_t CreateMesh(size_t vbIndexPosition, size_t vbIndexColor, const CHAR* name);
+	size_t CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name);
 	// Textures
-	size_t CreateEmptyTexture(UINT width, UINT height);
-	size_t CreateDepthTexture(UINT width, UINT height, const CHAR* name);
-	size_t CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
-	UINT CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex);
+	TextureHandle CreateEmptyTexture(UINT width, UINT height);
+	TextureHandle CreateDepthTexture(UINT width, UINT height, const CHAR* name);
+	TextureHandle CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
+	UINT CopyTexture(size_t cmdListIndex, TextureHandle source, TextureHandle destination);
 	// Geometry
-	size_t CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
-	size_t GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
+	VertexBufferHandle CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
+	VertexBufferHandle GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	// Constants
 	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
