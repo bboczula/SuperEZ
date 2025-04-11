@@ -28,14 +28,14 @@ public:
 	RenderPass::Type GetType() const { return type; }
 protected:
 	RenderPass::Type type;
-	HShader shaderIndex;
-	HRootSignature rootSignatureIndex;
-	HInputLayout inputLayoutIndex;
-	HPipelineState pipelineStateIndex;
-	HViewportAndScissors viewportAndScissorsIndex;
-	HCommandList commandListIndex;
-	HRenderTarget renderTargetIndex;
-	HDepthBuffer depthBufferIndex;
+	HShader shader;
+	HRootSignature rootSignature;
+	HInputLayout inputLayout;
+	HPipelineState pipelineState;
+	HViewportAndScissors viewportAndScissors;
+	HCommandList commandList;
+	HRenderTarget renderTarget;
+	HDepthBuffer depthBuffer;
 	LPCWSTR shaderSourceFileName;
 	PCWSTR name;
 };
