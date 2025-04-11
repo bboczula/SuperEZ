@@ -26,6 +26,8 @@ private:
 // Type aliases for clarity
 class Texture;
 class VertexBuffer;
+class RenderTarget;
 
 using TextureHandle = Handle<Texture>;
 using VertexBufferHandle = Handle<VertexBuffer>;
+using HRenderTarget = Handle<RenderTarget>;

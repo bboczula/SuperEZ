@@ -57,7 +57,7 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 	cbvSrvUavHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, deviceContext);
 }
 
-size_t RenderContext::CreateRenderTarget()
+HRenderTarget RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
@@ -68,7 +68,7 @@ size_t RenderContext::CreateRenderTarget()
 
 	// We also need naming, for debugging purposes
 
-	return renderTargets.size() - 1;
+	return HRenderTarget(renderTargets.size() - 1);
 }
 
 size_t RenderContext::CreateDepthBuffer()
@@ -426,25 +426,25 @@ void RenderContext::SetInlineConstants(size_t cmdListIndex, UINT numOfConstants,
 	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
 }
 
-void RenderContext::BindRenderTarget(size_t cmdListIndex, size_t rtIndex)
+void RenderContext::BindRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget)
 {
-	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 }
 
-void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, size_t rtIndex, size_t depthIndex)
+void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, size_t depthIndex)
 {
-	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
-void RenderContext::CleraRenderTarget(size_t cmdListIndex, size_t rtIndex)
+void RenderContext::CleraRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget)
 {
-	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
 	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);

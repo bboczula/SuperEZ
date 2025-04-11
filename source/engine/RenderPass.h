@@ -1,6 +1,7 @@
 #pragma once
 
 #include <d3d12.h>
+#include "Handle.h"
 
 class RenderTarget;
 class DeviceContext;
@@ -33,7 +34,7 @@ protected:
 	size_t pipelineStateIndex;
 	size_t viewportAndScissorsIndex;
 	size_t commandListIndex;
-	size_t renderTargetIndex;
+	HRenderTarget renderTargetIndex;
 	size_t depthBufferIndex;
 	LPCWSTR shaderSourceFileName;
 	PCWSTR name;
