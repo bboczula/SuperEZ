@@ -61,7 +61,7 @@ HRenderTarget RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	TextureHandle texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
+	HTexture texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
 	deviceContext.GetDevice()->CreateRenderTargetView(textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
 	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, "RT_Custom"));
@@ -75,7 +75,7 @@ HDepthBuffer RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
-	TextureHandle depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
+	HTexture depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
 	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate());
 
 	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size() - 1, "DB_Custom"));
@@ -203,7 +203,7 @@ HInputLayout RenderContext::CreateInputLayout()
 	return HInputLayout(inputLayouts.size() - 1);
 }
 
-VertexBufferHandle RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
+HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
 {
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
@@ -240,10 +240,10 @@ VertexBufferHandle RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT nu
 	memcpy(pVertexDataBegin, meshData, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
 
-	return VertexBufferHandle(index);
+	return HVertexBuffer(index);
 }
 
-VertexBufferHandle RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
+HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
 {
 #define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
 #define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
@@ -302,12 +302,12 @@ VertexBufferHandle RenderContext::GenerateColors(float* data, size_t size, UINT 
 	CHAR tempName[64];
 	snprintf(tempName, sizeof(tempName), "COLOR_%s", name);
 
-	VertexBufferHandle vertexBuffer = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
+	HVertexBuffer vertexBuffer = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
 
 	return vertexBuffer;
 }
 
-TextureHandle RenderContext::CreateEmptyTexture(UINT width, UINT height)
+HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -325,10 +325,10 @@ TextureHandle RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	CHAR name[] = "EmptyTexture";
 	textures.push_back(new Texture(width, height, resource, &name[0]));
 	
-	return TextureHandle(textures.size() - 1);
+	return HTexture(textures.size() - 1);
 }
 
-TextureHandle RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateDepthTexture\n");
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
@@ -350,10 +350,10 @@ TextureHandle RenderContext::CreateDepthTexture(UINT width, UINT height, const C
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 
-	return TextureHandle(textures.size() - 1);
+	return HTexture(textures.size() - 1);
 }
 
-TextureHandle RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
@@ -375,10 +375,10 @@ TextureHandle RenderContext::CreateRenderTargetTexture(UINT width, UINT height, 
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
 
-	return TextureHandle(textures.size() - 1);
+	return HTexture(textures.size() - 1);
 }
 
-void RenderContext::CopyTexture(HCommandList commandList, TextureHandle source, TextureHandle destination)
+void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HTexture destination)
 {
 	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
 	destLocation.pResource = textures[destination.Index()]->GetResource();
@@ -392,7 +392,7 @@ void RenderContext::CopyTexture(HCommandList commandList, TextureHandle source, 
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
-void RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name)
+void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -480,7 +480,7 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
 }
 
-void RenderContext::TransitionTo(HCommandList commandList, TextureHandle texture, D3D12_RESOURCE_STATES state)
+void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)
 {
 	if (textures[texture.Index()]->GetCurrentState() == state)
 	{
@@ -500,7 +500,7 @@ void RenderContext::TransitionTo(HCommandList commandList, TextureHandle texture
 	textures[texture.Index()]->SetCurrentState(state);
 }
 
-void RenderContext::TransitionBack(HCommandList commandList, TextureHandle texture)
+void RenderContext::TransitionBack(HCommandList commandList, HTexture texture)
 {
 	auto previousState = textures[texture.Index()]->GetPreviousState();
 	TransitionTo(commandList, texture, previousState);

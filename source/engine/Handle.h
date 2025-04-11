@@ -36,8 +36,8 @@ class Shader;
 class RootSignature;
 class VieportAndScissors;
 
-using TextureHandle = Handle<Texture>;
-using VertexBufferHandle = Handle<VertexBuffer>;
+using HTexture = Handle<Texture>;
+using HVertexBuffer = Handle<VertexBuffer>;
 using HRenderTarget = Handle<RenderTarget>;
 using HDepthBuffer = Handle<DepthBuffer>;
 using HCommandList = Handle<CommandList>;

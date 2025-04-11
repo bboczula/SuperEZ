@@ -41,15 +41,15 @@ public:
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
-	void CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name);
+	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name);
 	// Textures
-	TextureHandle CreateEmptyTexture(UINT width, UINT height);
-	TextureHandle CreateDepthTexture(UINT width, UINT height, const CHAR* name);
-	TextureHandle CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
-	void CopyTexture(HCommandList commandList, TextureHandle source, TextureHandle destination);
+	HTexture CreateEmptyTexture(UINT width, UINT height);
+	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
+	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
+	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
 	// Geometry
-	VertexBufferHandle CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
-	VertexBufferHandle GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
+	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
+	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	// Constants
 	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data);
 	// Binding
@@ -64,8 +64,8 @@ public:
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
 	// Barriers
-	void TransitionTo(HCommandList commandList, TextureHandle texture, D3D12_RESOURCE_STATES state);
-	void TransitionBack(HCommandList commandList, TextureHandle texture);
+	void TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state);
+	void TransitionBack(HCommandList commandList, HTexture texture);
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 private:
