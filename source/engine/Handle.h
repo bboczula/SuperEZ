@@ -29,9 +29,11 @@ class VertexBuffer;
 class RenderTarget;
 class DepthBuffer;
 class CommandList;
+class Mesh;
 
 using TextureHandle = Handle<Texture>;
 using VertexBufferHandle = Handle<VertexBuffer>;
 using HRenderTarget = Handle<RenderTarget>;
 using HDepthBuffer = Handle<DepthBuffer>;
 using HCommandList = Handle<CommandList>;
+using HMesh = Handle<Mesh>;

@@ -42,7 +42,7 @@ public:
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
-	size_t CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name);
+	void CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name);
 	// Textures
 	TextureHandle CreateEmptyTexture(UINT width, UINT height);
 	TextureHandle CreateDepthTexture(UINT width, UINT height, const CHAR* name);
@@ -60,7 +60,7 @@ public:
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
 	void SetupRenderPass(HCommandList commandList, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
-	void BindGeometry(HCommandList commandList, size_t meshIndex);
+	void BindGeometry(HCommandList commandList, HMesh mesh);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
@@ -68,7 +68,7 @@ public:
 	void TransitionTo(HCommandList commandList, size_t textureId, D3D12_RESOURCE_STATES state);
 	void TransitionBack(HCommandList commandList, size_t textureId);
 	// Drawing
-	void DrawMesh(HCommandList commandList, size_t meshIndex);
+	void DrawMesh(HCommandList commandList, HMesh mesh);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;

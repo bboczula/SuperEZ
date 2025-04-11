@@ -399,7 +399,7 @@ void RenderContext::CopyTexture(HCommandList commandList, TextureHandle source, 
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
-size_t RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name)
+void RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -415,8 +415,6 @@ size_t RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBuffe
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices() * 3;
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
-
-	return 0;
 }
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
@@ -478,13 +476,13 @@ void RenderContext::SetupRenderPass(HCommandList commandList, size_t psoIndex, s
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }
 
-void RenderContext::BindGeometry(HCommandList commandList, size_t meshIndex)
+void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 {
 	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
 	{
-		meshes[meshIndex]->GetPositionVertexBufferView(),
-		meshes[meshIndex]->GetColorVertexBufferView()
+		meshes[mesh.Index()]->GetPositionVertexBufferView(),
+		meshes[mesh.Index()]->GetColorVertexBufferView()
 	};
 	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
 }
@@ -515,9 +513,9 @@ void RenderContext::TransitionBack(HCommandList commandList, size_t textureId)
 	TransitionTo(commandList, textureId, previousState);
 }
 
-void RenderContext::DrawMesh(HCommandList commandList, size_t meshIndex)
+void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
 {
-	UINT vertexCount = meshes[meshIndex]->GetVertexCount();
+	UINT vertexCount = meshes[mesh.Index()]->GetVertexCount();
 	commandLists[commandList.Index()]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
 }
 

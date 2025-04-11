@@ -80,8 +80,8 @@ void TestPass::Execute()
 
 	for (int i = 0; i < 33; i++)
 	{
-		renderContext.BindGeometry(commandListIndex, i);
-		renderContext.DrawMesh(commandListIndex, i);
+		renderContext.BindGeometry(commandListIndex, HMesh(i));
+		renderContext.DrawMesh(commandListIndex, HMesh(i));
 	}
 }
 
