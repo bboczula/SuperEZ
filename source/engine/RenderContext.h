@@ -34,7 +34,6 @@ public:
 	void CreateConstantBuffer(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
 	void CreateShader(DeviceContext* deviceContext);
-	ID3D12Resource* GetVertexBuffer(size_t index);
 	ID3D12Resource* GetCurrentBackBuffer();
 	void ExecuteCommandList(HCommandList commandList);
 	HCommandList CreateCommandList();
@@ -65,8 +64,8 @@ public:
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
 	// Barriers
-	void TransitionTo(HCommandList commandList, size_t textureId, D3D12_RESOURCE_STATES state);
-	void TransitionBack(HCommandList commandList, size_t textureId);
+	void TransitionTo(HCommandList commandList, TextureHandle texture, D3D12_RESOURCE_STATES state);
+	void TransitionBack(HCommandList commandList, TextureHandle texture);
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 private:

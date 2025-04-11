@@ -480,9 +480,9 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
 }
 
-void RenderContext::TransitionTo(HCommandList commandList, size_t textureId, D3D12_RESOURCE_STATES state)
+void RenderContext::TransitionTo(HCommandList commandList, TextureHandle texture, D3D12_RESOURCE_STATES state)
 {
-	if (textures[textureId]->GetCurrentState() == state)
+	if (textures[texture.Index()]->GetCurrentState() == state)
 	{
 		return;
 	}
@@ -491,30 +491,25 @@ void RenderContext::TransitionTo(HCommandList commandList, size_t textureId, D3D
 	ZeroMemory(&barrier, sizeof(barrier));
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = textures[textureId]->GetResource();
-	barrier.Transition.StateBefore = textures[textureId]->GetCurrentState();
+	barrier.Transition.pResource = textures[texture.Index()]->GetResource();
+	barrier.Transition.StateBefore = textures[texture.Index()]->GetCurrentState();
 	barrier.Transition.StateAfter = state;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	commandLists[commandList.Index()]->GetCommandList()->ResourceBarrier(1, &barrier);
 
-	textures[textureId]->SetCurrentState(state);
+	textures[texture.Index()]->SetCurrentState(state);
 }
 
-void RenderContext::TransitionBack(HCommandList commandList, size_t textureId)
+void RenderContext::TransitionBack(HCommandList commandList, TextureHandle texture)
 {
-	auto previousState = textures[textureId]->GetPreviousState();
-	TransitionTo(commandList, textureId, previousState);
+	auto previousState = textures[texture.Index()]->GetPreviousState();
+	TransitionTo(commandList, texture, previousState);
 }
 
 void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
 {
 	UINT vertexCount = meshes[mesh.Index()]->GetVertexCount();
 	commandLists[commandList.Index()]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
-}
-
-ID3D12Resource* RenderContext::GetVertexBuffer(size_t index)
-{
-	return vertexBuffers[index]->GetResource();
 }
 
 ID3D12Resource* RenderContext::GetCurrentBackBuffer()
