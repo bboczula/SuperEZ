@@ -26,10 +26,10 @@ public:
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	size_t CreateRootSignature(DeviceContext* deviceContext);
 	size_t CreateShaders(LPCWSTR shaderName);
-	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, size_t inputLayoutIndex);
+	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayoutIndex);
 	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
-	size_t CreateInputLayout();
-	InputLayout* GetInputLayout(size_t index) { return inputLayouts[index]; }
+	HInputLayout CreateInputLayout();
+	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
 	void CreateIndexBuffer(DeviceContext* deviceContext);
 	void CreateConstantBuffer(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);

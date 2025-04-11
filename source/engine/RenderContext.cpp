@@ -156,17 +156,12 @@ size_t RenderContext::CreateShaders(LPCWSTR shaderName)
 	return vertexShaders.size() - 1;
 }
 
-size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, size_t inputLayoutIndex)
+size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
-	// Create the Input Layout
-	//inputLayout = new InputLayout();
-	//inputLayout->AppendElementT(VertexStream::Position, VertexStream::Color);
-
-	// Describe and create the graphics pipeline state object (PSO).
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = inputLayouts[inputLayoutIndex]->GetInputLayoutDesc();
+	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
@@ -174,8 +169,6 @@ size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t r
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	//psoDesc.DepthStencilState.DepthEnable = FALSE;
-	//psoDesc.DepthStencilState.StencilEnable = FALSE;
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
@@ -203,11 +196,11 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	return viewports.size() - 1;
 }
 
-size_t RenderContext::CreateInputLayout()
+HInputLayout RenderContext::CreateInputLayout()
 {
 	OutputDebugString(L"CreateInputLayout\n");
 	inputLayouts.push_back(new InputLayout());
-	return inputLayouts.size() - 1;
+	return HInputLayout(inputLayouts.size() - 1);
 }
 
 VertexBufferHandle RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)

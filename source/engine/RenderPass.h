@@ -30,7 +30,7 @@ protected:
 	RenderPass::Type type;
 	size_t shaderIndex;
 	size_t rootSignatureIndex;
-	size_t inputLayoutIndex;
+	HInputLayout inputLayoutIndex;
 	size_t pipelineStateIndex;
 	size_t viewportAndScissorsIndex;
 	HCommandList commandListIndex;
