@@ -67,7 +67,7 @@ void TestPass::Update()
 
 void TestPass::Execute()
 {
-	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
+	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex);
 	renderContext.BindRenderTargetWithDepth(commandListIndex, renderTargetIndex, depthBufferIndex);
 	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
 	renderContext.ClearDepthBuffer(commandListIndex, depthBufferIndex);

@@ -34,6 +34,7 @@ class InputLayout;
 class PipelineState;
 class Shader;
 class RootSignature;
+class VieportAndScissors;
 
 using TextureHandle = Handle<Texture>;
 using VertexBufferHandle = Handle<VertexBuffer>;
@@ -45,3 +46,4 @@ using HInputLayout = Handle<InputLayout>;
 using HPipelineState = Handle<PipelineState>;
 using HShader = Handle<Shader>;
 using HRootSignature = Handle<RootSignature>;
+using HViewportAndScissors = Handle<VieportAndScissors>;

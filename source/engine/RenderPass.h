@@ -32,7 +32,7 @@ protected:
 	HRootSignature rootSignatureIndex;
 	HInputLayout inputLayoutIndex;
 	HPipelineState pipelineStateIndex;
-	size_t viewportAndScissorsIndex;
+	HViewportAndScissors viewportAndScissorsIndex;
 	HCommandList commandListIndex;
 	HRenderTarget renderTargetIndex;
 	HDepthBuffer depthBufferIndex;

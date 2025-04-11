@@ -185,7 +185,7 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
-size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
+HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateViewportAndScissorRect\n");
 
@@ -193,7 +193,7 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight())));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
 
-	return viewports.size() - 1;
+	return HViewportAndScissors(viewports.size() - 1);
 }
 
 HInputLayout RenderContext::CreateInputLayout()
@@ -461,12 +461,12 @@ void RenderContext::CloseCommandList(HCommandList commandList)
 	commandLists[commandList.Index()]->Close();
 }
 
-void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, size_t viewportIndex, size_t scissorsIndex)
+void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors)
 {
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
-	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
-	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
 }
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
