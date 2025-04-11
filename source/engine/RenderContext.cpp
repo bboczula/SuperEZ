@@ -385,7 +385,7 @@ TextureHandle RenderContext::CreateRenderTargetTexture(UINT width, UINT height, 
 	return TextureHandle(textures.size() - 1);
 }
 
-UINT RenderContext::CopyTexture(size_t cmdListIndex, TextureHandle source, TextureHandle destination)
+void RenderContext::CopyTexture(HCommandList commandList, TextureHandle source, TextureHandle destination)
 {
 	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
 	destLocation.pResource = textures[destination.Index()]->GetResource();
@@ -396,9 +396,7 @@ UINT RenderContext::CopyTexture(size_t cmdListIndex, TextureHandle source, Textu
 	srcLocation.pResource = textures[source.Index()]->GetResource();
 	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 	srcLocation.SubresourceIndex = 0;
-	commandLists[cmdListIndex]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
-
-	return 0;
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
 size_t RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name)
@@ -421,77 +419,77 @@ size_t RenderContext::CreateMesh(VertexBufferHandle vbIndexPosition, VertexBuffe
 	return 0;
 }
 
-void RenderContext::SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data)
+void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
 {
-	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
 }
 
-void RenderContext::BindRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget)
+void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
-	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 }
 
-void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, HDepthBuffer depthBuffer)
+void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
-	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
-void RenderContext::CleraRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget)
+void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
-	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 }
 
-void RenderContext::ClearDepthBuffer(size_t cmdListIndex, HDepthBuffer depthBuffer)
+void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)
 {
 	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
-	commandLists[cmdListIndex]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
-void RenderContext::ResetCommandList(size_t cmdListindex, size_t psoIndex)
+void RenderContext::ResetCommandList(HCommandList commandList, size_t psoIndex)
 {
-	commandLists[cmdListindex]->Reset(pipelineStates[psoIndex]);
+	commandLists[commandList.Index()]->Reset(pipelineStates[psoIndex]);
 }
 
-void RenderContext::ResetCommandList(size_t index)
+void RenderContext::ResetCommandList(HCommandList commandList)
 {
-	commandLists[index]->Reset(nullptr);
+	commandLists[commandList.Index()]->Reset(nullptr);
 }
 
-void RenderContext::CloseCommandList(size_t index)
+void RenderContext::CloseCommandList(HCommandList commandList)
 {
-	commandLists[index]->Close();
+	commandLists[commandList.Index()]->Close();
 }
 
-void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
+void RenderContext::SetupRenderPass(HCommandList commandList, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
 {
-	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
-	commandLists[cmdListIndex]->GetCommandList()->SetPipelineState(pipelineStates[psoIndex]);
-	commandLists[cmdListIndex]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
-	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[psoIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }
 
-void RenderContext::BindGeometry(size_t cmdListIndex, size_t meshIndex)
+void RenderContext::BindGeometry(HCommandList commandList, size_t meshIndex)
 {
-	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
 	{
 		meshes[meshIndex]->GetPositionVertexBufferView(),
 		meshes[meshIndex]->GetColorVertexBufferView()
 	};
-	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
 }
 
-void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state)
+void RenderContext::TransitionTo(HCommandList commandList, size_t textureId, D3D12_RESOURCE_STATES state)
 {
 	if (textures[textureId]->GetCurrentState() == state)
 	{
@@ -506,21 +504,21 @@ void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RE
 	barrier.Transition.StateBefore = textures[textureId]->GetCurrentState();
 	barrier.Transition.StateAfter = state;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	commandLists[cmdListIndex]->GetCommandList()->ResourceBarrier(1, &barrier);
+	commandLists[commandList.Index()]->GetCommandList()->ResourceBarrier(1, &barrier);
 
 	textures[textureId]->SetCurrentState(state);
 }
 
-void RenderContext::TransitionBack(size_t cmdListIndex, size_t textureId)
+void RenderContext::TransitionBack(HCommandList commandList, size_t textureId)
 {
 	auto previousState = textures[textureId]->GetPreviousState();
-	TransitionTo(cmdListIndex, textureId, previousState);
+	TransitionTo(commandList, textureId, previousState);
 }
 
-void RenderContext::DrawMesh(size_t cmdListIndex, size_t meshIndex)
+void RenderContext::DrawMesh(HCommandList commandList, size_t meshIndex)
 {
 	UINT vertexCount = meshes[meshIndex]->GetVertexCount();
-	commandLists[cmdListIndex]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
+	commandLists[commandList.Index()]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
 }
 
 ID3D12Resource* RenderContext::GetVertexBuffer(size_t index)
@@ -534,17 +532,17 @@ ID3D12Resource* RenderContext::GetCurrentBackBuffer()
 	return backBuffer[frameIndex];
 }
 
-void RenderContext::ExecuteCommandList(size_t cmdListIndex)
+void RenderContext::ExecuteCommandList(HCommandList commandList)
 {
-	ID3D12CommandList* ppCommandLists[] = { commandLists[cmdListIndex]->GetCommandList() };
+	ID3D12CommandList* ppCommandLists[] = { commandLists[commandList.Index()]->GetCommandList()};
 	deviceContext.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 }
 
-size_t RenderContext::CreateCommandList()
+HCommandList RenderContext::CreateCommandList()
 {
 	size_t index = commandLists.size();
 	commandLists.push_back(new CommandList());
 	commandLists[index]->Create();
 
-	return index;
+	return HCommandList(index);
 }

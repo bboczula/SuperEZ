@@ -33,7 +33,7 @@ protected:
 	size_t inputLayoutIndex;
 	size_t pipelineStateIndex;
 	size_t viewportAndScissorsIndex;
-	size_t commandListIndex;
+	HCommandList commandListIndex;
 	HRenderTarget renderTargetIndex;
 	HDepthBuffer depthBufferIndex;
 	LPCWSTR shaderSourceFileName;

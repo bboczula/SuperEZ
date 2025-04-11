@@ -36,9 +36,9 @@ public:
 	void CreateShader(DeviceContext* deviceContext);
 	ID3D12Resource* GetVertexBuffer(size_t index);
 	ID3D12Resource* GetCurrentBackBuffer();
-	void ExecuteCommandList(size_t cmdListIndex);
-	size_t CreateCommandList();
-	CommandList* GetCommandList(size_t index) { return commandLists[index]; }
+	void ExecuteCommandList(HCommandList commandList);
+	HCommandList CreateCommandList();
+	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
@@ -47,28 +47,28 @@ public:
 	TextureHandle CreateEmptyTexture(UINT width, UINT height);
 	TextureHandle CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	TextureHandle CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
-	UINT CopyTexture(size_t cmdListIndex, TextureHandle source, TextureHandle destination);
+	void CopyTexture(HCommandList commandList, TextureHandle source, TextureHandle destination);
 	// Geometry
 	VertexBufferHandle CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	VertexBufferHandle GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	// Constants
-	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
+	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data);
 	// Binding
-	void BindRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget);
-	void BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
-	void ResetCommandList(size_t index, size_t psoIndex);
-	void ResetCommandList(size_t index);
-	void CloseCommandList(size_t index);
-	void SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
-	void BindGeometry(size_t cmdListIndex, size_t meshIndex);
+	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
+	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
+	void ResetCommandList(HCommandList commandList, size_t psoIndex);
+	void ResetCommandList(HCommandList commandList);
+	void CloseCommandList(HCommandList commandList);
+	void SetupRenderPass(HCommandList commandList, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
+	void BindGeometry(HCommandList commandList, size_t meshIndex);
 	// Clearing
-	void CleraRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget);
-	void ClearDepthBuffer(size_t cmdListIndex, HDepthBuffer depthBuffer);
+	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
+	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
 	// Barriers
-	void TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state);
-	void TransitionBack(size_t cmdListIndex, size_t textureId);
+	void TransitionTo(HCommandList commandList, size_t textureId, D3D12_RESOURCE_STATES state);
+	void TransitionBack(HCommandList commandList, size_t textureId);
 	// Drawing
-	void DrawMesh(size_t cmdListIndex, size_t meshIndex);
+	void DrawMesh(HCommandList commandList, size_t meshIndex);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
