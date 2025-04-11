@@ -33,6 +33,7 @@ class Mesh;
 class InputLayout;
 class PipelineState;
 class Shader;
+class RootSignature;
 
 using TextureHandle = Handle<Texture>;
 using VertexBufferHandle = Handle<VertexBuffer>;
@@ -43,3 +44,4 @@ using HMesh = Handle<Mesh>;
 using HInputLayout = Handle<InputLayout>;
 using HPipelineState = Handle<PipelineState>;
 using HShader = Handle<Shader>;
+using HRootSignature = Handle<RootSignature>;

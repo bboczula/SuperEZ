@@ -24,9 +24,9 @@ public:
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
-	size_t CreateRootSignature(DeviceContext* deviceContext);
+	HRootSignature CreateRootSignature(DeviceContext* deviceContext);
 	HShader CreateShaders(LPCWSTR shaderName);
-	HPipelineState CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, HShader shader, HInputLayout inputLayoutIndex);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayoutIndex);
 	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
@@ -59,7 +59,7 @@ public:
 	void ResetCommandList(HCommandList commandList, HPipelineState pipelineState);
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
-	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
+	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, size_t viewportIndex, size_t scissorsIndex);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);

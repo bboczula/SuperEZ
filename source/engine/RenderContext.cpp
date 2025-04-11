@@ -104,7 +104,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 	}
 }
 
-size_t RenderContext::CreateRootSignature(DeviceContext* deviceContext)
+HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
@@ -128,7 +128,7 @@ size_t RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	
 	rootSignatures.push_back(rootSignature);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
-	return rootSignatures.size() - 1;
+	return HRootSignature(rootSignatures.size() - 1);
 }
 
 HShader RenderContext::CreateShaders(LPCWSTR shaderName)
@@ -156,13 +156,13 @@ HShader RenderContext::CreateShaders(LPCWSTR shaderName)
 	return HShader(vertexShaders.size() - 1);
 }
 
-HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, HShader shader, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
-	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
+	psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shader.Index()]);
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shader.Index()]);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -461,9 +461,9 @@ void RenderContext::CloseCommandList(HCommandList commandList)
 	commandLists[commandList.Index()]->Close();
 }
 
-void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
+void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, size_t viewportIndex, size_t scissorsIndex)
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);

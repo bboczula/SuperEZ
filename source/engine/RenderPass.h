@@ -29,7 +29,7 @@ public:
 protected:
 	RenderPass::Type type;
 	HShader shaderIndex;
-	size_t rootSignatureIndex;
+	HRootSignature rootSignatureIndex;
 	HInputLayout inputLayoutIndex;
 	HPipelineState pipelineStateIndex;
 	size_t viewportAndScissorsIndex;
