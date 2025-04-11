@@ -27,7 +27,9 @@ private:
 class Texture;
 class VertexBuffer;
 class RenderTarget;
+class DepthBuffer;
 
 using TextureHandle = Handle<Texture>;
 using VertexBufferHandle = Handle<VertexBuffer>;
 using HRenderTarget = Handle<RenderTarget>;
+using HDepthBuffer = Handle<DepthBuffer>;

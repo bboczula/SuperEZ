@@ -41,7 +41,7 @@ public:
 	CommandList* GetCommandList(size_t index) { return commandLists[index]; }
 	// High Level
 	HRenderTarget CreateRenderTarget();
-	size_t CreateDepthBuffer();
+	HDepthBuffer CreateDepthBuffer();
 	size_t CreateMesh(VertexBufferHandle vbIndexPosition, VertexBufferHandle vbIndexColor, const CHAR* name);
 	// Textures
 	TextureHandle CreateEmptyTexture(UINT width, UINT height);
@@ -55,7 +55,7 @@ public:
 	void SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data);
 	// Binding
 	void BindRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget);
-	void BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, size_t depthIndex);
+	void BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
 	void ResetCommandList(size_t index, size_t psoIndex);
 	void ResetCommandList(size_t index);
 	void CloseCommandList(size_t index);
@@ -63,7 +63,7 @@ public:
 	void BindGeometry(size_t cmdListIndex, size_t meshIndex);
 	// Clearing
 	void CleraRenderTarget(size_t cmdListIndex, HRenderTarget renderTarget);
-	void ClearDepthBuffer(size_t cmdListIndex, size_t depthIndex);
+	void ClearDepthBuffer(size_t cmdListIndex, HDepthBuffer depthBuffer);
 	// Barriers
 	void TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state);
 	void TransitionBack(size_t cmdListIndex, size_t textureId);

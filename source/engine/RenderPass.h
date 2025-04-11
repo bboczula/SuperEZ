@@ -35,7 +35,7 @@ protected:
 	size_t viewportAndScissorsIndex;
 	size_t commandListIndex;
 	HRenderTarget renderTargetIndex;
-	size_t depthBufferIndex;
+	HDepthBuffer depthBufferIndex;
 	LPCWSTR shaderSourceFileName;
 	PCWSTR name;
 };

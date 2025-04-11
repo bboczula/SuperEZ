@@ -71,7 +71,7 @@ HRenderTarget RenderContext::CreateRenderTarget()
 	return HRenderTarget(renderTargets.size() - 1);
 }
 
-size_t RenderContext::CreateDepthBuffer()
+HDepthBuffer RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
@@ -80,7 +80,7 @@ size_t RenderContext::CreateDepthBuffer()
 
 	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size() - 1, "DB_Custom"));
 
-	return depthBuffers.size() - 1;
+	return HDepthBuffer(depthBuffers.size() - 1);
 }
 
 void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext)
@@ -433,11 +433,11 @@ void RenderContext::BindRenderTarget(size_t cmdListIndex, HRenderTarget renderTa
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 }
 
-void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, size_t depthIndex)
+void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, HRenderTarget renderTarget, HDepthBuffer depthBuffer)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
-	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
+	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
 	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
@@ -450,9 +450,9 @@ void RenderContext::CleraRenderTarget(size_t cmdListIndex, HRenderTarget renderT
 	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 }
 
-void RenderContext::ClearDepthBuffer(size_t cmdListIndex, size_t depthIndex)
+void RenderContext::ClearDepthBuffer(size_t cmdListIndex, HDepthBuffer depthBuffer)
 {
-	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
+	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
 	commandLists[cmdListIndex]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
