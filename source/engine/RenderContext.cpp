@@ -57,30 +57,30 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 	cbvSrvUavHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, deviceContext);
 }
 
-size_t RenderContext::CreateRenderTarget()
+HRenderTarget RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	size_t textureIndex = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
-	deviceContext.GetDevice()->CreateRenderTargetView(textures[textureIndex]->GetResource(), nullptr, rtvHeap.Allocate());
+	HTexture texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
+	deviceContext.GetDevice()->CreateRenderTargetView(textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	renderTargets.push_back(new RenderTarget(1920, 1080, textureIndex, rtvHeap.Size() - 1, "RT_Custom"));
+	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, "RT_Custom"));
 
 	// We also need naming, for debugging purposes
 
-	return renderTargets.size() - 1;
+	return HRenderTarget(renderTargets.size() - 1);
 }
 
-size_t RenderContext::CreateDepthBuffer()
+HDepthBuffer RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
-	size_t depthIndex = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
-	deviceContext.GetDevice()->CreateDepthStencilView(textures[depthIndex]->GetResource(), nullptr, dsvHeap.Allocate());
+	HTexture depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
+	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate());
 
-	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depthIndex, dsvHeap.Size() - 1, "DB_Custom"));
+	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size() - 1, "DB_Custom"));
 
-	return depthBuffers.size() - 1;
+	return HDepthBuffer(depthBuffers.size() - 1);
 }
 
 void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext)
@@ -104,7 +104,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 	}
 }
 
-size_t RenderContext::CreateRootSignature(DeviceContext* deviceContext)
+HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
@@ -128,10 +128,10 @@ size_t RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	
 	rootSignatures.push_back(rootSignature);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
-	return rootSignatures.size() - 1;
+	return HRootSignature(rootSignatures.size() - 1);
 }
 
-size_t RenderContext::CreateShaders(LPCWSTR shaderName)
+HShader RenderContext::CreateShaders(LPCWSTR shaderName)
 {
 	OutputDebugString(L"CreateShaders\n");
 
@@ -153,29 +153,22 @@ size_t RenderContext::CreateShaders(LPCWSTR shaderName)
 	pixelShaders.push_back(pixelShader);
 	OutputDebugString(L"CreateShaders succeeded\n");
 
-	return vertexShaders.size() - 1;
+	return HShader(vertexShaders.size() - 1);
 }
 
-size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, size_t inputLayoutIndex)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
-	// Create the Input Layout
-	//inputLayout = new InputLayout();
-	//inputLayout->AppendElementT(VertexStream::Position, VertexStream::Color);
-
-	// Describe and create the graphics pipeline state object (PSO).
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = inputLayouts[inputLayoutIndex]->GetInputLayoutDesc();
-	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
+	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
+	psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shader.Index()]);
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shader.Index()]);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	//psoDesc.DepthStencilState.DepthEnable = FALSE;
-	//psoDesc.DepthStencilState.StencilEnable = FALSE;
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
@@ -189,10 +182,10 @@ size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t r
 	pipelineStates.push_back(pipelineState);
 
 	OutputDebugString(L"CreatePipelineState succeeded\n");
-	return pipelineStates.size() - 1;
+	return HPipelineState(pipelineStates.size() - 1);
 }
 
-size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
+HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateViewportAndScissorRect\n");
 
@@ -200,17 +193,17 @@ size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
 	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight())));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
 
-	return viewports.size() - 1;
+	return HViewportAndScissors(viewports.size() - 1);
 }
 
-size_t RenderContext::CreateInputLayout()
+HInputLayout RenderContext::CreateInputLayout()
 {
 	OutputDebugString(L"CreateInputLayout\n");
 	inputLayouts.push_back(new InputLayout());
-	return inputLayouts.size() - 1;
+	return HInputLayout(inputLayouts.size() - 1);
 }
 
-size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
+HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
 {
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
@@ -247,10 +240,10 @@ size_t RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPer
 	memcpy(pVertexDataBegin, meshData, vbSizeInBytes);
 	vb->Unmap(0, nullptr);
 
-	return index;
+	return HVertexBuffer(index);
 }
 
-size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
+HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name)
 {
 #define COLOR_1 153.0f / 255.0f, 202.0f / 255.0f, 34.0f / 255.0f, 1.0f
 #define COLOR_2 160.0f / 255.0f, 210.0f / 255.0f, 31.0f / 255.0f, 1.0f
@@ -309,12 +302,12 @@ size_t RenderContext::GenerateColors(float* data, size_t size, UINT numOfTriangl
 	CHAR tempName[64];
 	snprintf(tempName, sizeof(tempName), "COLOR_%s", name);
 
-	size_t meshIndex = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
+	HVertexBuffer vertexBuffer = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
 
-	return meshIndex;
+	return vertexBuffer;
 }
 
-size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
+HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -332,10 +325,10 @@ size_t RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	CHAR name[] = "EmptyTexture";
 	textures.push_back(new Texture(width, height, resource, &name[0]));
 	
-	return textures.size() - 1;
+	return HTexture(textures.size() - 1);
 }
 
-size_t RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateDepthTexture\n");
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
@@ -357,10 +350,10 @@ size_t RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* na
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 
-	return textures.size() - 1;
+	return HTexture(textures.size() - 1);
 }
 
-size_t RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
@@ -382,120 +375,114 @@ size_t RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const C
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
 
-	return textures.size() - 1;
+	return HTexture(textures.size() - 1);
 }
 
-UINT RenderContext::CopyTexture(size_t cmdListIndex, size_t sourceIndex, size_t destIndex)
+void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HTexture destination)
 {
-	// Here you should copy the Render Target from the previous Render Context and copy it to the Back Buffer
-	// commandList->CopyTextureRegion();
 	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
-	destLocation.pResource = textures[destIndex]->GetResource(); //destination->GetResource();
+	destLocation.pResource = textures[destination.Index()]->GetResource();
 	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	destLocation.SubresourceIndex = 0; // Not sure if this is correct;
+	destLocation.SubresourceIndex = 0;
 
 	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-	srcLocation.pResource = textures[sourceIndex]->GetResource(); //source->GetResource();
+	srcLocation.pResource = textures[source.Index()]->GetResource();
 	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 	srcLocation.SubresourceIndex = 0;
-	commandLists[cmdListIndex]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
-
-	return 0;
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
-size_t RenderContext::CreateMesh(size_t vbIndexPosition, size_t vbIndexColor, const CHAR* name)
+void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition;
-	vbvPosition.BufferLocation = vertexBuffers[vbIndexPosition]->GetResource()->GetGPUVirtualAddress();
+	vbvPosition.BufferLocation = vertexBuffers[vbIndexPosition.Index()]->GetResource()->GetGPUVirtualAddress();
 	vbvPosition.StrideInBytes = 4 * sizeof(float);
-	vbvPosition.SizeInBytes = vertexBuffers[vbIndexPosition]->GetSizeInBytes();
+	vbvPosition.SizeInBytes = vertexBuffers[vbIndexPosition.Index()]->GetSizeInBytes();
 
 	D3D12_VERTEX_BUFFER_VIEW vbvColor;
-	vbvColor.BufferLocation = vertexBuffers[vbIndexColor]->GetResource()->GetGPUVirtualAddress();
+	vbvColor.BufferLocation = vertexBuffers[vbIndexColor.Index()]->GetResource()->GetGPUVirtualAddress();
 	vbvColor.StrideInBytes = 4 * sizeof(float);
-	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor]->GetSizeInBytes();
+	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor.Index()]->GetSizeInBytes();
 
-	UINT vertexCount = vertexBuffers[vbIndexPosition]->GetNumOfVertices() * 3;
-	meshes.push_back(new Mesh(vbIndexPosition, vbvPosition, vbIndexColor, vbvColor, vertexCount, name));
-
-	return 0;
+	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices() * 3;
+	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
 }
 
-void RenderContext::SetInlineConstants(size_t cmdListIndex, UINT numOfConstants, void* data)
+void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
 {
-	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
 }
 
-void RenderContext::BindRenderTarget(size_t cmdListIndex, size_t rtIndex)
+void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
-	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
-	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 }
 
-void RenderContext::BindRenderTargetWithDepth(size_t cmdListIndex, size_t rtIndex, size_t depthIndex)
+void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer)
 {
-	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
-	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
+	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
-	commandLists[cmdListIndex]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
-void RenderContext::CleraRenderTarget(size_t cmdListIndex, size_t rtIndex)
+void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
-	auto rtvHandleIndex = renderTargets[rtIndex]->GetDescriptorIndex();
+	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
-	commandLists[cmdListIndex]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 }
 
-void RenderContext::ClearDepthBuffer(size_t cmdListIndex, size_t depthIndex)
+void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)
 {
-	auto dsvHandleIndex = depthBuffers[depthIndex]->GetDescriptorIndex();
+	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
-	commandLists[cmdListIndex]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
-void RenderContext::ResetCommandList(size_t cmdListindex, size_t psoIndex)
+void RenderContext::ResetCommandList(HCommandList commandList, HPipelineState pipelineState)
 {
-	commandLists[cmdListindex]->Reset(pipelineStates[psoIndex]);
+	commandLists[commandList.Index()]->Reset(pipelineStates[pipelineState.Index()]);
 }
 
-void RenderContext::ResetCommandList(size_t index)
+void RenderContext::ResetCommandList(HCommandList commandList)
 {
-	commandLists[index]->Reset(nullptr);
+	commandLists[commandList.Index()]->Reset(nullptr);
 }
 
-void RenderContext::CloseCommandList(size_t index)
+void RenderContext::CloseCommandList(HCommandList commandList)
 {
-	commandLists[index]->Close();
+	commandLists[commandList.Index()]->Close();
 }
 
-void RenderContext::SetupRenderPass(size_t cmdListIndex, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
+void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors)
 {
-	commandLists[cmdListIndex]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
-	commandLists[cmdListIndex]->GetCommandList()->SetPipelineState(pipelineStates[psoIndex]);
-	commandLists[cmdListIndex]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
-	commandLists[cmdListIndex]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]);
+	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
 }
 
-void RenderContext::BindGeometry(size_t cmdListIndex, size_t meshIndex)
+void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 {
-	commandLists[cmdListIndex]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
 	{
-		meshes[meshIndex]->GetPositionVertexBufferView(),
-		meshes[meshIndex]->GetColorVertexBufferView()
+		meshes[mesh.Index()]->GetPositionVertexBufferView(),
+		meshes[mesh.Index()]->GetColorVertexBufferView()
 	};
-	commandLists[cmdListIndex]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
 }
 
-void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RESOURCE_STATES state)
+void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)
 {
-	if (textures[textureId]->GetCurrentState() == state)
+	if (textures[texture.Index()]->GetCurrentState() == state)
 	{
 		return;
 	}
@@ -504,30 +491,25 @@ void RenderContext::TransitionTo(size_t cmdListIndex, size_t textureId, D3D12_RE
 	ZeroMemory(&barrier, sizeof(barrier));
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = textures[textureId]->GetResource();
-	barrier.Transition.StateBefore = textures[textureId]->GetCurrentState();
+	barrier.Transition.pResource = textures[texture.Index()]->GetResource();
+	barrier.Transition.StateBefore = textures[texture.Index()]->GetCurrentState();
 	barrier.Transition.StateAfter = state;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	commandLists[cmdListIndex]->GetCommandList()->ResourceBarrier(1, &barrier);
+	commandLists[commandList.Index()]->GetCommandList()->ResourceBarrier(1, &barrier);
 
-	textures[textureId]->SetCurrentState(state);
+	textures[texture.Index()]->SetCurrentState(state);
 }
 
-void RenderContext::TransitionBack(size_t cmdListIndex, size_t textureId)
+void RenderContext::TransitionBack(HCommandList commandList, HTexture texture)
 {
-	auto previousState = textures[textureId]->GetPreviousState();
-	TransitionTo(cmdListIndex, textureId, previousState);
+	auto previousState = textures[texture.Index()]->GetPreviousState();
+	TransitionTo(commandList, texture, previousState);
 }
 
-void RenderContext::DrawMesh(size_t cmdListIndex, size_t meshIndex)
+void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
 {
-	UINT vertexCount = meshes[meshIndex]->GetVertexCount();
-	commandLists[cmdListIndex]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
-}
-
-ID3D12Resource* RenderContext::GetVertexBuffer(size_t index)
-{
-	return vertexBuffers[index]->GetResource();
+	UINT vertexCount = meshes[mesh.Index()]->GetVertexCount();
+	commandLists[commandList.Index()]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
 }
 
 ID3D12Resource* RenderContext::GetCurrentBackBuffer()
@@ -536,17 +518,17 @@ ID3D12Resource* RenderContext::GetCurrentBackBuffer()
 	return backBuffer[frameIndex];
 }
 
-void RenderContext::ExecuteCommandList(size_t cmdListIndex)
+void RenderContext::ExecuteCommandList(HCommandList commandList)
 {
-	ID3D12CommandList* ppCommandLists[] = { commandLists[cmdListIndex]->GetCommandList() };
+	ID3D12CommandList* ppCommandLists[] = { commandLists[commandList.Index()]->GetCommandList()};
 	deviceContext.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 }
 
-size_t RenderContext::CreateCommandList()
+HCommandList RenderContext::CreateCommandList()
 {
 	size_t index = commandLists.size();
 	commandLists.push_back(new CommandList());
 	commandLists[index]->Create();
 
-	return index;
+	return HCommandList(index);
 }

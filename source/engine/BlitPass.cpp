@@ -25,14 +25,17 @@ void BlitPass::Prepare()
 
 void BlitPass::Execute()
 {
-	renderContext.TransitionTo(commandListIndex, 2, D3D12_RESOURCE_STATE_COPY_SOURCE);
+	renderContext.TransitionTo(commandList, HTexture(2), D3D12_RESOURCE_STATE_COPY_SOURCE);
 	
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
-	renderContext.TransitionTo(commandListIndex, frameIndex, D3D12_RESOURCE_STATE_COPY_DEST);
-	renderContext.CopyTexture(commandListIndex, 2, frameIndex);
+	HTexture renderTarget = HTexture(2);
+	HTexture backBuffer = HTexture(frameIndex);
+	HTexture frameTexture = HTexture(frameIndex);
+	renderContext.TransitionTo(commandList, frameTexture, D3D12_RESOURCE_STATE_COPY_DEST);
+	renderContext.CopyTexture(commandList, renderTarget, backBuffer);
 
-	renderContext.TransitionBack(commandListIndex, 2);
-	renderContext.TransitionTo(commandListIndex, frameIndex, D3D12_RESOURCE_STATE_PRESENT);
+	renderContext.TransitionBack(commandList, renderTarget);
+	renderContext.TransitionTo(commandList, frameTexture, D3D12_RESOURCE_STATE_PRESENT);
 }
 
 void BlitPass::Allocate(DeviceContext* deviceContext)

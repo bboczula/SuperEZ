@@ -49,14 +49,14 @@ TestPass::~TestPass()
 void TestPass::ConfigurePipelineState()
 {
 	// Pre-AutomaticPrepare Procedure
-	inputLayoutIndex = renderContext.CreateInputLayout();
-	renderContext.GetInputLayout(inputLayoutIndex)->AppendElementT(VertexStream::Position, VertexStream::Color);
+	inputLayout = renderContext.CreateInputLayout();
+	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color);
 }
 
 void TestPass::Prepare()
 {
-	renderTargetIndex = renderContext.CreateRenderTarget();
-	depthBufferIndex = renderContext.CreateDepthBuffer();
+	renderTarget = renderContext.CreateRenderTarget();
+	depthBuffer = renderContext.CreateDepthBuffer();
 	deviceContext.Flush();
 }
 
@@ -67,21 +67,21 @@ void TestPass::Update()
 
 void TestPass::Execute()
 {
-	renderContext.SetupRenderPass(commandListIndex, pipelineStateIndex, rootSignatureIndex, viewportAndScissorsIndex, viewportAndScissorsIndex);
-	renderContext.BindRenderTargetWithDepth(commandListIndex, renderTargetIndex, depthBufferIndex);
-	renderContext.CleraRenderTarget(commandListIndex, renderTargetIndex);
-	renderContext.ClearDepthBuffer(commandListIndex, depthBufferIndex);
+	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
+	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
+	renderContext.CleraRenderTarget(commandList, renderTarget);
+	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
 #if USE_PERSPECTIVE_CAMERA
-	renderContext.SetInlineConstants(commandListIndex, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
+	renderContext.SetInlineConstants(commandList, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
 #else
-	renderContext.SetInlineConstants(commandListIndex, 16, orthoCamera->GetViewProjectionMatrixPtr());
+	renderContext.SetInlineConstants(commandList, 16, orthoCamera->GetViewProjectionMatrixPtr());
 #endif
 
 	for (int i = 0; i < 33; i++)
 	{
-		renderContext.BindGeometry(commandListIndex, i);
-		renderContext.DrawMesh(commandListIndex, i);
+		renderContext.BindGeometry(commandList, HMesh(i));
+		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 }
 

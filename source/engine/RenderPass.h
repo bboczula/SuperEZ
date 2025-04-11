@@ -1,6 +1,7 @@
 #pragma once
 
 #include <d3d12.h>
+#include "Handle.h"
 
 class RenderTarget;
 class DeviceContext;
@@ -27,14 +28,14 @@ public:
 	RenderPass::Type GetType() const { return type; }
 protected:
 	RenderPass::Type type;
-	size_t shaderIndex;
-	size_t rootSignatureIndex;
-	size_t inputLayoutIndex;
-	size_t pipelineStateIndex;
-	size_t viewportAndScissorsIndex;
-	size_t commandListIndex;
-	size_t renderTargetIndex;
-	size_t depthBufferIndex;
+	HShader shader;
+	HRootSignature rootSignature;
+	HInputLayout inputLayout;
+	HPipelineState pipelineState;
+	HViewportAndScissors viewportAndScissors;
+	HCommandList commandList;
+	HRenderTarget renderTarget;
+	HDepthBuffer depthBuffer;
 	LPCWSTR shaderSourceFileName;
 	PCWSTR name;
 };

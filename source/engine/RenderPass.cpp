@@ -24,13 +24,13 @@ void RenderPass::AutomaticPrepare()
 {
 	if (GetType() == Type::Default)
 	{
-		rootSignatureIndex = renderContext.CreateRootSignature(&deviceContext);
-		shaderIndex = renderContext.CreateShaders(shaderSourceFileName);
-		pipelineStateIndex = renderContext.CreatePipelineState(&deviceContext, rootSignatureIndex, shaderIndex, inputLayoutIndex);
-		viewportAndScissorsIndex = renderContext.CreateViewportAndScissorRect(&deviceContext);
+		rootSignature = renderContext.CreateRootSignature(&deviceContext);
+		shader = renderContext.CreateShaders(shaderSourceFileName);
+		pipelineState = renderContext.CreatePipelineState(&deviceContext, rootSignature, shader, inputLayout);
+		viewportAndScissors = renderContext.CreateViewportAndScissorRect(&deviceContext);
 	}
 
-	commandListIndex = renderContext.CreateCommandList();
+	commandList = renderContext.CreateCommandList();
 }
 
 void RenderPass::Prepare()
@@ -51,18 +51,18 @@ void RenderPass::PreExecute()
 {
 	if (GetType() == Type::Default)
 	{
-		renderContext.ResetCommandList(commandListIndex, pipelineStateIndex);
+		renderContext.ResetCommandList(commandList, pipelineState);
 	}
 	else if (GetType() == Type::Drawless)
 	{
-		renderContext.ResetCommandList(commandListIndex);
+		renderContext.ResetCommandList(commandList);
 	}
-	PIXBeginEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList(), 0, name);
+	PIXBeginEvent(renderContext.GetCommandList(commandList)->GetCommandList(), 0, name);
 }
 
 void RenderPass::PostExecute()
 {
-	PIXEndEvent(renderContext.GetCommandList(commandListIndex)->GetCommandList());
-	renderContext.CloseCommandList(commandListIndex);
-	renderContext.ExecuteCommandList(commandListIndex);
+	PIXEndEvent(renderContext.GetCommandList(commandList)->GetCommandList());
+	renderContext.CloseCommandList(commandList);
+	renderContext.ExecuteCommandList(commandList);
 }
