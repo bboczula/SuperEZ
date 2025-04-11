@@ -131,7 +131,7 @@ size_t RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	return rootSignatures.size() - 1;
 }
 
-size_t RenderContext::CreateShaders(LPCWSTR shaderName)
+HShader RenderContext::CreateShaders(LPCWSTR shaderName)
 {
 	OutputDebugString(L"CreateShaders\n");
 
@@ -153,18 +153,18 @@ size_t RenderContext::CreateShaders(LPCWSTR shaderName)
 	pixelShaders.push_back(pixelShader);
 	OutputDebugString(L"CreateShaders succeeded\n");
 
-	return vertexShaders.size() - 1;
+	return HShader(vertexShaders.size() - 1);
 }
 
-HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, HShader shader, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignatureIndex];
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shaderIndex]);
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shaderIndex]);
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shader.Index()]);
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shader.Index()]);
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);

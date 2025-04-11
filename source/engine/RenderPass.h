@@ -28,7 +28,7 @@ public:
 	RenderPass::Type GetType() const { return type; }
 protected:
 	RenderPass::Type type;
-	size_t shaderIndex;
+	HShader shaderIndex;
 	size_t rootSignatureIndex;
 	HInputLayout inputLayoutIndex;
 	HPipelineState pipelineStateIndex;

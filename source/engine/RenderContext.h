@@ -25,8 +25,8 @@ public:
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	size_t CreateRootSignature(DeviceContext* deviceContext);
-	size_t CreateShaders(LPCWSTR shaderName);
-	HPipelineState CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayoutIndex);
+	HShader CreateShaders(LPCWSTR shaderName);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, HShader shader, HInputLayout inputLayoutIndex);
 	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }

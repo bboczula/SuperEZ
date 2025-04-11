@@ -32,6 +32,7 @@ class CommandList;
 class Mesh;
 class InputLayout;
 class PipelineState;
+class Shader;
 
 using TextureHandle = Handle<Texture>;
 using VertexBufferHandle = Handle<VertexBuffer>;
@@ -41,3 +42,4 @@ using HCommandList = Handle<CommandList>;
 using HMesh = Handle<Mesh>;
 using HInputLayout = Handle<InputLayout>;
 using HPipelineState = Handle<PipelineState>;
+using HShader = Handle<Shader>;
