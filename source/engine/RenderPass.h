@@ -31,7 +31,7 @@ protected:
 	size_t shaderIndex;
 	size_t rootSignatureIndex;
 	HInputLayout inputLayoutIndex;
-	size_t pipelineStateIndex;
+	HPipelineState pipelineStateIndex;
 	size_t viewportAndScissorsIndex;
 	HCommandList commandListIndex;
 	HRenderTarget renderTargetIndex;

@@ -156,7 +156,7 @@ size_t RenderContext::CreateShaders(LPCWSTR shaderName)
 	return vertexShaders.size() - 1;
 }
 
-size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
@@ -182,7 +182,7 @@ size_t RenderContext::CreatePipelineState(DeviceContext* deviceContext, size_t r
 	pipelineStates.push_back(pipelineState);
 
 	OutputDebugString(L"CreatePipelineState succeeded\n");
-	return pipelineStates.size() - 1;
+	return HPipelineState(pipelineStates.size() - 1);
 }
 
 size_t RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
@@ -446,9 +446,9 @@ void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer dept
 	commandLists[commandList.Index()]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
-void RenderContext::ResetCommandList(HCommandList commandList, size_t psoIndex)
+void RenderContext::ResetCommandList(HCommandList commandList, HPipelineState pipelineState)
 {
-	commandLists[commandList.Index()]->Reset(pipelineStates[psoIndex]);
+	commandLists[commandList.Index()]->Reset(pipelineStates[pipelineState.Index()]);
 }
 
 void RenderContext::ResetCommandList(HCommandList commandList)
@@ -461,10 +461,10 @@ void RenderContext::CloseCommandList(HCommandList commandList)
 	commandLists[commandList.Index()]->Close();
 }
 
-void RenderContext::SetupRenderPass(HCommandList commandList, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
+void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex)
 {
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignatureIndex]);
-	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[psoIndex]);
+	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportIndex]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[scissorsIndex]);
 }

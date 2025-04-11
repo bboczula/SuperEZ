@@ -26,7 +26,7 @@ public:
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	size_t CreateRootSignature(DeviceContext* deviceContext);
 	size_t CreateShaders(LPCWSTR shaderName);
-	size_t CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayoutIndex);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, size_t rootSignatureIndex, size_t shaderIndex, HInputLayout inputLayoutIndex);
 	size_t CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
@@ -56,10 +56,10 @@ public:
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
-	void ResetCommandList(HCommandList commandList, size_t psoIndex);
+	void ResetCommandList(HCommandList commandList, HPipelineState pipelineState);
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
-	void SetupRenderPass(HCommandList commandList, size_t psoIndex, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
+	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, size_t rootSignatureIndex, size_t viewportIndex, size_t scissorsIndex);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
