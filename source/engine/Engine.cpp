@@ -5,6 +5,7 @@
 #include "RenderContext.h"
 #include "RenderGraph.h"
 #include "Settings.h"
+#include "Observer.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 
 #include <filesystem>
@@ -17,6 +18,7 @@ WindowContext windowContext;
 DeviceContext deviceContext;
 RenderContext renderContext;
 RenderGraph renderGraph;
+Subject<WinMessageEvent> winMessageSubject;
 
 Engine::Engine()
 {

@@ -15,8 +15,10 @@ struct WinMessageEvent {
 template<typename Event>
 class IObserver {
 public:
-      virtual void OnNotify(const Event& event) = 0;
+      virtual void OnNotify(Event& event) = 0;
       virtual ~IObserver() = default;
+      virtual void Initialize() = 0;
+      virtual void PostFrame() = 0;
 };
 
 // Subject class that manages observers
