@@ -66,13 +66,22 @@ void TestPass::Prepare()
 
 void TestPass::Update()
 {
-	if (rawInput.GetMouseXDelta() > 0)
+	const bool isXAxisRotation = rawInput.GetMouseXDelta() != 0 && rawInput.IsMiddleButtonDown();
+	const bool isYAxisRotation = rawInput.GetMouseYDelta() != 0 && rawInput.IsMiddleButtonDown();
+	if (isXAxisRotation || isYAxisRotation)
 	{
-		arcballCamera->Rotate(0.0f, -0.25f, 0.0f);
+		arcballCamera->Rotate(-0.1f * rawInput.GetMouseYDelta(), -0.1f * rawInput.GetMouseXDelta(), 0.0f);
 	}
-	else if (rawInput.GetMouseXDelta() < 0)
+
+	const bool hasMouseWheelMoved = rawInput.HasMouseWheelMoved();
+	if (hasMouseWheelMoved)
 	{
-		arcballCamera->Rotate(0.0f, 0.25f, 0.0f);
+		SHORT wheelDelta = rawInput.GetMouseWheelDelta();
+		if (wheelDelta != 0.0f)
+		{
+			float zoomStep = 0.1f * static_cast<float>(wheelDelta) / 120.0f;
+			arcballCamera->SetRadius(arcballCamera->GetRadius() + zoomStep);
+		}
 	}
 }
 

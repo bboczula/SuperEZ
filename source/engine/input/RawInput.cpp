@@ -42,8 +42,57 @@ void RawInput::HandleKeyboardInput(const RAWINPUT& rawInput)
 
 void RawInput::HandleMouseInput(const RAWINPUT& rawInput)
 {
-      mouseDelta.first += rawInput.data.mouse.lLastX;
-      mouseDelta.second += rawInput.data.mouse.lLastY;
+	const RAWMOUSE& mouseData = rawInput.data.mouse;
+	const USHORT flags = rawInput.data.mouse.usButtonFlags;
+	const USHORT data = rawInput.data.mouse.usButtonData;
+
+	HandleMousePosition(mouseData);
+	HandleMouseButtonStates(flags);
+	HandleMouseWheel(flags, data);
+}
+
+void RawInput::HandleMouseWheel(const USHORT flags, const USHORT data)
+{
+	if (flags & RI_MOUSE_WHEEL)
+	{
+		mouseButtonState[static_cast<size_t>(MouseButton::Wheel)] = true;
+		wheelDelta = data;
+	}
+}
+
+void RawInput::HandleMousePosition(const RAWMOUSE& mouseData)
+{
+	mouseDelta.first += mouseData.lLastX;
+	mouseDelta.second += mouseData.lLastY;
+}
+
+void RawInput::HandleMouseButtonStates(const USHORT flags)
+{
+	struct ButtonMap
+	{
+		USHORT downFlag;
+		USHORT upFlag;
+		MouseButton index;
+	};
+
+	const ButtonMap buttonMap[] =
+	{
+		{ RI_MOUSE_LEFT_BUTTON_DOWN,   RI_MOUSE_LEFT_BUTTON_UP,   MouseButton::Left },
+		{ RI_MOUSE_MIDDLE_BUTTON_DOWN, RI_MOUSE_MIDDLE_BUTTON_UP, MouseButton::Middle },
+		{ RI_MOUSE_RIGHT_BUTTON_DOWN,  RI_MOUSE_RIGHT_BUTTON_UP,  MouseButton::Right }
+	};
+
+	for (const auto& btn : buttonMap)
+	{
+		if (flags & btn.downFlag)
+		{
+			mouseButtonState[static_cast<size_t>(btn.index)] = true;
+		}
+		if (flags & btn.upFlag)
+		{
+			mouseButtonState[static_cast<size_t>(btn.index)] = false;
+		}
+	}
 }
 
 void RawInput::Initialize()
@@ -74,6 +123,8 @@ void RawInput::PostFrame()
 {
 	mouseDelta.first = 0;
 	mouseDelta.second = 0;
+	mouseButtonState[static_cast<size_t>(MouseButton::Wheel)] = false;
+	wheelDelta = 0;
 	
 	if (clearNextFrame.first)
 	{
