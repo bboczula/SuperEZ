@@ -134,6 +134,11 @@ void Engine::LoadAssets()
 
 void Engine::Tick()
 {
+	if (rawInput.IsKeyDown(VK_ESCAPE))
+	{
+		OutputDebugString(L"Engine::Tick() - Escape key pressed\n");
+		exit(0);
+	}
 	renderGraph.Execute();
 	deviceContext.Flush();
 	deviceContext.Present();
