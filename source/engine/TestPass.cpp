@@ -7,12 +7,16 @@
 #include "camera/PerspectiveCamera.h"
 #include "camera/OrthographicCamera.h"
 #include "camera/Arcball.h"
+#include "input/RawInput.h"
+#include "input/WinMouse.h"
 
 #include <pix3.h>
 
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 extern WindowContext windowContext;
+extern RawInput rawInput;
+extern WinMouse winMouse;
 
 #define USE_PERSPECTIVE_CAMERA 1
 
@@ -62,7 +66,14 @@ void TestPass::Prepare()
 
 void TestPass::Update()
 {
-	arcballCamera->Rotate(0.0f, 0.25f, 0.0f);
+	if (rawInput.GetMouseXDelta() > 0)
+	{
+		arcballCamera->Rotate(0.0f, -0.25f, 0.0f);
+	}
+	else if (rawInput.GetMouseXDelta() < 0)
+	{
+		arcballCamera->Rotate(0.0f, 0.25f, 0.0f);
+	}
 }
 
 void TestPass::Execute()

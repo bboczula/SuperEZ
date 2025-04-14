@@ -35,9 +35,15 @@ public:
             observers.erase(std::remove(observers.begin(), observers.end(), observer), observers.end());
       }
 
-      void Notify(const Event& event) {
+      void Notify(Event& event) {
             for (auto* obs : observers) {
                   obs->OnNotify(event);
             }
       }
+
+	void RunPostFrame() {
+		for (auto* obs : observers) {
+			obs->PostFrame();
+		}
+	}
 };

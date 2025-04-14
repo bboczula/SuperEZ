@@ -6,6 +6,8 @@
 #include "RenderGraph.h"
 #include "Settings.h"
 #include "Observer.h"
+#include "input/WinMouse.h"
+#include "input/RawInput.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 
 #include <filesystem>
@@ -19,6 +21,8 @@ DeviceContext deviceContext;
 RenderContext renderContext;
 RenderGraph renderGraph;
 Subject<WinMessageEvent> winMessageSubject;
+RawInput rawInput;
+WinMouse winMouse;
 
 Engine::Engine()
 {
@@ -33,6 +37,10 @@ Engine::~Engine()
 void Engine::Initialize()
 {
 	OutputDebugString(L"Engine::Initialize()\n");
+	rawInput.Initialize();
+	winMessageSubject.Subscribe(&rawInput);
+	winMouse.Initialize();
+	winMessageSubject.Subscribe(&winMouse);
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
 	renderGraph.Initialize();
@@ -153,5 +161,6 @@ void Engine::Run()
 			DispatchMessage(&msg);
 		}
 		Tick();
+		winMessageSubject.RunPostFrame();
 	}
 }
