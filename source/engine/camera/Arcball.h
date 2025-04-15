@@ -15,6 +15,7 @@ public:
 	void MoveLeft(float step) override;
 	// Rotate
 	void Rotate(float x, float y, float z) override;
+	void RecalculateBasisVectors();
 	// Custom
 	void SetRadius(float radius);
 	float GetRadius();

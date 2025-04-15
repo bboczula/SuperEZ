@@ -42,6 +42,11 @@ void Arcball::Rotate(float x, float y, float z)
 	// Now we really have to roatet position
 	camera->position = DirectX::SimpleMath::Vector3::Transform(camera->position, cameraRotation);
 
+	RecalculateBasisVectors();
+}
+
+void Arcball::RecalculateBasisVectors()
+{
 	// Calculation of forward vector should be easy
 	camera->forward = target - camera->position;
 	camera->forward.Normalize();

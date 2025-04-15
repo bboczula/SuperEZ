@@ -83,6 +83,23 @@ void TestPass::Update()
 			arcballCamera->SetRadius(arcballCamera->GetRadius() + zoomStep);
 		}
 	}
+
+	if (rawInput.IsKeyDown(VK_NUMPAD1) || rawInput.IsKeyDown(VK_NUMPAD3) || rawInput.IsKeyDown(VK_NUMPAD7))
+	{
+		// There is a crash, somehow we keep entering this condition, even though we don't press any key
+		auto radius = arcballCamera->GetRadius();
+		perspectiveCamera->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
+		perspectiveCamera->SetPosition(DirectX::SimpleMath::Vector3(
+			2.0f * rawInput.IsKeyDown(VK_NUMPAD1),
+			2.0f * rawInput.IsKeyDown(VK_NUMPAD7),
+			2.0f * rawInput.IsKeyDown(VK_NUMPAD3) + 0.0000001));
+		arcballCamera->SetRadius(radius);
+		arcballCamera->RecalculateBasisVectors();
+	}
+	else if (rawInput.IsKeyDown(VK_NUMPAD5))
+	{
+		// Toggle between perspective and orthographic cameras
+	}
 }
 
 void TestPass::Execute()
