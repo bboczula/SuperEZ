@@ -18,15 +18,24 @@ extern WindowContext windowContext;
 extern RawInput rawInput;
 extern WinMouse winMouse;
 
-#define USE_PERSPECTIVE_CAMERA 1
-
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-#if USE_PERSPECTIVE_CAMERA
-	perspectiveCamera = new PerspectiveCamera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
-	arcballCamera = new Arcball(perspectiveCamera);
-#else
+	CreatePerpectiveCamera(aspectRatio);
+	CreateOrthographicCamera(aspectRatio);
+
+	if (isPerspectiveCamera)
+	{
+		arcballCamera = new Arcball(perspectiveCamera);
+	}
+	else
+	{
+		arcballCamera = new Arcball(orthoCamera);
+	}
+}
+
+void TestPass::CreateOrthographicCamera(const float aspectRatio)
+{
 	float distanceToPlane = 2.0f;
 	float fov = DirectX::XMConvertToRadians(36.0f);
 	float height = tan(fov * 0.5f) * distanceToPlane;
@@ -37,17 +46,17 @@ TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 	orthoCamera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
 	orthoCamera->SetWidth(width);
 	orthoCamera->SetHeight(height);
-	arcballCamera = new Arcball(orthoCamera);
-#endif
+}
+
+void TestPass::CreatePerpectiveCamera(const float aspectRatio)
+{
+	perspectiveCamera = new PerspectiveCamera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
 }
 
 TestPass::~TestPass()
 {
-#if USE_PERSPECTIVE_CAMERA
 	delete perspectiveCamera;
-#else
 	delete orthoCamera;
-#endif
 }
 
 void TestPass::ConfigurePipelineState()
@@ -109,11 +118,14 @@ void TestPass::Execute()
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
-#if USE_PERSPECTIVE_CAMERA
-	renderContext.SetInlineConstants(commandList, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
-#else
-	renderContext.SetInlineConstants(commandList, 16, orthoCamera->GetViewProjectionMatrixPtr());
-#endif
+	if (isPerspectiveCamera)
+	{
+		renderContext.SetInlineConstants(commandList, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
+	}
+	else
+	{
+		renderContext.SetInlineConstants(commandList, 16, orthoCamera->GetViewProjectionMatrixPtr());
+	}
 
 	for (int i = 0; i < 33; i++)
 	{
