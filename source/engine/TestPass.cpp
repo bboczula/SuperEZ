@@ -105,9 +105,18 @@ void TestPass::Update()
 		arcballCamera->SetRadius(radius);
 		arcballCamera->RecalculateBasisVectors();
 	}
-	else if (rawInput.IsKeyDown(VK_NUMPAD5))
+	else if (rawInput.WasKeyDown(VK_NUMPAD5))
 	{
-		// Toggle between perspective and orthographic cameras
+		if (isPerspectiveCamera)
+		{
+			isPerspectiveCamera = FALSE;
+			arcballCamera->SetCamera(orthoCamera);
+		}
+		else
+		{
+			isPerspectiveCamera = TRUE;
+			arcballCamera->SetCamera(perspectiveCamera);
+		}
 	}
 }
 
