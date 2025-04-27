@@ -5,6 +5,9 @@
 #include "RenderContext.h"
 #include "RenderGraph.h"
 #include "Settings.h"
+#include "Observer.h"
+#include "input/WinMouse.h"
+#include "input/RawInput.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 
 #include <filesystem>
@@ -17,6 +20,9 @@ WindowContext windowContext;
 DeviceContext deviceContext;
 RenderContext renderContext;
 RenderGraph renderGraph;
+Subject<WinMessageEvent> winMessageSubject;
+RawInput rawInput;
+WinMouse winMouse;
 
 Engine::Engine()
 {
@@ -31,6 +37,10 @@ Engine::~Engine()
 void Engine::Initialize()
 {
 	OutputDebugString(L"Engine::Initialize()\n");
+	rawInput.Initialize();
+	winMessageSubject.Subscribe(&rawInput);
+	winMouse.Initialize();
+	winMessageSubject.Subscribe(&winMouse);
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
 	renderGraph.Initialize();
@@ -124,6 +134,11 @@ void Engine::LoadAssets()
 
 void Engine::Tick()
 {
+	if (rawInput.IsKeyDown(VK_ESCAPE))
+	{
+		OutputDebugString(L"Engine::Tick() - Escape key pressed\n");
+		exit(0);
+	}
 	renderGraph.Execute();
 	deviceContext.Flush();
 	deviceContext.Present();
@@ -151,5 +166,6 @@ void Engine::Run()
 			DispatchMessage(&msg);
 		}
 		Tick();
+		winMessageSubject.RunPostFrame();
 	}
 }

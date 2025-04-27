@@ -13,6 +13,8 @@
 
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	WinMessageEvent winMessageEvent(hwnd, uMsg, wParam, lParam);
+	winMessageSubject.Notify(winMessageEvent);
 	switch (uMsg)
 	{
 	case WM_DESTROY:

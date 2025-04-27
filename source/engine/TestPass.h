@@ -15,6 +15,8 @@ class TestPass : public RenderPass
 {
 public:
 	TestPass();
+	void CreateOrthographicCamera(const float aspectRatio);
+	void CreatePerpectiveCamera(const float aspectRatio);
 	~TestPass();
 	void ConfigurePipelineState() override;
 	void Prepare() override;
@@ -25,4 +27,5 @@ private:
 	PerspectiveCamera* perspectiveCamera;
 	OrthographicCamera* orthoCamera;
 	Arcball* arcballCamera;
+	BOOL isPerspectiveCamera = TRUE;
 };

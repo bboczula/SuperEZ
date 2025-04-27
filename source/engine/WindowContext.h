@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Windows.h>
+#include "Observer.h"
+
+extern Subject<WinMessageEvent> winMessageSubject;
 
 class WindowContext
 {
