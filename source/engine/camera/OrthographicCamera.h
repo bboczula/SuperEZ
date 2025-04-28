@@ -11,7 +11,4 @@ public:
 	float GetWidth() { return width; }
 	void SetHeight(float height) { this->height = height; }
 	float GetHeight() { return height; }
-private:
-	float width;
-	float height;
 };

@@ -16,6 +16,11 @@ public:
 	DirectX::SimpleMath::Vector3 GetRotation();
 	void LogInfo();
 protected:
+	enum class CameraType
+	{
+		PERSPECTIVE,
+		ORTHOGRAPHIC
+	};
 	virtual void CalculateViewProjectionMatrix() = 0;
 	const DirectX::SimpleMath::Vector3 DEFAULT_UP = { 0.0f, 1.0f, 0.0f };
 	const DirectX::SimpleMath::Vector3 DEFAULT_FORWARD = { 0.0f, 0.0f, 1.0f };
@@ -29,4 +34,18 @@ protected:
 	DirectX::SimpleMath::Vector3 forward;
 	// Matrices
 	DirectX::SimpleMath::Matrix viewProjection;
+	DirectX::SimpleMath::Matrix view;
+	DirectX::SimpleMath::Matrix projection;
+	// Projection
+	float fov = DirectX::XMConvertToRadians(36.0f);
+	float aspectRatio;
+	// Orthographic
+	float width;
+	float height;
+	// Common
+	float nearPlane = 0.1f;
+	float farPlane = 1000.0f;
+	float roll = 0.0f;
+	float pitch = 0.0f;
+	float yaw = 0.0f;
 };
