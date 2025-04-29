@@ -24,14 +24,23 @@ public:
 	float GetWidth() { return width; }
 	void SetHeight(float height) { this->height = height; }
 	float GetHeight() { return height; }
+	void SetPitch(float pitch) { this->pitch = pitch; }
+	float GetPitch() { return DirectX::XMConvertToDegrees(pitch); }
+	void SetYaw(float yaw) { this->yaw = yaw; }
+	float GetYaw() { return DirectX::XMConvertToDegrees(yaw); }
+	void SetRoll(float roll) { this->roll = roll; }
+	float GetRoll() { return DirectX::XMConvertToDegrees(roll); }
+	// Helper Functions
+	void InitializeYawAndPitchFromPosition();
 protected:
-	//virtual void CalculateViewProjectionMatrix() = 0;
+	// Devault Vectors
 	const DirectX::SimpleMath::Vector3 DEFAULT_UP = { 0.0f, 1.0f, 0.0f };
 	const DirectX::SimpleMath::Vector3 DEFAULT_FORWARD = { 0.0f, 0.0f, 1.0f };
 	const DirectX::SimpleMath::Vector3 DEFAULT_RIGTH = { 1.0f, 0.0f, 0.0f };
 	// Points
 	DirectX::SimpleMath::Vector3 position;
 	DirectX::SimpleMath::Vector3 rotation;
+	DirectX::SimpleMath::Vector3 target;
 	// Vectors
 	DirectX::SimpleMath::Vector3 up;
 	DirectX::SimpleMath::Vector3 right;

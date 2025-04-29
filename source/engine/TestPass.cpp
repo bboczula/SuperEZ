@@ -62,7 +62,7 @@ void TestPass::Update()
 	const bool isYAxisRotation = rawInput.GetMouseYDelta() != 0 && rawInput.IsMiddleButtonDown();
 	if (isXAxisRotation || isYAxisRotation)
 	{
-		arcballCamera->Rotate(-0.1f * rawInput.GetMouseYDelta(), -0.1f * rawInput.GetMouseXDelta(), 0.0f);
+		arcballCamera->Rotate(0.1f * rawInput.GetMouseYDelta(), -0.1f * rawInput.GetMouseXDelta(), 0.0f);
 	}
 
 	const bool hasMouseWheelMoved = rawInput.HasMouseWheelMoved();

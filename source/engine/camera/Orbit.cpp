@@ -1,11 +1,10 @@
 #include "Orbit.h"
 #include "Camera.h"
+#include <algorithm>
 
-Orbit::Orbit(Camera* camera) : target(0.0f, 0.0f, 0.0f)
+Orbit::Orbit(Camera* camera)
 {
 	SetCamera(camera);
-	camera->forward = target - camera->position;
-	camera->forward.Normalize();
 }
 
 Orbit::~Orbit()
@@ -28,19 +27,23 @@ void Orbit::MoveLeft(float step)
 {
 }
 
-void Orbit::Rotate(float x, float y, float z)
+void Orbit::Rotate(float pitchDeltaDegrees, float yawDeltaDegrees, float /*rollDelta*/)
 {
-	camera->rotation.x = DirectX::XMConvertToRadians(x);
-	camera->rotation.y = DirectX::XMConvertToRadians(y);
-	camera->rotation.z = DirectX::XMConvertToRadians(z);
+	// 1. Accumulate yaw and pitch deltas (convert degrees to radians)
+	camera->pitch += DirectX::XMConvertToRadians(pitchDeltaDegrees);
+	camera->yaw += DirectX::XMConvertToRadians(yawDeltaDegrees);
 
-	DirectX::SimpleMath::Matrix cameraRotationX = DirectX::SimpleMath::Matrix::CreateRotationX(camera->rotation.x);
-	DirectX::SimpleMath::Matrix cameraRotationY = DirectX::SimpleMath::Matrix::CreateRotationY(camera->rotation.y);
-	DirectX::SimpleMath::Matrix cameraRotationZ = DirectX::SimpleMath::Matrix::CreateRotationZ(camera->rotation.z);
-	auto cameraRotation = cameraRotationX * cameraRotationY * cameraRotationZ;
+	// 2. Clamp pitch to [-89°, 89°] to avoid flipping over poles
+	const float limit = DirectX::XMConvertToRadians(89.0f);
+	camera->pitch = std::clamp(camera->pitch, -limit, limit);
 
-	// Now we really have to roatet position
-	camera->position = DirectX::SimpleMath::Vector3::Transform(camera->position, cameraRotation);
+	// 3. Recalculate camera position using spherical coordinates
+	auto radius = GetRadius();
+	float x = radius * cosf(camera->pitch) * sinf(camera->yaw);
+	float y = radius * sinf(camera->pitch);
+	float z = radius * cosf(camera->pitch) * cosf(camera->yaw);
+
+	camera->position = camera->target + DirectX::SimpleMath::Vector3(x, y, z);
 
 	RecalculateBasisVectors();
 }
@@ -48,7 +51,7 @@ void Orbit::Rotate(float x, float y, float z)
 void Orbit::RecalculateBasisVectors()
 {
 	// Calculation of forward vector should be easy
-	camera->forward = target - camera->position;
+	camera->forward = camera->target - camera->position;
 	camera->forward.Normalize();
 
 	camera->right = camera->DEFAULT_UP.Cross(camera->forward);
@@ -60,15 +63,15 @@ void Orbit::RecalculateBasisVectors()
 
 void Orbit::SetRadius(float radius)
 {
-	DirectX::SimpleMath::Vector3 radiusVector = camera->position - target;
+	DirectX::SimpleMath::Vector3 radiusVector = camera->position - camera->target;
 	radiusVector.Normalize();
-	camera->position = target + (radiusVector * radius);
-	camera->forward = target - camera->position;
+	camera->position = camera->target + (radiusVector * radius);
+	camera->forward = camera->target - camera->position;
 	camera->forward.Normalize();
 }
 
 float Orbit::GetRadius()
 {
-	DirectX::SimpleMath::Vector3 radiusVector = camera->position - target;
+	DirectX::SimpleMath::Vector3 radiusVector = camera->position - camera->target;
 	return radiusVector.Length();
 }
