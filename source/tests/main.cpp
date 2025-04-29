@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "camera.h"
-#include "arcball-camera.h"
+#include "orbit-camera.h"
 
 int main(int argc, char** argv)
 {
