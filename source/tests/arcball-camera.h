@@ -2,14 +2,14 @@
 
 #include "../engine/camera/Camera.h"
 #include "../engine/camera/Camera.h"
-#include "../engine/camera/Arcball.h"
+#include "../engine/camera/Orbit.h"
 
 namespace CameraUnitTest
 {
 	TEST(ArballCameraSuite, RotateYRight90Degrees)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
@@ -22,7 +22,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYLeft90Degrees)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, -90.0f, 0.0f);
@@ -35,7 +35,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYRight180Degrees)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, 180.0f, 0.0f);
@@ -48,7 +48,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYLeft180Degrees)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, -180.0f, 0.0f);
@@ -61,7 +61,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYRight360Degrees)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, 360.0f, 0.0f);
@@ -74,7 +74,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYLeft360Degrees)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, -360.0f, 0.0f);
@@ -87,7 +87,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYRight90Degrees_StartOnXAxis)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(-3.0f, 0.0f, 0.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
@@ -100,7 +100,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotateYLeft90Degrees_StartOnXAxis)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(-3.0f, 0.0f, 0.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		const float ABS_ERROR = 0.000001f;
 		arcball->Rotate(0.0f, -90.0f, 0.0f);
@@ -113,7 +113,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RadiusLength_1)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 3.0f);
 	}
@@ -121,7 +121,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RadiusLength_2)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 5.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 5.0f);
 	}
@@ -129,7 +129,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RadiusLength_3)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, -5.0f, 0.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 5.0f);
 	}
@@ -137,7 +137,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RadiusLength_4)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(4.0f, 0.0f, 0.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 4.0f);
 	}
@@ -145,7 +145,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RadiusLength_5)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 		camera->SetPosition(DirectX::SimpleMath::Vector3(0.0f, -6.0f, 0.0f));
 
 		ASSERT_EQ(arcball->GetRadius(), 6.0f);
@@ -154,7 +154,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, SetRadiusLength_1)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 		arcball->SetRadius(10.0f);
 
 		ASSERT_EQ(arcball->GetRadius(), 10.0f);
@@ -163,7 +163,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, DefaultRadiusRotation_1)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
 
 		const float ABS_ERROR = 0.000001f;
@@ -173,7 +173,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, SetRadiusRotation_1)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 		arcball->SetRadius(10.0f);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
 
@@ -184,7 +184,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotationSetRadius_1)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
 		arcball->SetRadius(10.0f);
 
@@ -194,7 +194,7 @@ namespace CameraUnitTest
 	TEST(ArballCameraSuite, RotationSetRadius_2)
 	{
 		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
-		Arcball* arcball = new Arcball(camera);
+		Orbit* arcball = new Orbit(camera);
 		arcball->SetRadius(10.0f);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
 

@@ -6,7 +6,7 @@ class Camera
 {
 	friend class FreeCamera;
 	friend class FirstPersonCamera;
-	friend class Arcball;
+	friend class Orbit;
 public:
 	enum class CameraType
 	{

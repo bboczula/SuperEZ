@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../engine/camera/Camera.h"
-#include "../engine/camera/Arcball.h"
+#include "../engine/camera/Orbit.h"
 
 namespace CameraUnitTest
 {

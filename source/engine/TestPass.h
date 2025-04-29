@@ -8,7 +8,7 @@
 
 class Camera;
 class Camera;
-class Arcball;
+class Orbit;
 class Camera;
 
 class TestPass : public RenderPass
@@ -24,6 +24,6 @@ public:
 	void Allocate(DeviceContext* deviceContext) override;
 private:
 	Camera* camera;
-	Arcball* arcballCamera;
+	Orbit* arcballCamera;
 	BOOL isPerspectiveCamera = TRUE;
 };

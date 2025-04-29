@@ -21,7 +21,7 @@ TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 	camera = new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
-	arcballCamera = new Arcball(camera);
+	arcballCamera = new Orbit(camera);
 }
 
 void TestPass::SetOrthographicProperties(const float aspectRatio)

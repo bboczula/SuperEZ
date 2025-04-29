@@ -3,11 +3,11 @@
 #include "CameraControler.h"
 #include "../../externals/SimpleMath/SimpleMath.h"
 
-class Arcball : public CameraControler
+class Orbit : public CameraControler
 {
 public:
-	Arcball(Camera* camera);
-	~Arcball();
+	Orbit(Camera* camera);
+	~Orbit();
 	// Move
 	void MoveForward(float step) override;
 	void MoveBackward(float step) override;

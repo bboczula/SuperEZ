@@ -1,34 +1,34 @@
 #include "Orbit.h"
 #include "Camera.h"
 
-Arcball::Arcball(Camera* camera) : target(0.0f, 0.0f, 0.0f)
+Orbit::Orbit(Camera* camera) : target(0.0f, 0.0f, 0.0f)
 {
 	SetCamera(camera);
 	camera->forward = target - camera->position;
 	camera->forward.Normalize();
 }
 
-Arcball::~Arcball()
+Orbit::~Orbit()
 {
 }
 
-void Arcball::MoveForward(float step)
+void Orbit::MoveForward(float step)
 {
 }
 
-void Arcball::MoveBackward(float step)
+void Orbit::MoveBackward(float step)
 {
 }
 
-void Arcball::MoveRight(float step)
+void Orbit::MoveRight(float step)
 {
 }
 
-void Arcball::MoveLeft(float step)
+void Orbit::MoveLeft(float step)
 {
 }
 
-void Arcball::Rotate(float x, float y, float z)
+void Orbit::Rotate(float x, float y, float z)
 {
 	camera->rotation.x = DirectX::XMConvertToRadians(x);
 	camera->rotation.y = DirectX::XMConvertToRadians(y);
@@ -45,7 +45,7 @@ void Arcball::Rotate(float x, float y, float z)
 	RecalculateBasisVectors();
 }
 
-void Arcball::RecalculateBasisVectors()
+void Orbit::RecalculateBasisVectors()
 {
 	// Calculation of forward vector should be easy
 	camera->forward = target - camera->position;
@@ -58,7 +58,7 @@ void Arcball::RecalculateBasisVectors()
 	camera->up *= -1.0f;
 }
 
-void Arcball::SetRadius(float radius)
+void Orbit::SetRadius(float radius)
 {
 	DirectX::SimpleMath::Vector3 radiusVector = camera->position - target;
 	radiusVector.Normalize();
@@ -67,7 +67,7 @@ void Arcball::SetRadius(float radius)
 	camera->forward.Normalize();
 }
 
-float Arcball::GetRadius()
+float Orbit::GetRadius()
 {
 	DirectX::SimpleMath::Vector3 radiusVector = camera->position - target;
 	return radiusVector.Length();
