@@ -8,20 +8,24 @@ class Camera
 	friend class FirstPersonCamera;
 	friend class Arcball;
 public:
-	Camera();
-	DirectX::SimpleMath::Matrix* GetViewProjectionMatrixPtr();
-	void SetPosition(DirectX::SimpleMath::Vector3 position);
-	DirectX::SimpleMath::Vector3 GetPosition();
-	void SetRotation(DirectX::SimpleMath::Vector3 rotation);
-	DirectX::SimpleMath::Vector3 GetRotation();
-	void LogInfo();
-protected:
 	enum class CameraType
 	{
 		PERSPECTIVE,
 		ORTHOGRAPHIC
 	};
-	virtual void CalculateViewProjectionMatrix() = 0;
+	Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position);
+	DirectX::SimpleMath::Matrix* GetViewProjectionMatrixPtr(CameraType type);
+	void SetPosition(DirectX::SimpleMath::Vector3 position);
+	DirectX::SimpleMath::Vector3 GetPosition();
+	void SetRotation(DirectX::SimpleMath::Vector3 rotation);
+	DirectX::SimpleMath::Vector3 GetRotation();
+	void CalculateViewProjectionMatrix(CameraType type);
+	void SetWidth(float width) { this->width = width; }
+	float GetWidth() { return width; }
+	void SetHeight(float height) { this->height = height; }
+	float GetHeight() { return height; }
+protected:
+	//virtual void CalculateViewProjectionMatrix() = 0;
 	const DirectX::SimpleMath::Vector3 DEFAULT_UP = { 0.0f, 1.0f, 0.0f };
 	const DirectX::SimpleMath::Vector3 DEFAULT_FORWARD = { 0.0f, 0.0f, 1.0f };
 	const DirectX::SimpleMath::Vector3 DEFAULT_RIGTH = { 1.0f, 0.0f, 0.0f };

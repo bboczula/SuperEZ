@@ -6,8 +6,8 @@
 // The test pass first will create its own Render Target and Vertex Buffer,
 // and then it will render a triangle to the screen.
 
-class PerspectiveCamera;
-class OrthographicCamera;
+class Camera;
+class Camera;
 class Arcball;
 class Camera;
 
@@ -15,8 +15,7 @@ class TestPass : public RenderPass
 {
 public:
 	TestPass();
-	void CreateOrthographicCamera(const float aspectRatio);
-	void CreatePerpectiveCamera(const float aspectRatio);
+	void SetOrthographicProperties(const float aspectRatio);
 	~TestPass();
 	void ConfigurePipelineState() override;
 	void Prepare() override;
@@ -24,8 +23,7 @@ public:
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
-	PerspectiveCamera* perspectiveCamera;
-	OrthographicCamera* orthoCamera;
+	Camera* camera;
 	Arcball* arcballCamera;
 	BOOL isPerspectiveCamera = TRUE;
 };

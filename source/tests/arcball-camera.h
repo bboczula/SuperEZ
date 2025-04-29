@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
-#include "../engine/camera/PerspectiveCamera.h"
-#include "../engine/camera/OrthographicCamera.h"
+#include "../engine/camera/Camera.h"
+#include "../engine/camera/Camera.h"
 #include "../engine/camera/Arcball.h"
 
 namespace CameraUnitTest
 {
 	TEST(ArballCameraSuite, RotateYRight90Degrees)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -21,7 +21,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYLeft90Degrees)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -34,7 +34,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYRight180Degrees)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -47,7 +47,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYLeft180Degrees)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -60,7 +60,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYRight360Degrees)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -73,7 +73,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYLeft360Degrees)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -86,7 +86,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYRight90Degrees_StartOnXAxis)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(-3.0f, 0.0f, 0.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(-3.0f, 0.0f, 0.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -99,7 +99,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotateYLeft90Degrees_StartOnXAxis)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(-3.0f, 0.0f, 0.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(-3.0f, 0.0f, 0.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		const float ABS_ERROR = 0.000001f;
@@ -112,7 +112,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RadiusLength_1)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 3.0f);
@@ -120,7 +120,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RadiusLength_2)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 5.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 5.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 5.0f);
@@ -128,7 +128,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RadiusLength_3)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, -5.0f, 0.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, -5.0f, 0.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 5.0f);
@@ -136,7 +136,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RadiusLength_4)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(4.0f, 0.0f, 0.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(4.0f, 0.0f, 0.0f));
 		Arcball* arcball = new Arcball(camera);
 
 		ASSERT_EQ(arcball->GetRadius(), 4.0f);
@@ -144,7 +144,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RadiusLength_5)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, -3.0f));
 		Arcball* arcball = new Arcball(camera);
 		camera->SetPosition(DirectX::SimpleMath::Vector3(0.0f, -6.0f, 0.0f));
 
@@ -153,7 +153,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, SetRadiusLength_1)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
 		Arcball* arcball = new Arcball(camera);
 		arcball->SetRadius(10.0f);
 
@@ -162,7 +162,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, DefaultRadiusRotation_1)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
 		Arcball* arcball = new Arcball(camera);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
 
@@ -172,7 +172,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, SetRadiusRotation_1)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
 		Arcball* arcball = new Arcball(camera);
 		arcball->SetRadius(10.0f);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
@@ -183,7 +183,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotationSetRadius_1)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
 		Arcball* arcball = new Arcball(camera);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
 		arcball->SetRadius(10.0f);
@@ -193,7 +193,7 @@ namespace CameraUnitTest
 
 	TEST(ArballCameraSuite, RotationSetRadius_2)
 	{
-		PerspectiveCamera* camera = new PerspectiveCamera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
+		Camera* camera = new Camera(1.0f, DirectX::SimpleMath::Vector3(0.0f, 0.0f, 3.0f));
 		Arcball* arcball = new Arcball(camera);
 		arcball->SetRadius(10.0f);
 		arcball->Rotate(0.0f, 90.0f, 0.0f);
