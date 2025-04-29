@@ -1,4 +1,4 @@
-#include "Arcball.h"
+#include "Orbit.h"
 #include "Camera.h"
 
 Arcball::Arcball(Camera* camera) : target(0.0f, 0.0f, 0.0f)

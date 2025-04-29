@@ -5,7 +5,7 @@
 #include "WindowContext.h"
 #include "InputLayout.h"
 #include "camera/Camera.h"
-#include "camera/Arcball.h"
+#include "camera/Orbit.h"
 #include "input/RawInput.h"
 #include "input/WinMouse.h"
 
