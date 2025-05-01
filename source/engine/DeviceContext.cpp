@@ -218,8 +218,23 @@ void DeviceContext::SetDebugNames()
 void DeviceContext::CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
 	D3D12_RESOURCE_STATES initResourceState, const IID &riidResource, void** ppResource)
 {
+	D3D12_CLEAR_VALUE clearValue = {};
+	clearValue.Format = desc->Format;
+	clearValue.Color[0] = 1.0f;
+
+	switch (desc->Format)
+	{
+	case DXGI_FORMAT_D32_FLOAT:
+		break;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+		clearValue.Color[1] = 0.980f;
+		clearValue.Color[2] = 0.900f;
+		clearValue.Color[3] = 1.0f;
+		break;
+	}
+
 	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
-	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
+	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, &clearValue, riidResource, ppResource);
 }
 
 void DeviceContext::CreateUploadResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,

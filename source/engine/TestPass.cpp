@@ -4,9 +4,8 @@
 #include "DeviceContext.h"
 #include "WindowContext.h"
 #include "InputLayout.h"
-#include "camera/PerspectiveCamera.h"
-#include "camera/OrthographicCamera.h"
-#include "camera/Arcball.h"
+#include "camera/Camera.h"
+#include "camera/Orbit.h"
 #include "input/RawInput.h"
 #include "input/WinMouse.h"
 
@@ -21,42 +20,26 @@ extern WinMouse winMouse;
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	CreatePerpectiveCamera(aspectRatio);
-	CreateOrthographicCamera(aspectRatio);
-
-	if (isPerspectiveCamera)
-	{
-		arcballCamera = new Arcball(perspectiveCamera);
-	}
-	else
-	{
-		arcballCamera = new Arcball(orthoCamera);
-	}
+	camera = new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
+	arcballCamera = new Orbit(camera);
 }
 
-void TestPass::CreateOrthographicCamera(const float aspectRatio)
+void TestPass::SetOrthographicProperties(const float aspectRatio)
 {
-	float distanceToPlane = 2.0f;
+	float distanceToPlane = arcballCamera->GetRadius();
 	float fov = DirectX::XMConvertToRadians(36.0f);
 	float height = tan(fov * 0.5f) * distanceToPlane;
 	float width = height * aspectRatio;
 	width *= 2.0f;
 	height *= 2.0f;
 
-	orthoCamera = new OrthographicCamera(DirectX::SimpleMath::Vector3(0.0f, 0.0f, 2.0f));
-	orthoCamera->SetWidth(width);
-	orthoCamera->SetHeight(height);
-}
-
-void TestPass::CreatePerpectiveCamera(const float aspectRatio)
-{
-	perspectiveCamera = new PerspectiveCamera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
+	camera->SetWidth(width);
+	camera->SetHeight(height);
 }
 
 TestPass::~TestPass()
 {
-	delete perspectiveCamera;
-	delete orthoCamera;
+	delete camera;
 }
 
 void TestPass::ConfigurePipelineState()
@@ -79,7 +62,7 @@ void TestPass::Update()
 	const bool isYAxisRotation = rawInput.GetMouseYDelta() != 0 && rawInput.IsMiddleButtonDown();
 	if (isXAxisRotation || isYAxisRotation)
 	{
-		arcballCamera->Rotate(-0.1f * rawInput.GetMouseYDelta(), -0.1f * rawInput.GetMouseXDelta(), 0.0f);
+		arcballCamera->Rotate(0.1f * rawInput.GetMouseYDelta(), -0.1f * rawInput.GetMouseXDelta(), 0.0f);
 	}
 
 	const bool hasMouseWheelMoved = rawInput.HasMouseWheelMoved();
@@ -97,8 +80,8 @@ void TestPass::Update()
 	{
 		// There is a crash, somehow we keep entering this condition, even though we don't press any key
 		auto radius = arcballCamera->GetRadius();
-		perspectiveCamera->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
-		perspectiveCamera->SetPosition(DirectX::SimpleMath::Vector3(
+		camera->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
+		camera->SetPosition(DirectX::SimpleMath::Vector3(
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD1),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD7),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD3) + 0.0000001));
@@ -107,15 +90,10 @@ void TestPass::Update()
 	}
 	else if (rawInput.WasKeyDown(VK_NUMPAD5))
 	{
-		if (isPerspectiveCamera)
+		isPerspectiveCamera = !isPerspectiveCamera;
+		if (!isPerspectiveCamera)
 		{
-			isPerspectiveCamera = FALSE;
-			arcballCamera->SetCamera(orthoCamera);
-		}
-		else
-		{
-			isPerspectiveCamera = TRUE;
-			arcballCamera->SetCamera(perspectiveCamera);
+			SetOrthographicProperties(static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()));
 		}
 	}
 }
@@ -127,15 +105,9 @@ void TestPass::Execute()
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
-	if (isPerspectiveCamera)
-	{
-		renderContext.SetInlineConstants(commandList, 16, perspectiveCamera->GetViewProjectionMatrixPtr());
-	}
-	else
-	{
-		renderContext.SetInlineConstants(commandList, 16, orthoCamera->GetViewProjectionMatrixPtr());
-	}
-
+	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
+	renderContext.SetInlineConstants(commandList, 16, camera->GetViewProjectionMatrixPtr(type));
+	
 	for (int i = 0; i < 33; i++)
 	{
 		renderContext.BindGeometry(commandList, HMesh(i));
