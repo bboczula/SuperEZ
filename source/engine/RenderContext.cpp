@@ -396,19 +396,23 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 {
 	OutputDebugString(L"CreateMesh\n");
 
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition;
-	vbvPosition.BufferLocation = vertexBuffers[vbIndexPosition.Index()]->GetResource()->GetGPUVirtualAddress();
-	vbvPosition.StrideInBytes = 4 * sizeof(float);
-	vbvPosition.SizeInBytes = vertexBuffers[vbIndexPosition.Index()]->GetSizeInBytes();
+	auto createVBV = [&](HVertexBuffer handle, UINT stride) -> D3D12_VERTEX_BUFFER_VIEW
+	{
+		auto& vb = vertexBuffers[handle.Index()];
+		D3D12_VERTEX_BUFFER_VIEW vbv;
+		vbv.BufferLocation = vb->GetResource()->GetGPUVirtualAddress();
+		vbv.StrideInBytes = stride;
+		vbv.SizeInBytes = vb->GetSizeInBytes();
+		return vbv;
+	};
 
-	D3D12_VERTEX_BUFFER_VIEW vbvColor;
-	vbvColor.BufferLocation = vertexBuffers[vbIndexColor.Index()]->GetResource()->GetGPUVirtualAddress();
-	vbvColor.StrideInBytes = 4 * sizeof(float);
-	vbvColor.SizeInBytes = vertexBuffers[vbIndexColor.Index()]->GetSizeInBytes();
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
 
-	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices() * 3;
+	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
 }
+
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
 {
