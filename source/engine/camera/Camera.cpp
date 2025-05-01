@@ -38,28 +38,20 @@ DirectX::SimpleMath::Vector3 Camera::GetRotation()
 
 void Camera::InitializeYawAndPitchFromPosition()
 {
-	// Step 1: Compute offset from target
 	DirectX::SimpleMath::Vector3 offset = position - target;
 
 	auto radius = offset.Length();
 
 	if (radius < 0.0001f)
 	{
-		// Prevent division by zero if somehow sitting on target
 		yaw = 0.0f;
 		pitch = 0.0f;
 		return;
 	}
 
-	// Step 3: Calculate pitch (vertical angle)
 	pitch = asinf(offset.y / radius);
-	// asin returns value between -90 and +90 degrees (in radians)
 
-	// Step 4: Calculate yaw (horizontal angle)
 	yaw = atan2f(offset.x, offset.z);
-	// atan2 handles quadrants properly
-
-	// Yaw will be between -pi and +pi, perfectly good for orbit
 }
 
 void Camera::CalculateViewProjectionMatrix(CameraType type)
