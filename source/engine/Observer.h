@@ -4,7 +4,8 @@
 #include <Windows.h>
 
 // Define your WinMessageEvent struct
-struct WinMessageEvent {
+struct WinMessageEvent
+{
       HWND hwnd;
       UINT msg;
       WPARAM wParam;
@@ -13,7 +14,8 @@ struct WinMessageEvent {
 
 // Generic observer interface
 template<typename Event>
-class IObserver {
+class IObserver
+{
 public:
       virtual void OnNotify(Event& event) = 0;
       virtual ~IObserver() = default;
@@ -23,25 +25,30 @@ public:
 
 // Subject class that manages observers
 template<typename Event>
-class Subject {
+class Subject
+{
       std::vector<IObserver<Event>*> observers;
 
 public:
-      void Subscribe(IObserver<Event>* observer) {
+      void Subscribe(IObserver<Event>* observer)
+      {
             observers.push_back(observer);
       }
 
-      void Unsubscribe(IObserver<Event>* observer) {
+      void Unsubscribe(IObserver<Event>* observer)
+      {
             observers.erase(std::remove(observers.begin(), observers.end(), observer), observers.end());
       }
 
-      void Notify(Event& event) {
+      void Notify(Event& event)
+      {
             for (auto* obs : observers) {
                   obs->OnNotify(event);
             }
       }
 
-	void RunPostFrame() {
+	void RunPostFrame()
+      {
 		for (auto* obs : observers) {
 			obs->PostFrame();
 		}
