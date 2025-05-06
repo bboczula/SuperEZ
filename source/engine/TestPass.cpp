@@ -108,7 +108,7 @@ void TestPass::Execute()
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.SetInlineConstants(commandList, 16, camera->GetViewProjectionMatrixPtr(type));
 	
-	for (int i = 0; i < 33; i++)
+	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
 		renderContext.BindGeometry(commandList, HMesh(i));
 		renderContext.DrawMesh(commandList, HMesh(i));

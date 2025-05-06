@@ -38,6 +38,7 @@ public:
 	void ExecuteCommandList(HCommandList commandList);
 	HCommandList CreateCommandList();
 	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
+	UINT GetNumOfMeshes() { return static_cast<UINT>(meshes.size()); }
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
