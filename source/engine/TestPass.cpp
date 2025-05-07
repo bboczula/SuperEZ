@@ -7,7 +7,6 @@
 #include "camera/Camera.h"
 #include "camera/Orbit.h"
 #include "input/RawInput.h"
-#include "input/WinMouse.h"
 
 #include <pix3.h>
 
@@ -15,7 +14,6 @@ extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 extern WindowContext windowContext;
 extern RawInput rawInput;
-extern WinMouse winMouse;
 
 TestPass::TestPass() : RenderPass(L"Test", Type::Default)
 {
