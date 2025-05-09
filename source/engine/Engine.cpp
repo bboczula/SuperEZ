@@ -54,7 +54,9 @@ void Engine::LoadAssets()
 	//currentPath.append("teapot.obj");
 	//currentPath.append("cube.obj");
 	//currentPath.append("temple.obj");
-	currentPath.append("chess.obj");
+	//currentPath.append("chess.obj");
+	//currentPath.append("bunny.obj");
+	currentPath.append("sponza.obj");
 
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
@@ -73,40 +75,52 @@ void Engine::LoadAssets()
 	//	"RoofEdge_Mesh"
 	//};
 
+	//std::vector<std::string> meshNames = {
+	//	"Chess_Board_Mesh",
+	//	"Pawn_3_Dark_Mesh",
+	//	"Bishop_Dark_Mesh",
+	//	"Tower_2_Dark_Mesh",
+	//	"Queen_Dark_Mesh",
+	//	"King_Dark_Mesh",
+	//	"Knight_2_Dark_Mesh",
+	//	"Knight_Dark_Mesh",
+	//	"Tower_Dark_Mesh",
+	//	"Bishop_2_Dark_Mesh",
+	//	"Pawn_2_Dark_Mesh",
+	//	"Pawn_4_Dark_Mesh",
+	//	"Pawn_5_Dark_Mesh",
+	//	"Pawn_6_Dark_Mesh",
+	//	"Pawn_7_Dark_Mesh",
+	//	"Pawn_8_Dark_Mesh",
+	//	"Pawn_Dark_Mesh",
+	//	"Pawn_3_Light_Mesh",
+	//	"Bishop_Light_Mesh",
+	//	"Tower_2_Light_Mesh",
+	//	"Queen_Light_Mesh",
+	//	"King_Light_Mesh",
+	//	"Knight_2_Light_Mesh",
+	//	"Knight_Light_Mesh",
+	//	"Tower_Light_Mesh",
+	//	"Bishop_2_Light_Mesh",
+	//	"Pawn_2_Light_Mesh",
+	//	"Pawn_4_Light_Mesh",
+	//	"Pawn_5_Light_Mesh",
+	//	"Pawn_6_Light_Mesh",
+	//	"Pawn_7_Light_Mesh",
+	//	"Pawn_8_Light_Mesh",
+	//	"Pawn_Light_Mesh"
+	//};
+
+	//std::vector<std::string> meshNames = {
+	//	"bunny_Mesh"
+	//};
+
+	//std::vector<std::string> meshNames = {
+	//	"teapot_Mesh"
+	//};
+
 	std::vector<std::string> meshNames = {
-		"Chess_Board_Mesh",
-		"Pawn_3_Dark_Mesh",
-		"Bishop_Dark_Mesh",
-		"Tower_2_Dark_Mesh",
-		"Queen_Dark_Mesh",
-		"King_Dark_Mesh",
-		"Knight_2_Dark_Mesh",
-		"Knight_Dark_Mesh",
-		"Tower_Dark_Mesh",
-		"Bishop_2_Dark_Mesh",
-		"Pawn_2_Dark_Mesh",
-		"Pawn_4_Dark_Mesh",
-		"Pawn_5_Dark_Mesh",
-		"Pawn_6_Dark_Mesh",
-		"Pawn_7_Dark_Mesh",
-		"Pawn_8_Dark_Mesh",
-		"Pawn_Dark_Mesh",
-		"Pawn_3_Light_Mesh",
-		"Bishop_Light_Mesh",
-		"Tower_2_Light_Mesh",
-		"Queen_Light_Mesh",
-		"King_Light_Mesh",
-		"Knight_2_Light_Mesh",
-		"Knight_Light_Mesh",
-		"Tower_Light_Mesh",
-		"Bishop_2_Light_Mesh",
-		"Pawn_2_Light_Mesh",
-		"Pawn_4_Light_Mesh",
-		"Pawn_5_Light_Mesh",
-		"Pawn_6_Light_Mesh",
-		"Pawn_7_Light_Mesh",
-		"Pawn_8_Light_Mesh",
-		"Pawn_Light_Mesh"
+		"sponza_Mesh"
 	};
 
 	for (const auto& meshName : meshNames)
