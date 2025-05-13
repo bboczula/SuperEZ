@@ -215,31 +215,48 @@ void DeviceContext::SetDebugNames()
 	ExitIfFailed(fence->SetName(L"Device Context Fence"));
 }
 
-void DeviceContext::CreateResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
+void DeviceContext::CreateGpuResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
 	D3D12_RESOURCE_STATES initResourceState, const IID &riidResource, void** ppResource)
 {
-	D3D12_CLEAR_VALUE clearValue = {};
-	clearValue.Format = desc->Format;
-	clearValue.Color[0] = 1.0f;
+	const auto isBuffer = desc->Dimension == D3D12_RESOURCE_DIMENSION_BUFFER;
+	const auto isRenderTarget = (desc->Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) != 0;
+	const auto isDepthStencil = (desc->Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) != 0;
 
-	switch (desc->Format)
+	auto requiresNullClearValue = [](bool isBuffer, bool isRenderTarget, bool isDepthStencil)
+		{
+			return !isBuffer && !isRenderTarget && !isDepthStencil;
+		};
+
+	D3D12_CLEAR_VALUE* clearValue = nullptr;
+	D3D12_CLEAR_VALUE optimalClearValue = {};
+	if (!requiresNullClearValue(isBuffer, isRenderTarget, isDepthStencil))
 	{
-	case DXGI_FORMAT_D32_FLOAT:
-		break;
-	case DXGI_FORMAT_R8G8B8A8_UNORM:
-		clearValue.Color[1] = 0.980f;
-		clearValue.Color[2] = 0.900f;
-		clearValue.Color[3] = 1.0f;
-		break;
+		optimalClearValue.Format = desc->Format;
+		optimalClearValue.Color[0] = 1.0f;
+
+		switch (desc->Format)
+		{
+		case DXGI_FORMAT_D32_FLOAT:
+			break;
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+			optimalClearValue.Color[1] = 0.980f;
+			optimalClearValue.Color[2] = 0.900f;
+			optimalClearValue.Color[3] = 1.0f;
+			break;
+		}
+
+		clearValue = &optimalClearValue;
 	}
 
 	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
-	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, &clearValue, riidResource, ppResource);
+
+	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, clearValue, riidResource, ppResource);
 }
 
 void DeviceContext::CreateUploadResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
 	D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource)
 {
 	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_UPLOAD);
+
 	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
 }

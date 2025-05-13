@@ -214,7 +214,6 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
 	// over. Please read up on Default Heap usage. An upload heap is used here for 
 	// code simplicity and because there are very few verts to actually transfer.
-	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
 	const D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
 	ID3D12Resource* vertexBuffer;
@@ -319,7 +318,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
 
 	ID3D12Resource* resource;
-	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Empty Texture");
 	
 	CHAR name[] = "EmptyTexture";
@@ -339,7 +338,7 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 
 	ID3D12Resource* resource;
-	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Depth Texture");
 
 	CHAR tempName[32];
@@ -365,7 +364,7 @@ HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	ID3D12Resource* resource;
-	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
