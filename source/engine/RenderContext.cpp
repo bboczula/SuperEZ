@@ -412,6 +412,14 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
 }
 
+void RenderContext::CreateSimpleTexture()
+{
+	OutputDebugString(L"CreateSimpleTexture\n");
+	// Create a simple texture
+	UINT width = 256;
+	UINT height = 256;
+	CreateEmptyTexture(width, height);
+}
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
 {
