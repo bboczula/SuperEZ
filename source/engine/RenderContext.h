@@ -13,6 +13,7 @@ class DeviceContext;
 class RenderTarget;
 class DepthBuffer;
 class Texture;
+class Buffer;
 class VertexBuffer;
 class Mesh;
 class InputLayout;
@@ -44,11 +45,14 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name);
 	void CreateSimpleTexture();
+	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
+	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
@@ -68,6 +72,8 @@ public:
 	// Barriers
 	void TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state);
 	void TransitionBack(HCommandList commandList, HTexture texture);
+	void TransitionTo(HCommandList commandList, HBuffer buffer, D3D12_RESOURCE_STATES state);
+	void TransitionBack(HCommandList commandList, HBuffer buffer);
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 private:
@@ -80,6 +86,7 @@ private:
 	std::vector<DepthBuffer*> depthBuffers;
 	std::vector<CommandList*> commandLists;
 	std::vector<Texture*> textures;
+	std::vector<Buffer*> buffers;
 	std::vector<VertexBuffer*> vertexBuffers;
 	std::vector<Mesh*> meshes;
 	std::vector<ID3DBlob*> vertexShaders;

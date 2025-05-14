@@ -25,6 +25,7 @@ private:
 
 // Type aliases for clarity
 class Texture;
+class Buffer;
 class VertexBuffer;
 class RenderTarget;
 class DepthBuffer;
@@ -37,6 +38,7 @@ class RootSignature;
 class VieportAndScissors;
 
 using HTexture = Handle<Texture>;
+using HBuffer = Handle<Buffer>;
 using HVertexBuffer = Handle<VertexBuffer>;
 using HRenderTarget = Handle<RenderTarget>;
 using HDepthBuffer = Handle<DepthBuffer>;

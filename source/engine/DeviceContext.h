@@ -22,6 +22,7 @@ public:
 		D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource);
 	void CreateUploadResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
 		D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource);
+	UINT64 GetCopyableFootprintsSize(D3D12_RESOURCE_DESC& resourceDesc, D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout);
 	void Present();
 	void Flush();
 private:

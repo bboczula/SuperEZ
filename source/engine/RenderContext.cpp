@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "VertexBuffer.h"
 #include "InputLayout.h"
+#include "Buffer.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -391,6 +392,49 @@ void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HText
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
+HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
+{
+	OutputDebugString(L"CreateTextureUploadBuffer\n");
+
+	auto texture = textures[textureHandle.Index()]->GetResource();
+	auto textureDesc = texture->GetDesc();
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
+	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
+
+	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	
+	ID3D12Resource* textureUploadBuffer;
+	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
+
+	CHAR name[] = "TextureUploadBuffer";
+	buffers.push_back(new Buffer(textureUploadBuffer, layout, name));
+
+	return HBuffer(buffers.size() - 1);
+}
+
+void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
+{
+	OutputDebugString(L"CopyBufferToTexture\n");
+	
+	auto gpuTexture = textures[texture.Index()]->GetResource();
+	D3D12_TEXTURE_COPY_LOCATION dst = {};
+	dst.pResource = gpuTexture;
+	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	dst.SubresourceIndex = 0;
+
+	auto uploadBuffer = buffers[buffer.Index()]->GetResource();
+	auto layout = buffers[buffer.Index()]->GetLayout();
+	D3D12_TEXTURE_COPY_LOCATION src = {};
+	src.pResource = uploadBuffer;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	src.PlacedFootprint = layout;
+
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+}
+
 void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
@@ -415,10 +459,52 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 void RenderContext::CreateSimpleTexture()
 {
 	OutputDebugString(L"CreateSimpleTexture\n");
-	// Create a simple texture
+	
 	UINT width = 256;
 	UINT height = 256;
-	CreateEmptyTexture(width, height);
+	auto textureHandle = CreateEmptyTexture(width, height);
+	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
+
+	auto uploadCommandList = CreateCommandList();
+	ResetCommandList(uploadCommandList);
+
+	FillTextureUploadBuffer(width, height, bufferHandle);
+
+	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
+
+	CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
+
+	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	CloseCommandList(uploadCommandList);
+
+	ExecuteCommandList(uploadCommandList);
+}
+
+void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle)
+{
+	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
+	std::vector<UINT32> pixels(width * height);
+	for (UINT y = 0; y < height; ++y) {
+		for (UINT x = 0; x < width; ++x) {
+			UINT32 color = (x ^ y) & 0xFF;
+			pixels[y * width + x] = 0xFF000000 | (color << 16) | (color << 8) | color;
+		}
+	}
+
+	UINT8* mappedData = nullptr;
+	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
+	auto layout = buffers[bufferHandle.Index()]->GetLayout();
+
+	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
+			&pixels[y * width],
+			width * sizeof(UINT32));
+	}
+
+	uploadBuffer->Unmap(0, nullptr);
 }
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
@@ -515,6 +601,32 @@ void RenderContext::TransitionBack(HCommandList commandList, HTexture texture)
 {
 	auto previousState = textures[texture.Index()]->GetPreviousState();
 	TransitionTo(commandList, texture, previousState);
+}
+
+void RenderContext::TransitionTo(HCommandList commandList, HBuffer buffer, D3D12_RESOURCE_STATES state)
+{
+	if (buffers[buffer.Index()]->GetCurrentState() == state)
+	{
+		return;
+	}
+
+	D3D12_RESOURCE_BARRIER barrier;
+	ZeroMemory(&barrier, sizeof(barrier));
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = buffers[buffer.Index()]->GetResource();
+	barrier.Transition.StateBefore = buffers[buffer.Index()]->GetCurrentState();
+	barrier.Transition.StateAfter = state;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	commandLists[commandList.Index()]->GetCommandList()->ResourceBarrier(1, &barrier);
+
+	buffers[buffer.Index()]->SetCurrentState(state);
+}
+
+void RenderContext::TransitionBack(HCommandList commandList, HBuffer buffer)
+{
+	auto previousState = buffers[buffer.Index()]->GetPreviousState();
+	TransitionTo(commandList, buffer, previousState);
 }
 
 void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
