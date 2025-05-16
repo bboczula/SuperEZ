@@ -38,6 +38,7 @@ void Engine::Initialize()
 	rawInput.Initialize();
 	winMessageSubject.Subscribe(&rawInput);
 	renderContext.CreateDescriptorHeap(&deviceContext);
+	renderContext.CreateDefaultSamplers();
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
 	renderGraph.Initialize();
 }

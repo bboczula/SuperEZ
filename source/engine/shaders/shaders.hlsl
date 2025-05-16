@@ -8,6 +8,8 @@
 // PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
 //
 //*********************************************************
+SamplerState LinearSampler : register(s0);
+
 cbuffer CameraData : register(b0)
 {
 	float4x4 viewProjection;
@@ -20,7 +22,6 @@ struct PSInput
 };
 
 PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
-//PSInput VSMain(float4 position : POSITION)
 {
     PSInput result;
 
@@ -33,5 +34,4 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 float4 PSMain(PSInput input) : SV_TARGET
 {
     return input.color;
-	//return float4(0.89f, 0.43f, 0.07f, 1.0f);
 }

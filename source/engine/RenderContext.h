@@ -53,6 +53,7 @@ public:
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CreateDefaultSamplers();
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
@@ -66,6 +67,7 @@ public:
 	void CloseCommandList(HCommandList commandList);
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
+	void BindSamplers(HCommandList commandList);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
@@ -80,6 +82,7 @@ private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
+	DescriptorHeap samplerHeap;
 	ID3D12Resource* backBuffer[2];
 private:
 	std::vector<RenderTarget*> renderTargets;
