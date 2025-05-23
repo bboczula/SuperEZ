@@ -10,6 +10,8 @@
 //*********************************************************
 SamplerState LinearSampler : register(s0);
 
+Texture2D myTexture : register(t0);
+
 cbuffer CameraData : register(b0)
 {
 	float4x4 viewProjection;
@@ -33,5 +35,6 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return input.color;
+    float4 texColor = myTexture.Sample(LinearSampler, float2(0.0f, 1.0f));
+    return texColor;
 }

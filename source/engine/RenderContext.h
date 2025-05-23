@@ -68,6 +68,7 @@ public:
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	void BindSamplers(HCommandList commandList);
+	void BindTexture(HCommandList commandList);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);

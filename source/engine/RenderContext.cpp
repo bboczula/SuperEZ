@@ -466,8 +466,17 @@ void RenderContext::CreateDefaultSamplers()
 
 void RenderContext::BindSamplers(HCommandList commandList)
 {
-	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap() };
+	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
 	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+}
+
+void RenderContext::BindTexture(HCommandList commandList)
+{
+	//ID3D12DescriptorHeap* heaps[] = { cbvSrvUavHeap.GetHeap() };
+	//commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
+	//commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, heaps[0]->GetGPUDescriptorHandleForHeapStart());
 }
 
 void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name)
@@ -611,6 +620,7 @@ void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pip
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
 	BindSamplers(commandList);
+	BindTexture(commandList);
 }
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
