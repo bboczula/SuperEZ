@@ -111,15 +111,23 @@ HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	OutputDebugString(L"CreateRootSignature\n");
 
 	// Build Common Root Signature
-	D3D12_ROOT_PARAMETER rootParameter;
-	rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	rootParameter.Constants.Num32BitValues = 16;
-	rootParameter.Constants.RegisterSpace = 0;
-	rootParameter.Constants.ShaderRegister = 0;
-	rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	CD3DX12_ROOT_PARAMETER rootParameters[3];
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParameters[0].Constants.Num32BitValues = 16;
+	rootParameters[0].Constants.RegisterSpace = 0;
+	rootParameters[0].Constants.ShaderRegister = 0;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	CD3DX12_DESCRIPTOR_RANGE texRange;
+	texRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0
+	rootParameters[1].InitAsDescriptorTable(1, &texRange, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	CD3DX12_DESCRIPTOR_RANGE samplerRange;
+	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0); // s0
+	rootParameters[2].InitAsDescriptorTable(1, &samplerRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(1, &rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ID3DBlob* signature;
 	ID3DBlob* error;
@@ -491,6 +499,17 @@ void RenderContext::CreateSimpleTexture()
 	UINT height = 256;
 	auto textureHandle = CreateEmptyTexture(width, height);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	deviceContext.GetDevice()->CreateShaderResourceView(
+		textures[textureHandle.Index()]->GetResource(),            // Your texture resource
+		&srvDesc,
+		cbvSrvUavHeap.Allocate());
 
 	auto uploadCommandList = CreateCommandList();
 	ResetCommandList(uploadCommandList);
