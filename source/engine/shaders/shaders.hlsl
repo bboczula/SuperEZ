@@ -21,20 +21,22 @@ struct PSInput
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
+    float2 texCoord : TEXCOORD;
 };
 
-PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
+PSInput VSMain(float4 position : POSITION, float4 color : COLOR, float4 texCoord : TEXCOORD)
 {
     PSInput result;
 
     result.position = mul(position, viewProjection);
     result.color = color;
+    result.texCoord = texCoord.xy;
 
     return result;
 }
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    float4 texColor = myTexture.Sample(LinearSampler, float2(0.0f, 1.0f));
+    float4 texColor = myTexture.Sample(LinearSampler, input.texCoord);
     return texColor;
 }

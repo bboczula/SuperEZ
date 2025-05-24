@@ -158,7 +158,8 @@ void Engine::LoadAssets()
 		snprintf(tempName, sizeof(tempName), "POSITION_%s", meshName.c_str());
 		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
 		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles, meshName.c_str());
-		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor,meshName.c_str());
+		auto vbIndexTexture = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
+		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor, vbIndexTexture, meshName.c_str());
 	}
 
 	renderContext.CreateSimpleTexture();

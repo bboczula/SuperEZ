@@ -44,7 +44,7 @@ void TestPass::ConfigurePipelineState()
 {
 	// Pre-AutomaticPrepare Procedure
 	inputLayout = renderContext.CreateInputLayout();
-	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color);
+	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
 }
 
 void TestPass::Prepare()

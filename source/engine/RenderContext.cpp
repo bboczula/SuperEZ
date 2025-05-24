@@ -479,7 +479,7 @@ void RenderContext::BindTexture(HCommandList commandList)
 	//commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, heaps[0]->GetGPUDescriptorHandleForHeapStart());
 }
 
-void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name)
+void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -495,9 +495,10 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 4 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
-	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
+	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vbIndexTexture.Index(), vbvTexture, vertexCount, name));
 }
 
 void RenderContext::CreateSimpleTexture()
@@ -540,10 +541,48 @@ void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bu
 {
 	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
 	std::vector<UINT32> pixels(width * height);
-	for (UINT y = 0; y < height; ++y) {
-		for (UINT x = 0; x < width; ++x) {
-			UINT32 color = (x ^ y) & 0xFF;
-			pixels[y * width + x] = 0xFF000000 | (color << 16) | (color << 8) | color;
+	for (UINT y = 0; y < height; ++y)
+	{
+		for (UINT x = 0; x < width; ++x)
+		{
+			// Normalized coords
+			float fx = static_cast<float>(x) / width;
+			float fy = static_cast<float>(y) / height;
+
+			// HSV-based hue gradient across X
+			float hue = fx; // 0 to 1
+			float brightness = 0.3f + 0.7f * (1.0f - fy); // dark at bottom, bright at top
+			float saturation = 1.0f;
+
+			// Convert HSV to RGB
+			float h = hue * 6.0f;
+			int i = static_cast<int>(floor(h));
+			float f = h - i;
+			float p = brightness * (1.0f - saturation);
+			float q = brightness * (1.0f - saturation * f);
+			float t = brightness * (1.0f - saturation * (1.0f - f));
+
+			float r, g, b;
+			switch (i % 6)
+			{
+			case 0: r = brightness; g = t;         b = p;        break;
+			case 1: r = q;         g = brightness; b = p;        break;
+			case 2: r = p;         g = brightness; b = t;        break;
+			case 3: r = p;         g = q;         b = brightness; break;
+			case 4: r = t;         g = p;         b = brightness; break;
+			case 5: r = brightness; g = p;         b = q;        break;
+			}
+
+			// Checker overlay
+			int checkerSize = 16;
+			bool checker = ((x / checkerSize) % 2) ^ ((y / checkerSize) % 2);
+			float checkerMix = checker ? 1.0f : 0.8f;
+
+			UINT ir = static_cast<UINT>(r * checkerMix * 255.0f);
+			UINT ig = static_cast<UINT>(g * checkerMix * 255.0f);
+			UINT ib = static_cast<UINT>(b * checkerMix * 255.0f);
+
+			pixels[y * width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
 		}
 	}
 
@@ -629,9 +668,10 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
 	{
 		meshes[mesh.Index()]->GetPositionVertexBufferView(),
-		meshes[mesh.Index()]->GetColorVertexBufferView()
+		meshes[mesh.Index()]->GetColorVertexBufferView(),
+		meshes[mesh.Index()]->GetTextureVertexBufferView()
 	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 3, vbvPosition);
 }
 
 void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)
