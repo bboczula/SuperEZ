@@ -501,12 +501,10 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vbIndexTexture.Index(), vbvTexture, vertexCount, name));
 }
 
-void RenderContext::CreateSimpleTexture()
+void RenderContext::CreateSimpleTexture(UINT width, UINT height, BYTE* data)
 {
 	OutputDebugString(L"CreateSimpleTexture\n");
 	
-	UINT width = 256;
-	UINT height = 256;
 	auto textureHandle = CreateEmptyTexture(width, height);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
@@ -524,7 +522,43 @@ void RenderContext::CreateSimpleTexture()
 	auto uploadCommandList = CreateCommandList();
 	ResetCommandList(uploadCommandList);
 
-	FillTextureUploadBuffer(width, height, bufferHandle);
+	if (data == nullptr)
+	{
+		FillTextureUploadBuffer(width, height, bufferHandle);
+	}
+	else
+	{
+		unsigned int index = 0;
+		std::vector<UINT32> pixels(width * height);
+		for (UINT y = 0; y < height; ++y)
+		{
+			for (UINT x = 0; x < width; ++x)
+			{
+				//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
+				UINT r = data[index++];
+				UINT g = data[index++];
+				UINT b = data[index++];
+				UINT32 packed = (b << 16) | (g << 8) | r;
+				pixels[y * width + x] = packed;
+			}
+		}
+
+		UINT8* mappedData = nullptr;
+		auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
+		auto layout = buffers[bufferHandle.Index()]->GetLayout();
+
+		uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+
+		for (UINT y = 0; y < height; ++y) {
+			memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
+				&pixels[y * width],
+				width * sizeof(UINT32));
+		}
+
+		uploadBuffer->Unmap(0, nullptr);
+	}
+
+	// Here you need to get loaded data instead 
 
 	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
 
@@ -599,6 +633,10 @@ void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bu
 	}
 
 	uploadBuffer->Unmap(0, nullptr);
+}
+
+void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle)
+{
 }
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)

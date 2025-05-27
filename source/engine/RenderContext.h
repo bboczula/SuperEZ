@@ -44,8 +44,9 @@ public:
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
-	void CreateSimpleTexture();
+	void CreateSimpleTexture(UINT width, UINT height, BYTE* data);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
+	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);

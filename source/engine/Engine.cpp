@@ -162,7 +162,15 @@ void Engine::LoadAssets()
 		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor, vbIndexTexture, meshName.c_str());
 	}
 
-	renderContext.CreateSimpleTexture();
+	std::filesystem::path currentTexturePath = std::filesystem::current_path();
+	currentTexturePath.append("stone_texture.bmp");
+	assetManager.ImageLoadAndDecode(currentTexturePath.string().c_str());
+
+	std::vector<BYTE> imageOutput;
+	AssetSuite::ImageDescriptor imageDescriptor = {};
+	assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
+
+	renderContext.CreateSimpleTexture(imageDescriptor.width, imageDescriptor.height, imageOutput.data());
 }
 
 void Engine::Tick()
