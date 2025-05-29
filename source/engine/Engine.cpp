@@ -52,7 +52,8 @@ void Engine::LoadAssets()
 {
 	std::filesystem::path currentPath = std::filesystem::current_path();
 	//currentPath.append("monkey.obj");
-	currentPath.append("teapot.obj");
+	//currentPath.append("teapot.obj");
+	currentPath.append("spheres.obj");
 	//currentPath.append("cube.obj");
 	//currentPath.append("temple.obj");
 	//currentPath.append("chess.obj");
@@ -116,8 +117,14 @@ void Engine::LoadAssets()
 	//	"bunny_Mesh"
 	//};
 
+	//std::vector<std::string> meshNames = {
+	//	"teapot_Mesh"
+	//};
+
 	std::vector<std::string> meshNames = {
-		"teapot_Mesh"
+		"Sphere_2_Mesh",
+		"Sphere_2.001_Mesh",
+		"Sphere_2.002_Mesh"
 	};
 
 	//std::vector<std::string> meshNames = {
@@ -158,19 +165,33 @@ void Engine::LoadAssets()
 		snprintf(tempName, sizeof(tempName), "POSITION_%s", meshName.c_str());
 		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
 		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles, meshName.c_str());
-		auto vbIndexTexture = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
+
+		//meshOutput.clear();
+		//meshDescriptor = {};
+		errorCode = assetManager.MeshGet(meshName.c_str(), AssetSuite::MeshOutputFormat::TEXCOORD, meshOutput, meshDescriptor);
+		if (errorCode != AssetSuite::ErrorCode::OK)
+		{
+			OutputDebugString(L"Failed to load mesh: ");
+			OutputDebugStringA(meshName.c_str());
+			OutputDebugString(L"\n");
+			continue;
+		}
+		CHAR tempNameTexture[64];
+		snprintf(tempNameTexture, sizeof(tempNameTexture), "TEXCOORD_%s", meshName.c_str());
+		auto vbIndexTexture = renderContext.CreateVertexBuffer(numOfTriangles * 3, 2, meshOutput.data(), tempNameTexture);
+
+		std::filesystem::path currentTexturePath = std::filesystem::current_path();
+		currentTexturePath.append("earth_texture.bmp");
+		assetManager.ImageLoadAndDecode(currentTexturePath.string().c_str());
+
+		std::vector<BYTE> imageOutput;
+		AssetSuite::ImageDescriptor imageDescriptor = {};
+		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
+
+		renderContext.CreateSimpleTexture(imageDescriptor.width, imageDescriptor.height, imageOutput.data());
+
 		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor, vbIndexTexture, meshName.c_str());
 	}
-
-	std::filesystem::path currentTexturePath = std::filesystem::current_path();
-	currentTexturePath.append("stone_texture.bmp");
-	assetManager.ImageLoadAndDecode(currentTexturePath.string().c_str());
-
-	std::vector<BYTE> imageOutput;
-	AssetSuite::ImageDescriptor imageDescriptor = {};
-	assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
-
-	renderContext.CreateSimpleTexture(imageDescriptor.width, imageDescriptor.height, imageOutput.data());
 }
 
 void Engine::Tick()

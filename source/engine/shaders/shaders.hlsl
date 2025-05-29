@@ -37,6 +37,6 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR, float4 texCoord
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    float4 texColor = myTexture.Sample(LinearSampler, input.texCoord);
+    float4 texColor = myTexture.Sample(LinearSampler, input.texCoord * float2(1.0f, -1.0f));
     return texColor;
 }
