@@ -10,6 +10,7 @@ public:
 	CD3DX12_CPU_DESCRIPTOR_HANDLE Allocate();
 	D3D12_CPU_DESCRIPTOR_HANDLE Get(size_t index);
 	UINT Size();
+	UINT GetDescriptorSize() { return descriptorSize; }
 	ID3D12DescriptorHeap* GetHeap() { return heap; }
 private:
 	ID3D12DescriptorHeap* heap;

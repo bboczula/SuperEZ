@@ -109,6 +109,7 @@ void TestPass::Execute()
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
 		renderContext.BindGeometry(commandList, HMesh(i));
+		renderContext.BindTexture(commandList, HTexture(i));
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 }

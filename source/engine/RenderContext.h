@@ -16,6 +16,7 @@ class Texture;
 class Buffer;
 class VertexBuffer;
 class Mesh;
+class Material;
 class InputLayout;
 
 class RenderContext
@@ -45,6 +46,8 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateSimpleTexture(UINT width, UINT height, BYTE* data);
+	UINT CreateShaderResourceView(HTexture& textureHandle);
+	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	// Textures
@@ -69,7 +72,7 @@ public:
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	void BindSamplers(HCommandList commandList);
-	void BindTexture(HCommandList commandList);
+	void BindTexture(HCommandList commandList, HTexture texture);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
@@ -94,6 +97,7 @@ private:
 	std::vector<Buffer*> buffers;
 	std::vector<VertexBuffer*> vertexBuffers;
 	std::vector<Mesh*> meshes;
+	std::vector<Material*> materials;
 	std::vector<ID3DBlob*> vertexShaders;
 	std::vector<ID3DBlob*> pixelShaders;
 	std::vector<ID3D12RootSignature*> rootSignatures;

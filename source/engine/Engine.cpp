@@ -166,8 +166,6 @@ void Engine::LoadAssets()
 		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
 		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles, meshName.c_str());
 
-		//meshOutput.clear();
-		//meshDescriptor = {};
 		errorCode = assetManager.MeshGet(meshName.c_str(), AssetSuite::MeshOutputFormat::TEXCOORD, meshOutput, meshDescriptor);
 		if (errorCode != AssetSuite::ErrorCode::OK)
 		{
