@@ -317,7 +317,7 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	return vertexBuffer;
 }
 
-HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
+HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -332,8 +332,13 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Empty Texture");
 	
-	CHAR name[] = "EmptyTexture";
-	textures.push_back(new Texture(width, height, resource, &name[0]));
+	CHAR tempName[32];
+	strcpy_s(tempName, name);
+	WCHAR wName[32];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	resource->SetName(wName);
+	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 	
 	return HTexture(textures.size() - 1);
 }
@@ -465,24 +470,6 @@ void RenderContext::CreateDefaultSamplers()
 	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate());
 }
 
-void RenderContext::BindSamplers(HCommandList commandList)
-{
-	//ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
-	//commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
-	//commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
-	//commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
-}
-
-void RenderContext::BindTexture(HCommandList commandList, HTexture texture)
-{
-	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(), materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
-
-	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
-	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, textureHandle);
-}
-
 void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
@@ -505,11 +492,11 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vbIndexTexture.Index(), vbvTexture, vertexCount, name));
 }
 
-void RenderContext::CreateSimpleTexture(UINT width, UINT height, BYTE* data)
+void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
 {
-	OutputDebugString(L"CreateSimpleTexture\n");
+	OutputDebugString(L"CreateTexture\n");
 	
-	auto textureHandle = CreateEmptyTexture(width, height);
+	auto textureHandle = CreateEmptyTexture(width, height, name);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
 	auto descHandleOffset = CreateShaderResourceView(textureHandle);
@@ -536,7 +523,7 @@ void RenderContext::CreateSimpleTexture(UINT width, UINT height, BYTE* data)
 
 	ExecuteCommandList(uploadCommandList);
 
-	materials.push_back(new Material(textureHandle, descHandleOffset, "DefaultTexture"));
+	materials.push_back(new Material(textureHandle, descHandleOffset, name));
 }
 
 UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
@@ -679,6 +666,28 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
+void RenderContext::BindTexture(HCommandList commandList, HTexture texture)
+{
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(), materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
+
+	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
+	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, textureHandle);
+}
+
+void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
+{
+	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
+	{
+		meshes[mesh.Index()]->GetPositionVertexBufferView(),
+		meshes[mesh.Index()]->GetColorVertexBufferView(),
+		meshes[mesh.Index()]->GetTextureVertexBufferView()
+	};
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 3, vbvPosition);
+}
+
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
@@ -715,18 +724,6 @@ void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pip
 	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
-}
-
-void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
-{
-	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
-	{
-		meshes[mesh.Index()]->GetPositionVertexBufferView(),
-		meshes[mesh.Index()]->GetColorVertexBufferView(),
-		meshes[mesh.Index()]->GetTextureVertexBufferView()
-	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 3, vbvPosition);
 }
 
 void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)

@@ -45,13 +45,13 @@ public:
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
-	void CreateSimpleTexture(UINT width, UINT height, BYTE* data);
+	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateShaderResourceView(HTexture& textureHandle);
 	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height);
+	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
@@ -71,7 +71,6 @@ public:
 	void CloseCommandList(HCommandList commandList);
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
-	void BindSamplers(HCommandList commandList);
 	void BindTexture(HCommandList commandList, HTexture texture);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
