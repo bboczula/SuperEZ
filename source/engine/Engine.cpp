@@ -9,8 +9,6 @@
 #include "input/RawInput.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 
-#include <filesystem>
-
 #define FRAME_COUNT 2
 
 // Global Entities
@@ -48,34 +46,91 @@ void Engine::CreateRenderResources()
 	// Here we can make engine speciffic allocations
 }
 
-void Engine::LoadAssets()
+void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPath)
 {
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	//currentPath.append("spheres.obj");
-	//currentPath.append("cube.obj");
-	//currentPath.append("temple.obj");
-	//currentPath.append("chess.obj");
-	//currentPath.append("bunny.obj");
-	currentPath.append("sponza_tex.obj");
-
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
 
 	std::vector<FLOAT> meshOutput;
-	AssetSuite::MeshDescriptor meshDescriptor;
+	AssetSuite::MeshDescriptor meshDescriptor{};
+	std::vector<BYTE> imageOutput;
+	AssetSuite::ImageDescriptor imageDescriptor{};
 
-	//std::vector<std::string> meshNames = {
-	//	"Building_Mesh",
-	//	"RoofBase_Mesh",
-	//	"ColumnOne_Mesh",
-	//	"ColumnTwo_Mesh",
-	//	"ColumnThree_Mesh",
-	//	"ColumnFour_Mesh",
-	//	"Roof_Mesh",
-	//	"RoofEdge_Mesh"
-	//};
+	auto LogMeshError = [](const std::string& meshName)
+		{
+			OutputDebugStringW(L"Failed to load mesh: ");
+			OutputDebugStringA(meshName.c_str());
+			OutputDebugStringW(L"\n");
+		};
 
-	//std::vector < std::pair < std::string, std::string>> gameObjects =
+	for (const auto& [meshName, textureName] : gameObjects)
+	{
+		auto TryGetMesh = [&](AssetSuite::MeshOutputFormat format) -> bool
+		{
+			auto errorCode = assetManager.MeshGet(meshName.c_str(), format, meshOutput, meshDescriptor);
+			if (errorCode != AssetSuite::ErrorCode::OK)
+			{
+				LogMeshError(meshName);
+				return false;
+			}
+			return true;
+		};
+
+		auto CreateVB = [&](std::string_view label, int components) -> HVertexBuffer
+		{
+			std::string name = std::string(label) + "_" + meshName;
+			return renderContext.CreateVertexBuffer(meshDescriptor.numOfVertices * 3, components, meshOutput.data(), name.c_str());
+		};
+
+		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<BYTE>& data)
+		{
+			std::string name = "TEX_" + meshName;
+			renderContext.CreateTexture(desc.width, desc.height, data.data(), name.c_str());
+		};
+
+		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))
+			continue;
+
+		auto vbPosition = CreateVB("POSITION", 4);
+		auto vbColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), meshDescriptor.numOfVertices, meshName.c_str());
+
+		if (!TryGetMesh(AssetSuite::MeshOutputFormat::TEXCOORD))
+			continue;
+
+		auto vbTexcoord = CreateVB("TEXCOORD", 2);
+		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, meshName.c_str());
+
+		auto texturePath = std::filesystem::current_path() / textureName;
+		assetManager.ImageLoadAndDecode(texturePath.string().c_str());
+		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
+
+		CreateTexture(imageDescriptor, imageOutput);
+	}
+}
+
+
+void Engine::Tick()
+{
+	if (rawInput.IsKeyDown(VK_ESCAPE))
+	{
+		OutputDebugString(L"Engine::Tick() - Escape key pressed\n");
+		exit(0);
+	}
+	renderGraph.Execute();
+	deviceContext.Flush();
+	deviceContext.Present();
+	deviceContext.Flush();
+}
+
+void Engine::Run()
+{
+	Initialize();
+
+	std::filesystem::path currentPath = std::filesystem::current_path();;
+	//currentPath.append("chess.obj");
+	currentPath.append("sponza_tex.obj");
+
+	//GameObjects gameObjects =
 	//{
 	//	std::make_pair( "Chess_Board_Mesh", "Chess_Board_BaseMap.bmp" ),
 	//	std::make_pair( "Pawn_3_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
@@ -112,7 +167,7 @@ void Engine::LoadAssets()
 	//	std::make_pair( "Pawn_Light_Mesh", "Chess_Pieces_BaseMap.bmp" )
 	//};
 
-	std::vector < std::pair < std::string, std::string>> gameObjects =
+	GameObjects gameObjects =
 	{
 		std::make_pair("arcs_01_Mesh", "sp_luk.bmp"),
 		std::make_pair("arcs_02_Mesh", "sp_luk.bmp"),
@@ -148,93 +203,8 @@ void Engine::LoadAssets()
 		std::make_pair("walls_Mesh", "KAMEN.bmp"),
 		std::make_pair("windows_Mesh", "prozor1.bmp")
 	};
-		
-	//std::vector<std::string> meshNames = {
-	//	"bunny_Mesh"
-	//};
 
-	//std::vector<std::string> meshNames = {
-	//	"Sphere_2_Mesh",
-	//	"Sphere_2.001_Mesh",
-	//	"Sphere_2.002_Mesh"
-	//};
-	//
-	//std::vector<std::string> textureNames = {
-	//	"moon_texture.bmp",
-	//	"earth_texture.bmp",
-	//	"mars_texture.bmp",
-	//};
-
-	//std::vector<std::string> meshNames = {
-	//	"Cube_Mesh"
-	//};
-
-	// Load Geometry
-	for (const auto& gameObject : gameObjects)
-	{
-		const auto& meshName = gameObject.first;
-		const auto& textureName = gameObject.second;
-
-		auto errorCode = assetManager.MeshGet(meshName.c_str(), AssetSuite::MeshOutputFormat::POSITION, meshOutput, meshDescriptor);
-		if (errorCode != AssetSuite::ErrorCode::OK)
-		{
-			OutputDebugString(L"Failed to load mesh: ");
-			OutputDebugStringA(meshName.c_str());
-			OutputDebugString(L"\n");
-			continue;
-		}
-		auto numOfTriangles = meshDescriptor.numOfVertices;
-		CHAR tempName[64];
-		snprintf(tempName, sizeof(tempName), "POSITION_%s", meshName.c_str());
-		auto vbIndexPositionAndColor = renderContext.CreateVertexBuffer(numOfTriangles * 3, 4, meshOutput.data(), tempName);
-		auto vbIndexColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), numOfTriangles, meshName.c_str());
-
-		errorCode = assetManager.MeshGet(meshName.c_str(), AssetSuite::MeshOutputFormat::TEXCOORD, meshOutput, meshDescriptor);
-		if (errorCode != AssetSuite::ErrorCode::OK)
-		{
-			OutputDebugString(L"Failed to load mesh: ");
-			OutputDebugStringA(meshName.c_str());
-			OutputDebugString(L"\n");
-			continue;
-		}
-		CHAR tempNameTexture[64];
-		snprintf(tempNameTexture, sizeof(tempNameTexture), "TEXCOORD_%s", meshName.c_str());
-		auto vbIndexTexture = renderContext.CreateVertexBuffer(numOfTriangles * 3, 2, meshOutput.data(), tempNameTexture);
-
-		renderContext.CreateMesh(vbIndexPositionAndColor, vbIndexColor, vbIndexTexture, meshName.c_str());
-
-		std::filesystem::path currentTexturePath = std::filesystem::current_path();
-		currentTexturePath.append(textureName);
-		assetManager.ImageLoadAndDecode(currentTexturePath.string().c_str());
-
-		std::vector<BYTE> imageOutput;
-		AssetSuite::ImageDescriptor imageDescriptor = {};
-		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
-
-		CHAR tempNameTextureImage[64];
-		snprintf(tempNameTextureImage, sizeof(tempNameTextureImage), "TEX_%s", meshName.c_str());
-		renderContext.CreateTexture(imageDescriptor.width, imageDescriptor.height, imageOutput.data(), tempNameTextureImage);
-	}
-}
-
-void Engine::Tick()
-{
-	if (rawInput.IsKeyDown(VK_ESCAPE))
-	{
-		OutputDebugString(L"Engine::Tick() - Escape key pressed\n");
-		exit(0);
-	}
-	renderGraph.Execute();
-	deviceContext.Flush();
-	deviceContext.Present();
-	deviceContext.Flush();
-}
-
-void Engine::Run()
-{
-	Initialize();
-
-	LoadAssets();
+	LoadAssets(gameObjects, currentPath);
 
 	MSG msg{ 0 };
 	while (1)
