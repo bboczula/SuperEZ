@@ -4,8 +4,10 @@
 #include "RenderTarget.h"
 #include "DepthBuffer.h"
 #include "Mesh.h"
+#include "Material.h"
 #include "VertexBuffer.h"
 #include "InputLayout.h"
+#include "Buffer.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -55,6 +57,7 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 	rtvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, deviceContext);
 	dsvHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, deviceContext);
 	cbvSrvUavHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, deviceContext);
+	samplerHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, deviceContext);
 }
 
 HRenderTarget RenderContext::CreateRenderTarget()
@@ -109,15 +112,23 @@ HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	OutputDebugString(L"CreateRootSignature\n");
 
 	// Build Common Root Signature
-	D3D12_ROOT_PARAMETER rootParameter;
-	rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	rootParameter.Constants.Num32BitValues = 16;
-	rootParameter.Constants.RegisterSpace = 0;
-	rootParameter.Constants.ShaderRegister = 0;
-	rootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	CD3DX12_ROOT_PARAMETER rootParameters[3];
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParameters[0].Constants.Num32BitValues = 16;
+	rootParameters[0].Constants.RegisterSpace = 0;
+	rootParameters[0].Constants.ShaderRegister = 0;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	CD3DX12_DESCRIPTOR_RANGE texRange;
+	texRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0
+	rootParameters[1].InitAsDescriptorTable(1, &texRange, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	CD3DX12_DESCRIPTOR_RANGE samplerRange;
+	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0); // s0
+	rootParameters[2].InitAsDescriptorTable(1, &samplerRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(1, &rootParameter, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ID3DBlob* signature;
 	ID3DBlob* error;
@@ -214,7 +225,6 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
 	// over. Please read up on Default Heap usage. An upload heap is used here for 
 	// code simplicity and because there are very few verts to actually transfer.
-	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(vbSizeInBytes);
 	const D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
 	ID3D12Resource* vertexBuffer;
@@ -307,7 +317,7 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	return vertexBuffer;
 }
 
-HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
+HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -319,11 +329,16 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height)
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
 
 	ID3D12Resource* resource;
-	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Empty Texture");
 	
-	CHAR name[] = "EmptyTexture";
-	textures.push_back(new Texture(width, height, resource, &name[0]));
+	CHAR tempName[32];
+	strcpy_s(tempName, name);
+	WCHAR wName[32];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	resource->SetName(wName);
+	textures.push_back(new Texture(width, height, resource, &tempName[0]));
 	
 	return HTexture(textures.size() - 1);
 }
@@ -339,7 +354,7 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 
 	ID3D12Resource* resource;
-	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Depth Texture");
 
 	CHAR tempName[32];
@@ -365,7 +380,7 @@ HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	ID3D12Resource* resource;
-	deviceContext.CreateResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
+	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -392,7 +407,70 @@ void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HText
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
-void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name)
+HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
+{
+	OutputDebugString(L"CreateTextureUploadBuffer\n");
+
+	auto texture = textures[textureHandle.Index()]->GetResource();
+	auto textureDesc = texture->GetDesc();
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
+	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
+
+	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	
+	ID3D12Resource* textureUploadBuffer;
+	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
+
+	CHAR name[] = "TextureUploadBuffer";
+	buffers.push_back(new Buffer(textureUploadBuffer, layout, name));
+
+	return HBuffer(buffers.size() - 1);
+}
+
+void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
+{
+	OutputDebugString(L"CopyBufferToTexture\n");
+	
+	auto gpuTexture = textures[texture.Index()]->GetResource();
+	D3D12_TEXTURE_COPY_LOCATION dst = {};
+	dst.pResource = gpuTexture;
+	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	dst.SubresourceIndex = 0;
+
+	auto uploadBuffer = buffers[buffer.Index()]->GetResource();
+	auto layout = buffers[buffer.Index()]->GetLayout();
+	D3D12_TEXTURE_COPY_LOCATION src = {};
+	src.pResource = uploadBuffer;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	src.PlacedFootprint = layout;
+
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+}
+
+void RenderContext::CreateDefaultSamplers()
+{
+	D3D12_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	samplerDesc.BorderColor[0] = 0.0f;
+	samplerDesc.BorderColor[1] = 0.0f;
+	samplerDesc.BorderColor[2] = 0.0f;
+	samplerDesc.BorderColor[3] = 0.0f;
+
+	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate());
+}
+
+void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -408,11 +486,164 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 2 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
-	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vertexCount, name));
+	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vbIndexTexture.Index(), vbvTexture, vertexCount, name));
 }
 
+void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
+{
+	OutputDebugString(L"CreateTexture\n");
+	
+	auto textureHandle = CreateEmptyTexture(width, height, name);
+	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
+
+	auto descHandleOffset = CreateShaderResourceView(textureHandle);
+
+	if (data == nullptr)
+	{
+		FillTextureUploadBuffer(width, height, bufferHandle);
+	}
+	else
+	{
+		UploadTextureToBuffer(width, height, data, bufferHandle);
+	}
+
+	auto uploadCommandList = CreateCommandList();
+	ResetCommandList(uploadCommandList);
+
+	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
+
+	CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
+
+	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	CloseCommandList(uploadCommandList);
+
+	ExecuteCommandList(uploadCommandList);
+
+	materials.push_back(new Material(textureHandle, descHandleOffset, name));
+}
+
+UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	auto descriptorHandle = cbvSrvUavHeap.Allocate();
+	auto offset = cbvSrvUavHeap.Size() - 1;
+
+	deviceContext.GetDevice()->CreateShaderResourceView(
+		textures[textureHandle.Index()]->GetResource(),            // Your texture resource
+		&srvDesc,
+		descriptorHandle);
+
+	return offset;
+}
+
+void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)
+{
+	unsigned int index = 0;
+	std::vector<UINT32> pixels(width * height);
+	for (UINT y = 0; y < height; ++y)
+	{
+		for (UINT x = 0; x < width; ++x)
+		{
+			//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
+			UINT r = data[index++];
+			UINT g = data[index++];
+			UINT b = data[index++];
+			UINT32 packed = (b << 16) | (g << 8) | r;
+			pixels[y * width + x] = packed;
+		}
+	}
+
+	UINT8* mappedData = nullptr;
+	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
+	auto layout = buffers[bufferHandle.Index()]->GetLayout();
+
+	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
+			&pixels[y * width],
+			width * sizeof(UINT32));
+	}
+
+	uploadBuffer->Unmap(0, nullptr);
+}
+
+void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle)
+{
+	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
+	std::vector<UINT32> pixels(width * height);
+	for (UINT y = 0; y < height; ++y)
+	{
+		for (UINT x = 0; x < width; ++x)
+		{
+			// Normalized coords
+			float fx = static_cast<float>(x) / width;
+			float fy = static_cast<float>(y) / height;
+
+			// HSV-based hue gradient across X
+			float hue = fx; // 0 to 1
+			float brightness = 0.3f + 0.7f * (1.0f - fy); // dark at bottom, bright at top
+			float saturation = 1.0f;
+
+			// Convert HSV to RGB
+			float h = hue * 6.0f;
+			int i = static_cast<int>(floor(h));
+			float f = h - i;
+			float p = brightness * (1.0f - saturation);
+			float q = brightness * (1.0f - saturation * f);
+			float t = brightness * (1.0f - saturation * (1.0f - f));
+
+			float r, g, b;
+			switch (i % 6)
+			{
+			case 0: r = brightness; g = t;         b = p;        break;
+			case 1: r = q;         g = brightness; b = p;        break;
+			case 2: r = p;         g = brightness; b = t;        break;
+			case 3: r = p;         g = q;         b = brightness; break;
+			case 4: r = t;         g = p;         b = brightness; break;
+			case 5: r = brightness; g = p;         b = q;        break;
+			}
+
+			// Checker overlay
+			int checkerSize = 16;
+			bool checker = ((x / checkerSize) % 2) ^ ((y / checkerSize) % 2);
+			float checkerMix = checker ? 1.0f : 0.8f;
+
+			UINT ir = static_cast<UINT>(r * checkerMix * 255.0f);
+			UINT ig = static_cast<UINT>(g * checkerMix * 255.0f);
+			UINT ib = static_cast<UINT>(b * checkerMix * 255.0f);
+
+			pixels[y * width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
+		}
+	}
+
+	UINT8* mappedData = nullptr;
+	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
+	auto layout = buffers[bufferHandle.Index()]->GetLayout();
+
+	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
+
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
+			&pixels[y * width],
+			width * sizeof(UINT32));
+	}
+
+	uploadBuffer->Unmap(0, nullptr);
+}
+
+void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle)
+{
+}
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
 {
@@ -433,6 +664,28 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+}
+
+void RenderContext::BindTexture(HCommandList commandList, HTexture texture)
+{
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(), materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
+
+	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
+	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, textureHandle);
+}
+
+void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
+{
+	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
+	{
+		meshes[mesh.Index()]->GetPositionVertexBufferView(),
+		meshes[mesh.Index()]->GetColorVertexBufferView(),
+		meshes[mesh.Index()]->GetTextureVertexBufferView()
+	};
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 3, vbvPosition);
 }
 
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
@@ -473,17 +726,6 @@ void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pip
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
 }
 
-void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
-{
-	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
-	{
-		meshes[mesh.Index()]->GetPositionVertexBufferView(),
-		meshes[mesh.Index()]->GetColorVertexBufferView()
-	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 2, vbvPosition);
-}
-
 void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)
 {
 	if (textures[texture.Index()]->GetCurrentState() == state)
@@ -508,6 +750,32 @@ void RenderContext::TransitionBack(HCommandList commandList, HTexture texture)
 {
 	auto previousState = textures[texture.Index()]->GetPreviousState();
 	TransitionTo(commandList, texture, previousState);
+}
+
+void RenderContext::TransitionTo(HCommandList commandList, HBuffer buffer, D3D12_RESOURCE_STATES state)
+{
+	if (buffers[buffer.Index()]->GetCurrentState() == state)
+	{
+		return;
+	}
+
+	D3D12_RESOURCE_BARRIER barrier;
+	ZeroMemory(&barrier, sizeof(barrier));
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = buffers[buffer.Index()]->GetResource();
+	barrier.Transition.StateBefore = buffers[buffer.Index()]->GetCurrentState();
+	barrier.Transition.StateAfter = state;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	commandLists[commandList.Index()]->GetCommandList()->ResourceBarrier(1, &barrier);
+
+	buffers[buffer.Index()]->SetCurrentState(state);
+}
+
+void RenderContext::TransitionBack(HCommandList commandList, HBuffer buffer)
+{
+	auto previousState = buffers[buffer.Index()]->GetPreviousState();
+	TransitionTo(commandList, buffer, previousState);
 }
 
 void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)

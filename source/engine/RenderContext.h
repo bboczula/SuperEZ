@@ -13,8 +13,10 @@ class DeviceContext;
 class RenderTarget;
 class DepthBuffer;
 class Texture;
+class Buffer;
 class VertexBuffer;
 class Mesh;
+class Material;
 class InputLayout;
 
 class RenderContext
@@ -42,12 +44,20 @@ public:
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
-	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, const CHAR* name);
+	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
+	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
+	UINT CreateShaderResourceView(HTexture& textureHandle);
+	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
+	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
+	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height);
+	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
+	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CreateDefaultSamplers();
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
@@ -61,26 +71,32 @@ public:
 	void CloseCommandList(HCommandList commandList);
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
+	void BindTexture(HCommandList commandList, HTexture texture);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
 	// Barriers
 	void TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state);
 	void TransitionBack(HCommandList commandList, HTexture texture);
+	void TransitionTo(HCommandList commandList, HBuffer buffer, D3D12_RESOURCE_STATES state);
+	void TransitionBack(HCommandList commandList, HBuffer buffer);
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
+	DescriptorHeap samplerHeap;
 	ID3D12Resource* backBuffer[2];
 private:
 	std::vector<RenderTarget*> renderTargets;
 	std::vector<DepthBuffer*> depthBuffers;
 	std::vector<CommandList*> commandLists;
 	std::vector<Texture*> textures;
+	std::vector<Buffer*> buffers;
 	std::vector<VertexBuffer*> vertexBuffers;
 	std::vector<Mesh*> meshes;
+	std::vector<Material*> materials;
 	std::vector<ID3DBlob*> vertexShaders;
 	std::vector<ID3DBlob*> pixelShaders;
 	std::vector<ID3D12RootSignature*> rootSignatures;

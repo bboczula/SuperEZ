@@ -44,7 +44,7 @@ void TestPass::ConfigurePipelineState()
 {
 	// Pre-AutomaticPrepare Procedure
 	inputLayout = renderContext.CreateInputLayout();
-	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color);
+	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
 }
 
 void TestPass::Prepare()
@@ -109,6 +109,7 @@ void TestPass::Execute()
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
 		renderContext.BindGeometry(commandList, HMesh(i));
+		renderContext.BindTexture(commandList, HTexture(i));
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 }
