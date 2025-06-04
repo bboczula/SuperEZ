@@ -9,9 +9,35 @@ workspace "SuperEZ"
 	architecture "x86_64"
 	system "Windows"
 	location(LOCATION_DIRECTORY_NAME)
+	project "ImGui"
 	project "Engine"
 	project "Game"
 	
+project "ImGui"
+	kind "StaticLib"
+	language "C++"
+	cppdialect "C++17"
+	targetdir "bin/%{cfg.buildcfg}/bin"
+	files
+	{
+        "source/externals/imgui/*.h",
+        "source/externals/imgui/*.cpp",
+        "source/externals/imgui/backends/imgui_impl_dx12.cpp",
+        "source/externals/imgui/backends/imgui_impl_win32.cpp"
+    }
+	includedirs
+	{
+		"source/externals/imgui",
+		"source/externals/imgui/backends"
+	}
+	filter "configurations:Debug"
+        runtime "Debug"
+        symbols "on"
+
+    filter "configurations:Release"
+        runtime "Release"
+        optimize "on"
+
 project "GoogleTest"
 	kind "StaticLib"
 	language "C++"
@@ -86,7 +112,9 @@ project "Engine"
 		"source/external/d3dx12",
 		"source/external/SimpleMath",
 		"source/externals/PixEvents/include",
-		"source/externals/AssetSuite/inc"
+		"source/externals/AssetSuite/inc",
+		"source/externals/imgui",
+		"source/externals/imgui/backends"
 	}
 	libdirs
 	{
@@ -101,6 +129,10 @@ project "Engine"
 	buildcommands
 	{
 		"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
+	}
+	links
+	{
+		"ImGui"
 	}
 	symbolspath '$(OutDir)$(TargetName).pdb'
 	filter "configurations:Final"

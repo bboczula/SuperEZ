@@ -7,6 +7,7 @@
 #include "camera/Camera.h"
 #include "camera/Orbit.h"
 #include "input/RawInput.h"
+#include <imgui.h>
 
 #include <pix3.h>
 
