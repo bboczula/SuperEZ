@@ -30,3 +30,15 @@ https://github.com/user-attachments/assets/e1b2ba3a-8306-4ba7-aa7c-c7df161eeaac
   - Fixed a lot of issues (flipping, gimball lock) by switching to spherical coordinates
   - Previously was using Euler angles and rotation matrices, but there were issues
 - More info on the DevLog: (coming soon)
+
+## Build
+This repository uses the submodules, therefore you need to remember to clone them too.
+```
+git clone --recurse-submodules <your-repo-url>
+```
+
+If you already cloned wihout submodules, you need to do this.
+```
+git submodule init
+git submodule update
+```
