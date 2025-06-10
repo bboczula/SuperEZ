@@ -42,6 +42,7 @@ void DescriptorHeap::Allocate(D3D12_CPU_DESCRIPTOR_HANDLE* outCpu, D3D12_GPU_DES
 {
 	assert(size < MAX_NUM_OF_DESCRIPTORS && "Descriptor heap is full!");
 
+	Allocate();
 	*outCpu = Get(size);
 	*outGpu = GetGPU(size);
 	++size;

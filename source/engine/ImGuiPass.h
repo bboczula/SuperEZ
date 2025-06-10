@@ -2,16 +2,13 @@
 
 #include "RenderPass.h"
 
-// This pass will copy whichever texture requested to the back buffer
-
-class BlitPass : public RenderPass
+class ImGuiPass : public RenderPass
 {
 public:
-	BlitPass();
-	~BlitPass();
+	ImGuiPass();
 	void ConfigurePipelineState() override;
 	void Initialize() override;
+	void Update() override;
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
-private:
 };

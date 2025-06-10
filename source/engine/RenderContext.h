@@ -41,6 +41,7 @@ public:
 	HCommandList CreateCommandList();
 	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
 	UINT GetNumOfMeshes() { return static_cast<UINT>(meshes.size()); }
+	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
@@ -70,6 +71,7 @@ public:
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
+	void SetDescriptorHeap(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	void BindTexture(HCommandList commandList, HTexture texture);
 	// Clearing

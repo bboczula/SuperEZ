@@ -20,7 +20,7 @@ RenderPass::~RenderPass()
 {
 }
 
-void RenderPass::AutomaticPrepare()
+void RenderPass::AutomaticInitialize()
 {
 	if (GetType() == Type::Default)
 	{
@@ -33,7 +33,7 @@ void RenderPass::AutomaticPrepare()
 	commandList = renderContext.CreateCommandList();
 }
 
-void RenderPass::Prepare()
+void RenderPass::Initialize()
 {
 	// Barrier management
 	// Clearing render targets

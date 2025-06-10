@@ -7,7 +7,6 @@
 #include "camera/Camera.h"
 #include "camera/Orbit.h"
 #include "input/RawInput.h"
-#include <imgui.h>
 
 #include <pix3.h>
 
@@ -43,12 +42,12 @@ TestPass::~TestPass()
 
 void TestPass::ConfigurePipelineState()
 {
-	// Pre-AutomaticPrepare Procedure
+	// Pre-AutomaticInitialize Procedure
 	inputLayout = renderContext.CreateInputLayout();
 	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
 }
 
-void TestPass::Prepare()
+void TestPass::Initialize()
 {
 	renderTarget = renderContext.CreateRenderTarget();
 	depthBuffer = renderContext.CreateDepthBuffer();
@@ -100,6 +99,7 @@ void TestPass::Update()
 void TestPass::Execute()
 {
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
+	renderContext.SetDescriptorHeap(commandList);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
