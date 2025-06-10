@@ -7,6 +7,7 @@
 #include "Settings.h"
 #include "Observer.h"
 #include "input/RawInput.h"
+#include "input/ImGuiHandler.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 
 #define FRAME_COUNT 2
@@ -19,6 +20,7 @@ RenderContext renderContext;
 RenderGraph renderGraph;
 Subject<WinMessageEvent> winMessageSubject;
 RawInput rawInput;
+ImGuiHandler imGuiHandler;
 
 Engine::Engine()
 {
@@ -34,6 +36,8 @@ void Engine::Initialize()
 {
 	OutputDebugString(L"Engine::Initialize()\n");
 	rawInput.Initialize();
+	imGuiHandler.Initialize();
+	winMessageSubject.Subscribe(&imGuiHandler);
 	winMessageSubject.Subscribe(&rawInput);
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateDefaultSamplers();
