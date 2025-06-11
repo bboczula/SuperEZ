@@ -62,6 +62,7 @@ public:
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
+	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
 	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data);
 	// Binding

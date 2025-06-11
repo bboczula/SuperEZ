@@ -73,31 +73,4 @@ void WindowContext::CreateWindowInstance()
 		exit(1);
 	}
 	OutputDebugString(L"Successfully created window\n");
-
-	//button = CreateWindowEx(0,
-	//	WC_TREEVIEW,
-	//	TEXT("Tree View"),
-	//	WS_VISIBLE | WS_CHILD | WS_BORDER | TVS_HASLINES,
-	//	0,
-	//	0,
-	//	windowDimentions.first * 0.25f,
-	//	windowDimentions.second,
-	//	hwnd,
-	//	nullptr,
-	//	instance,
-	//	NULL);
-
-	CreateMenuBar();
-}
-
-void WindowContext::CreateMenuBar()
-{
-	HMENU hMenubar = CreateMenu();
-	HMENU hMenu = CreateMenu();
-
-	AppendMenu(hMenu, MF_STRING, ID_FILE_ABOUT, L"About");
-	AppendMenu(hMenu, MF_STRING, ID_FILE_EXIT, L"Exit");
-	AppendMenu(hMenubar, MF_POPUP, (UINT_PTR)hMenu, L"File");
-
-	SetMenu(hwnd, hMenubar);
 }

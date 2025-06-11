@@ -16,7 +16,6 @@ public:
 private:
 	void RegisterWindowClass();
 	void CreateWindowInstance();
-	void CreateMenuBar();
 	HWND hwnd;
 	HWND button;
 	HINSTANCE instance;

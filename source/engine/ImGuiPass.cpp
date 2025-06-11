@@ -3,10 +3,12 @@
 #include "DeviceContext.h"
 #include "RenderContext.h"
 #include "DescriptorHeap.h"
+#include "Mesh.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_win32.h>
+#include <imgui_internal.h> // For ImGuiDockNodeFlags_DockSpace
 
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
@@ -28,7 +30,7 @@ void ImGuiPass::Initialize()
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
 
 	// Setup Platform/Renderer backends
 	const int NUM_FRAMES_IN_FLIGHT = 2; // Number of frames in flight
@@ -55,6 +57,8 @@ void ImGuiPass::Initialize()
 	// (there is a legacy version of ImGui_ImplDX12_Init() that supports those, but a future version of Dear ImGuii will requires more descriptors to be allocated)
 	ImGui_ImplWin32_Init(windowContext.GetWindowHandle()); // Win32 window handle
 	ImGui_ImplDX12_Init(&init_info);
+
+	ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\CascadiaMono.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
 }
 
 void ImGuiPass::Update()
@@ -75,7 +79,57 @@ void ImGuiPass::Execute()
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	ImGui::ShowDemoWindow(); // Show demo window! :)
+	//ImGui::ShowDemoWindow(); // Show demo window! :)
+
+	ImVec2 window_pos = ImVec2(0, 0);     // Top-left corner
+	ImVec2 window_size = ImVec2(400, 1080);      // 300 px wide, height auto
+	
+	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+	
+	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	
+	static int selectedIndex = -1;
+	
+	ImGui::Text("Game Objects");
+	ImGui::Separator();
+	
+	float panelHeight = ImGui::GetContentRegionAvail().y * 0.5f;
+	
+	if (ImGui::BeginChild("GameObjectList", ImVec2(0, panelHeight), true))
+	{
+		for (int i = 0; i < renderContext.GetNumOfMeshes(); ++i)
+		{
+			auto mesh = renderContext.GetMesh(HMesh(i));
+			bool selected = (i == selectedIndex);
+			if (ImGui::Selectable(mesh->GetName(), selected))
+			{
+				selectedIndex = i;
+			}
+		}
+	}
+	ImGui::EndChild();
+	
+	ImGui::Separator();
+	ImGui::Text("Details");
+	ImGui::Separator();
+	
+	if (ImGui::BeginChild("DetailsPanel", ImVec2(0, 0), true))
+	{
+		if (selectedIndex >= 0 && selectedIndex < renderContext.GetNumOfMeshes())
+		{
+			const auto mesh = renderContext.GetMesh(HMesh(selectedIndex));
+			ImGui::Text("Name: %s", mesh->GetName());
+			ImGui::Text("Vertices: %d", mesh->GetVertexCount());
+		}
+		else
+		{
+			ImGui::Text("No GameObject selected.");
+		}
+	}
+	ImGui::EndChild();
+	
+	ImGui::End();
 
 	// Rendering
 	// (Your code clears your framebuffer, renders your other stuff etc.)
