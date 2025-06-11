@@ -1,6 +1,7 @@
 #include "RenderGraph.h"
 #include "RenderPass.h"
 #include "TestPass.h"
+#include "ImGuiPass.h"
 #include "BlitPass.h"
 
 RenderGraph::RenderGraph()
@@ -8,6 +9,9 @@ RenderGraph::RenderGraph()
 	// Here we could define our render passes
 	RenderPass* testPass = new TestPass();
 	renderPasses.push_back(testPass);
+
+	RenderPass* imguiPass = new ImGuiPass();
+	renderPasses.push_back(imguiPass);
 
 	RenderPass* blitPass = new BlitPass();
 	renderPasses.push_back(blitPass);
@@ -33,7 +37,7 @@ void RenderGraph::Initialize()
 	for (RenderPass* renderPass : renderPasses)
 	{
 		renderPass->ConfigurePipelineState();
-		renderPass->AutomaticPrepare();
-		renderPass->Prepare();
+		renderPass->AutomaticInitialize();
+		renderPass->Initialize();
 	}
 }

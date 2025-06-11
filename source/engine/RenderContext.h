@@ -41,6 +41,7 @@ public:
 	HCommandList CreateCommandList();
 	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
 	UINT GetNumOfMeshes() { return static_cast<UINT>(meshes.size()); }
+	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();
@@ -61,6 +62,7 @@ public:
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
+	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
 	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data);
 	// Binding
@@ -70,6 +72,7 @@ public:
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
+	void SetDescriptorHeap(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	void BindTexture(HCommandList commandList, HTexture texture);
 	// Clearing

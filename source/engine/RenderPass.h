@@ -18,8 +18,8 @@ public:
 	RenderPass(PCWSTR name, RenderPass::Type type);
 	~RenderPass();
 	virtual void ConfigurePipelineState() = 0;
-	void AutomaticPrepare();
-	virtual void Prepare();
+	void AutomaticInitialize();
+	virtual void Initialize();
 	virtual void Update();
 	void PreExecute();
 	virtual void Execute() = 0;

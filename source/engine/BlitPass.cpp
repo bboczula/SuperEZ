@@ -19,7 +19,7 @@ void BlitPass::ConfigurePipelineState()
 {
 }
 
-void BlitPass::Prepare()
+void BlitPass::Initialize()
 {
 }
 

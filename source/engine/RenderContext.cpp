@@ -670,8 +670,6 @@ void RenderContext::BindTexture(HCommandList commandList, HTexture texture)
 {
 	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(), materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
 
-	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
-	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, textureHandle);
 }
@@ -724,6 +722,12 @@ void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pip
 	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
+}
+
+void RenderContext::SetDescriptorHeap(HCommandList commandList)
+{
+	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
+	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
 }
 
 void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)
