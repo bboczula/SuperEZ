@@ -3,6 +3,7 @@
 #include <vector>
 #include <filesystem>
 #include <string>
+#include "../externals/TinyXML2/tinyxml2.h"
 
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
