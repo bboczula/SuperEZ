@@ -90,7 +90,7 @@ void ImGuiPass::Execute()
 			// Open... with shortcut hint
 			if (ImGui::MenuItem("Open...", "Ctrl+O") ||
 				(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O, false))) {
-				//open_native_dialog = true;
+				std::string path = OpenFileDialog_Win32(windowContext.GetWindowHandle());
 			}
 
 			// Save with shortcut
@@ -170,4 +170,21 @@ void ImGuiPass::Execute()
 
 void ImGuiPass::Allocate(DeviceContext* deviceContext)
 {
+}
+
+std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
+{
+	char filename[MAX_PATH] = { 0 };
+	OPENFILENAMEA ofn = {};
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = owner;  // set your window's HWND
+	ofn.lpstrFilter = "XML Scene Files\0*.xml\0All Files\0*.*\0";
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+	if (GetOpenFileNameA(&ofn)) {
+		return std::string(filename);
+	}
+	return "";
 }
