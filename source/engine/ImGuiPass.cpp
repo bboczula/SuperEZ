@@ -81,13 +81,43 @@ void ImGuiPass::Execute()
 	ImGui::NewFrame();
 	//ImGui::ShowDemoWindow(); // Show demo window! :)
 
-	ImVec2 window_pos = ImVec2(0, 0);     // Top-left corner
-	ImVec2 window_size = ImVec2(400, 1080);      // 300 px wide, height auto
+	ImGuiIO& io = ImGui::GetIO();
+
+	float menuHeight = 0.0f;
+	if (ImGui::BeginMainMenuBar()) {
+		menuHeight = ImGui::GetFrameHeight();
+		if (ImGui::BeginMenu("File")) {
+			// Open... with shortcut hint
+			if (ImGui::MenuItem("Open...", "Ctrl+O") ||
+				(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O, false))) {
+				//open_native_dialog = true;
+			}
+
+			// Save with shortcut
+			if (ImGui::MenuItem("Save", "Ctrl+S") ||
+				(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))) {
+				//SaveScene();
+			}
+
+			ImGui::Separator();
+
+			// Exit
+			if (ImGui::MenuItem("Exit", "Alt+F4")) {
+				//should_exit = true;
+			}
+
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+
+	ImVec2 window_pos = ImVec2(0, menuHeight);     // Top-left corner
+	ImVec2 window_size = ImVec2(400, 1080 - menuHeight);      // 300 px wide, height auto
 	
 	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
 	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 	
-	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	
 	static int selectedIndex = -1;
 	
