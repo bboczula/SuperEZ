@@ -3,7 +3,6 @@
 #include <vector>
 #include <filesystem>
 #include <string>
-#include "../externals/TinyXML2/tinyxml2.h"
 
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
@@ -15,6 +14,7 @@ public:
 	void Initialize();
 	void CreateRenderResources();
 	void LoadAssets(GameObjects gameObjects, std::filesystem::path currentPath);
+	void ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName);
 	void Tick();
 	void Run();
 };

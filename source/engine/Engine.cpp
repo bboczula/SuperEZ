@@ -9,6 +9,7 @@
 #include "input/RawInput.h"
 #include "input/ImGuiHandler.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
+#include "../externals/TinyXML2/tinyxml2.h"
 
 #define FRAME_COUNT 2
 
@@ -104,7 +105,8 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 		auto vbTexcoord = CreateVB("TEXCOORD", 2);
 		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, meshName.c_str());
 
-		auto texturePath = std::filesystem::current_path() / textureName;
+		//auto texturePath = std::filesystem::current_path() / textureName;
+		auto texturePath = currentPath.remove_filename() / textureName;
 		assetManager.ImageLoadAndDecode(texturePath.string().c_str());
 		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
 
@@ -112,6 +114,40 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 	}
 }
 
+void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName)
+{
+	currentPath.append(sceneName);
+	std::filesystem::path scenePath = currentPath / (std::string(sceneName) + ".xml");
+
+	tinyxml2::XMLDocument doc;
+	tinyxml2::XMLError xmlError = doc.LoadFile(scenePath.string().c_str());
+	assert(xmlError == tinyxml2::XML_SUCCESS, "Failed to load sponza.xml");
+
+	tinyxml2::XMLElement* scene = doc.FirstChildElement("Scene");
+	assert(scene != nullptr, "Scene element not found in sponza.xml");
+
+	tinyxml2::XMLElement* meshLib = scene->FirstChildElement("MeshLibrary");
+	if (meshLib) {
+		const char* meshFile = meshLib->Attribute("file");
+		std::cout << "Mesh file: " << (meshFile ? meshFile : "none") << "\n";
+		currentPath.append(meshFile);
+	}
+
+	for (tinyxml2::XMLElement* go = scene->FirstChildElement("GameObject");
+		go != nullptr;
+		go = go->NextSiblingElement("GameObject"))
+	{
+		const char* name = go->Attribute("name");
+		const char* mesh = go->Attribute("mesh");
+		const char* texture = go->Attribute("texture");
+
+		std::cout << "[GameObject] name: " << (name ? name : "none")
+			<< ", mesh: " << (mesh ? mesh : "none")
+			<< ", texture: " << (texture ? texture : "none") << "\n";
+
+		gameObjects.emplace_back(std::make_pair(mesh ? mesh : "default_mesh", texture ? texture : "default_texture"));
+	}
+}
 
 void Engine::Tick()
 {
@@ -130,84 +166,11 @@ void Engine::Run()
 {
 	Initialize();
 
-	std::filesystem::path currentPath = std::filesystem::current_path();;
-	//currentPath.append("chess.obj");
-	currentPath.append("sponza_tex.obj");
-
-	//GameObjects gameObjects =
-	//{
-	//	std::make_pair( "Chess_Board_Mesh", "Chess_Board_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_3_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Bishop_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Tower_2_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Queen_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "King_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Knight_2_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Knight_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Tower_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Bishop_2_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_2_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_4_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_5_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_6_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_7_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_8_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_Dark_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_3_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Bishop_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Tower_2_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Queen_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "King_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Knight_2_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Knight_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Tower_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Bishop_2_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_2_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_4_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_5_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_6_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_7_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_8_Light_Mesh", "Chess_Pieces_BaseMap.bmp" ),
-	//	std::make_pair( "Pawn_Light_Mesh", "Chess_Pieces_BaseMap.bmp" )
-	//};
-
-	GameObjects gameObjects =
-	{
-		std::make_pair("arcs_01_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_02_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_03_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_04_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_floo0_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_floor_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_long_Mesh", "sp_luk.bmp"),
-		std::make_pair("arcs_small_Mesh", "sp_luk.bmp"),
-		std::make_pair("ceiling_Mesh", "KAMEN-stup.bmp"),
-		std::make_pair("doors_Mesh", "vrata_ko.bmp"),
-		std::make_pair("holes_Mesh", "x01_st.bmp"),
-		std::make_pair("object19_Mesh", "01_St_kp.bmp"),
-		std::make_pair("object21_Mesh", "KAMEN-stup.bmp"),
-		std::make_pair("object23_Mesh", "00_skap.bmp"),
-		std::make_pair("object27_Mesh", "01_St_kp.bmp"),
-		std::make_pair("object28_Mesh", "01_S_ba.bmp"),
-		std::make_pair("object3_Mesh", "01_S_ba.bmp"),
-		std::make_pair("object31_Mesh", "01_S_ba.bmp"),
-		std::make_pair("object32_Mesh", "00_skap.bmp"),
-		std::make_pair("object4_Mesh", "01_St_kp.bmp"),
-		std::make_pair("object5_Mesh", "00_skap.bmp"),
-		std::make_pair("object6_Mesh", "00_skap.bmp"),
-		std::make_pair("outside01_Mesh", "KAMEN.bmp"),
-		std::make_pair("parapet_Mesh", "sp_luk.bmp"),
-		std::make_pair("pillar_cor_Mesh", "01_STUB.bmp"),
-		std::make_pair("pillar_flo_Mesh", "01_STUB.bmp"),
-		std::make_pair("pillar_qua_Mesh", "sp_01_stub.bmp"),
-		std::make_pair("pillar_rou_Mesh", "x01_st.bmp"),
-		std::make_pair("puillar_fl_Mesh", "01_STUB.bmp"),
-		std::make_pair("relief_Mesh", "reljef.bmp"),
-		std::make_pair("round_hole_Mesh", "sp_luk.bmp"),
-		std::make_pair("walls_Mesh", "KAMEN.bmp"),
-		std::make_pair("windows_Mesh", "prozor1.bmp")
-	};
-
+	GameObjects gameObjects;
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	currentPath.append("assets");
+	// Scenes: chess, sponza, milkyway
+	ProcessScene(gameObjects, currentPath, "chess");
 	LoadAssets(gameObjects, currentPath);
 
 	MSG msg{ 0 };
