@@ -14,6 +14,7 @@ public:
 	void Initialize();
 	void CreateRenderResources();
 	void LoadAssets(GameObjects gameObjects, std::filesystem::path currentPath);
+	void ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName);
 	void Tick();
 	void Run();
 };

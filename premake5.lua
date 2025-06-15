@@ -109,12 +109,13 @@ project "Engine"
     targetdir "bin/%{cfg.buildcfg}"
 	includedirs
 	{
-		"source/external/d3dx12",
-		"source/external/SimpleMath",
+		"source/externals/d3dx12",
+		"source/externals/SimpleMath",
 		"source/externals/PixEvents/include",
 		"source/externals/AssetSuite/inc",
 		"source/externals/imgui",
-		"source/externals/imgui/backends"
+		"source/externals/imgui/backends",
+		"source/externals/TinyXML2"
 	}
 	libdirs
 	{
@@ -123,8 +124,11 @@ project "Engine"
 	}
     files
 	{
-		"source/engine/**.h", "source/engine/**.cpp",
-		"source/engine/shaders/**.hlsl"
+		"source/engine/**.h",
+		"source/engine/**.cpp",
+		"source/engine/shaders/**.hlsl",
+		"source/externals/TinyXML2/tinyxml2.h",
+		"source/externals/TinyXML2/tinyxml2.cpp"
 	}
 	buildcommands
 	{
