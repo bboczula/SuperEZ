@@ -11,6 +11,10 @@
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "../externals/TinyXML2/tinyxml2.h"
 
+#include "StartupState.h"
+#include "LoadAssetsState.h"
+#include "GameLoopState.h"
+
 #define FRAME_COUNT 2
 
 // Global Entities
@@ -164,15 +168,19 @@ void Engine::Tick()
 
 void Engine::Run()
 {
-	Initialize();
+	ChangeState(new StartupState());
+	ChangeState(new LoadAssetsState());
+	ChangeState(new GameLoopState());
 
-	GameObjects gameObjects;
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	currentPath.append("assets");
-	// Scenes: chess, sponza, milkyway
-	ProcessScene(gameObjects, currentPath, "chess");
-	LoadAssets(gameObjects, currentPath);
+	//Initialize();
 
+	//LoadSceneAssets();
+
+	//RunGameLoop();
+}
+
+void Engine::RunGameLoop()
+{
 	MSG msg{ 0 };
 	while (1)
 	{
@@ -189,5 +197,33 @@ void Engine::Run()
 		}
 		Tick();
 		winMessageSubject.RunPostFrame();
+	}
+}
+
+void Engine::LoadSceneAssets()
+{
+	GameObjects gameObjects;
+	std::filesystem::path currentPath = std::filesystem::current_path();
+	currentPath.append("assets");
+	// Scenes: chess, sponza, milkyway
+	ProcessScene(gameObjects, currentPath, "chess");
+	LoadAssets(gameObjects, currentPath);
+}
+
+void Engine::ChangeState(IEngineState* newState)
+{
+	if (currentState)
+	{
+		currentState->Exit(*this);
+		delete currentState;
+	}
+	currentState = newState;
+	if (currentState)
+	{
+		currentState->Enter(*this);
+	}
+	else
+	{
+		OutputDebugString(L"Engine::ChangeState() - No new state provided\n");
 	}
 }
