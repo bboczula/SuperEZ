@@ -1,12 +1,16 @@
 #include "LoadAssetsState.h"
-#include "Engine.h"
+#include "../Engine.h"
 #include <Windows.h>
 #include "EngineCommandQueue.h"
+
+LoadAssetsState::LoadAssetsState(std::string sceneName) : sceneName(std::move(sceneName))
+{
+}
 
 void LoadAssetsState::Enter(Engine& engine)
 {
 	OutputDebugString(L"LoadAssetsState::Enter\n");
-	engine.LoadSceneAssets();
+	engine.LoadSceneAssets(sceneName);
 
 	// Transition to the next state after loading assets
 	GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::GameLoop });

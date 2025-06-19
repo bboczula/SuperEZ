@@ -1,4 +1,3 @@
-// CommandQueue.cpp
 #include "EngineCommandQueue.h"
 
 std::mutex GlobalCommandQueue::mutex;

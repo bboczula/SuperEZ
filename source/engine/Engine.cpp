@@ -10,11 +10,11 @@
 #include "input/ImGuiHandler.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "../externals/TinyXML2/tinyxml2.h"
-#include "EngineCommandQueue.h"
 
-#include "StartupState.h"
-#include "LoadAssetsState.h"
-#include "GameLoopState.h"
+#include "states/EngineCommandQueue.h"
+#include "states/StartupState.h"
+#include "states/LoadAssetsState.h"
+#include "states/GameLoopState.h"
 
 #define FRAME_COUNT 2
 
@@ -194,13 +194,12 @@ void Engine::ProcessSingleFrame()
 	winMessageSubject.RunPostFrame();
 }
 
-void Engine::LoadSceneAssets()
+void Engine::LoadSceneAssets(std::string sceneName)
 {
 	GameObjects gameObjects;
 	std::filesystem::path currentPath = std::filesystem::current_path();
 	currentPath.append("assets");
-	// Scenes: chess, sponza, milkyway
-	ProcessScene(gameObjects, currentPath, "chess");
+	ProcessScene(gameObjects, currentPath, sceneName.c_str());
 	LoadAssets(gameObjects, currentPath);
 }
 
@@ -230,7 +229,6 @@ void Engine::ProcessGlobalCommands()
 	while (!commands.empty())
 	{
 		EngineCommand cmd = commands.front();
-		commands.pop();
 
 		switch (cmd.type)
 		{
@@ -238,8 +236,12 @@ void Engine::ProcessGlobalCommands()
 			ChangeState(new StartupState());
 			break;
 		case EngineCommandType::LoadAssets:
-			ChangeState(new LoadAssetsState());
+		{
+			// Why do I need braces here???
+			auto payload = std::get<LoadAssetsPayload>(cmd.payload);
+			ChangeState(new LoadAssetsState(payload.sceneName));
 			break;
+		}
 		case EngineCommandType::GameLoop:
 			ChangeState(new GameLoopState());
 			break;
@@ -248,5 +250,7 @@ void Engine::ProcessGlobalCommands()
 		default:
 			break;
 		}
+
+		commands.pop();
 	}
 }

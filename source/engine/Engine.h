@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <string>
 
-#include "IEngineState.h"
+#include "states/IEngineState.h"
 
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
@@ -20,7 +20,7 @@ public:
 	void Tick();
 	void Run();
 	void ProcessSingleFrame();
-	void LoadSceneAssets();
+	void LoadSceneAssets(std::string sceneName);
 	void ChangeState(IEngineState* newState);
 	void ProcessGlobalCommands();
 private:

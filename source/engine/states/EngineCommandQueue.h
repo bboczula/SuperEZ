@@ -3,21 +3,7 @@
 #include <string>
 #include <queue>
 #include <mutex>
-
-enum class EngineCommandType
-{
-	None,
-	Startup,
-	LoadAssets,
-	GameLoop,
-	Exit
-};
-
-struct EngineCommand
-{
-	EngineCommandType type;
-	std::string nextStateName;
-};
+#include "EngineCommand.h"
 
 class GlobalCommandQueue
 {

@@ -1,5 +1,5 @@
 #include "GameLoopState.h"
-#include "Engine.h"
+#include "../Engine.h"
 #include <Windows.h>
 
 void GameLoopState::Enter(Engine& engine)
