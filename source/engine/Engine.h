@@ -19,9 +19,10 @@ public:
 	void ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName);
 	void Tick();
 	void Run();
-	void RunGameLoop();
+	void ProcessSingleFrame();
 	void LoadSceneAssets();
 	void ChangeState(IEngineState* newState);
+	void ProcessGlobalCommands();
 private:
 	IEngineState* currentState = nullptr;
 };

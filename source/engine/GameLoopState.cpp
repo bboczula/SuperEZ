@@ -5,7 +5,6 @@
 void GameLoopState::Enter(Engine& engine)
 {
 	OutputDebugStringA("GameLoopState::Enter\n");
-	engine.RunGameLoop();
 }
 
 void GameLoopState::Exit(Engine& engine)
@@ -15,4 +14,5 @@ void GameLoopState::Exit(Engine& engine)
 
 void GameLoopState::Update(Engine& engine)
 {
+	engine.ProcessSingleFrame();
 }

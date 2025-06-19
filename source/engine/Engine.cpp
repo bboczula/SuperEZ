@@ -10,6 +10,7 @@
 #include "input/ImGuiHandler.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "../externals/TinyXML2/tinyxml2.h"
+#include "EngineCommandQueue.h"
 
 #include "StartupState.h"
 #include "LoadAssetsState.h"
@@ -30,6 +31,7 @@ ImGuiHandler imGuiHandler;
 Engine::Engine()
 {
 	OutputDebugString(L"Engine Constructor\n");
+	GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Startup });
 }
 
 Engine::~Engine()
@@ -131,15 +133,14 @@ void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& curre
 	assert(scene != nullptr, "Scene element not found in sponza.xml");
 
 	tinyxml2::XMLElement* meshLib = scene->FirstChildElement("MeshLibrary");
-	if (meshLib) {
+	if (meshLib)
+	{
 		const char* meshFile = meshLib->Attribute("file");
 		std::cout << "Mesh file: " << (meshFile ? meshFile : "none") << "\n";
 		currentPath.append(meshFile);
 	}
 
-	for (tinyxml2::XMLElement* go = scene->FirstChildElement("GameObject");
-		go != nullptr;
-		go = go->NextSiblingElement("GameObject"))
+	for (tinyxml2::XMLElement* go = scene->FirstChildElement("GameObject"); go != nullptr; go = go->NextSiblingElement("GameObject"))
 	{
 		const char* name = go->Attribute("name");
 		const char* mesh = go->Attribute("mesh");
@@ -168,36 +169,29 @@ void Engine::Tick()
 
 void Engine::Run()
 {
-	ChangeState(new StartupState());
-	ChangeState(new LoadAssetsState());
-	ChangeState(new GameLoopState());
-
-	//Initialize();
-
-	//LoadSceneAssets();
-
-	//RunGameLoop();
-}
-
-void Engine::RunGameLoop()
-{
-	MSG msg{ 0 };
 	while (1)
 	{
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			if (msg.message == WM_QUIT)
-			{
-				OutputDebugString(L"Engine::Run() - WM_QUIT received\n");
-				exit(0);
-			}
-
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		Tick();
-		winMessageSubject.RunPostFrame();
+		ProcessGlobalCommands();
+		currentState->Update(*this);
 	}
+}
+
+void Engine::ProcessSingleFrame()
+{
+	MSG msg{ 0 };
+	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+	{
+		if (msg.message == WM_QUIT)
+		{
+			OutputDebugString(L"Engine::Run() - WM_QUIT received\n");
+			GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Exit });
+		}
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+	Tick();
+	winMessageSubject.RunPostFrame();
 }
 
 void Engine::LoadSceneAssets()
@@ -217,7 +211,9 @@ void Engine::ChangeState(IEngineState* newState)
 		currentState->Exit(*this);
 		delete currentState;
 	}
+
 	currentState = newState;
+
 	if (currentState)
 	{
 		currentState->Enter(*this);
@@ -225,5 +221,32 @@ void Engine::ChangeState(IEngineState* newState)
 	else
 	{
 		OutputDebugString(L"Engine::ChangeState() - No new state provided\n");
+	}
+}
+
+void Engine::ProcessGlobalCommands()
+{
+	auto commands = GlobalCommandQueue::Consume();
+	while (!commands.empty())
+	{
+		EngineCommand cmd = commands.front();
+		commands.pop();
+
+		switch (cmd.type)
+		{
+		case EngineCommandType::Startup:
+			ChangeState(new StartupState());
+			break;
+		case EngineCommandType::LoadAssets:
+			ChangeState(new LoadAssetsState());
+			break;
+		case EngineCommandType::GameLoop:
+			ChangeState(new GameLoopState());
+			break;
+		case EngineCommandType::Exit:
+			break;
+		default:
+			break;
+		}
 	}
 }
