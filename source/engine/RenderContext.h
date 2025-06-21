@@ -27,7 +27,7 @@ public:
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	HRootSignature CreateRootSignature(DeviceContext* deviceContext);
-	HShader CreateShaders(LPCWSTR shaderName);
+	HShader CreateShaders(LPCWSTR shaderFileName);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayout);
 	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	HInputLayout CreateInputLayout();

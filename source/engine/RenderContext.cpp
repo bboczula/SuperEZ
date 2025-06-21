@@ -8,6 +8,7 @@
 #include "VertexBuffer.h"
 #include "InputLayout.h"
 #include "Buffer.h"
+#include "Shader.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -183,26 +184,18 @@ HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	return HRootSignature(rootSignatures.size() - 1);
 }
 
-HShader RenderContext::CreateShaders(LPCWSTR shaderName)
+HShader RenderContext::CreateShaders(LPCWSTR shaderFileName)
 {
 	OutputDebugString(L"CreateShaders\n");
 
-#if defined(DEBUG)
-	// Enable better shader debugging with the graphics debugging tools.
-	UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-	UINT compileFlags = 0;
-#endif
+	// Both shaders are compiled from the same file, so we can use the same shaderName
+	Shader ps;
+	ps.Compile(shaderFileName, "PSMain", "ps_5_0");
+	Shader vs;
+	vs.Compile(shaderFileName, "VSMain", "vs_5_0");
 
-	ID3DBlob* vertexShader;
-	ID3DBlob* pixelShader;
-
-	// In final we will copy shaders to the bin directory
-	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-
-	vertexShaders.push_back(vertexShader);
-	pixelShaders.push_back(pixelShader);
+	vertexShaders.push_back(vs.GetBlob());
+	pixelShaders.push_back(ps.GetBlob());
 	OutputDebugString(L"CreateShaders succeeded\n");
 
 	return HShader(vertexShaders.size() - 1);
