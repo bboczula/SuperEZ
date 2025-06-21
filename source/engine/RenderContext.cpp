@@ -60,6 +60,47 @@ void RenderContext::CreateDescriptorHeap(DeviceContext* deviceContext)
 	samplerHeap.Create(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, deviceContext);
 }
 
+void RenderContext::UnloadAssets()
+{
+	//for(int i = 0; i < meshes.size(); i++)
+	//{
+	//	delete meshes[i];
+	//	delete materials[i];
+	//}
+
+	while(!vertexBuffers.empty())
+	{
+		delete vertexBuffers.back();
+		vertexBuffers.pop_back();
+	}
+
+	while(!meshes.empty())
+	{
+		delete meshes.back();
+		meshes.pop_back();
+	}
+
+	// Delete everything from index 2 onward
+	// This is very bad, it so happens that first two textures are the back buffer textures
+	// Next is the one we render to, and the last one is the depth buffer
+	// But this is basically just a coincidence I think at least for the last two
+	for (size_t i = 4; i < textures.size(); ++i)
+	{
+		delete textures[i];
+	}
+
+	// Shrink the vector to just keep the first two
+	textures.resize(4);
+
+	while(!materials.empty())
+	{
+		delete materials.back();
+		materials.pop_back();
+	}
+
+	cbvSrvUavHeap.Reset();
+}
+
 HRenderTarget RenderContext::CreateRenderTarget()
 {
 	OutputDebugString(L"CreateRenderTarget\n");

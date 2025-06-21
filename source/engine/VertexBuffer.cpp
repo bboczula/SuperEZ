@@ -1,5 +1,7 @@
 #include "VertexBuffer.h"
 
+#include <string>
+
 VertexBuffer::VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, UINT numOfVertices, const char* name)
 	: resource(resource), sizeInBytes(sizeInBytes), numOfVertices(numOfVertices)
 {
@@ -8,4 +10,12 @@ VertexBuffer::VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, UINT numO
 
 VertexBuffer::~VertexBuffer()
 {
+	if (resource)
+	{
+		resource->Release();
+		resource = nullptr;
+	}
+	OutputDebugStringA(("VertexBuffer Destructor: " + std::string(name) + "\n").c_str());
+	// Cleanup if necessary
+	// For example, release resources or perform other cleanup tasks
 }

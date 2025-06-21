@@ -18,6 +18,7 @@ public:
 	UINT Size();
 	UINT GetDescriptorSize() { return descriptorSize; }
 	ID3D12DescriptorHeap* GetHeap() { return heap; }
+	void Reset();
 private:
 	std::stack<uint32_t> freeList;
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType;

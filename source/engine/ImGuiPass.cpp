@@ -1,4 +1,4 @@
-#include "ImGuiPass.h"
+﻿#include "ImGuiPass.h"
 #include "WindowContext.h"
 #include "DeviceContext.h"
 #include "RenderContext.h"
@@ -10,6 +10,7 @@
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_win32.h>
 #include <imgui_internal.h> // For ImGuiDockNodeFlags_DockSpace
+#include <filesystem>
 
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
@@ -92,6 +93,12 @@ void ImGuiPass::Execute()
 			if (ImGui::MenuItem("Open...", "Ctrl+O") ||
 				(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O, false))) {
 				std::string path = OpenFileDialog_Win32(windowContext.GetWindowHandle());
+				std::filesystem::path fsPath(path);
+				std::string filename = fsPath.stem().string();
+				GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::UnloadAssets });
+				GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::LoadAssets, LoadAssetsPayload{ filename } });
+				// Later add Load Assets command with the new scene name
+				//GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::GameLoop });
 			}
 
 			// Save with shortcut
@@ -115,7 +122,7 @@ void ImGuiPass::Execute()
 	}
 
 	ImVec2 window_pos = ImVec2(0, menuHeight);     // Top-left corner
-	ImVec2 window_size = ImVec2(400, 1080 - menuHeight);      // 300 px wide, height auto
+	ImVec2 window_size = ImVec2(400, 1080 - menuHeight - 25);      // 300 px wide, height auto
 	
 	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
 	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
@@ -163,6 +170,36 @@ void ImGuiPass::Execute()
 	ImGui::EndChild();
 	
 	ImGui::End();
+
+	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 25));
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 25));
+
+	ImGui::Begin("StatusBar", nullptr,
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoSavedSettings);
+
+	float currentMB, budgetMB, usagePct;
+	deviceContext.GetMemoryUsage(currentMB, budgetMB, usagePct);
+
+	std::stringstream ss;
+	ss << "GPU VRAM: " << std::fixed << std::setprecision(1)
+		<< currentMB << " MB / " << budgetMB << " MB (" << std::setprecision(0) << usagePct << "%)";
+	std::string vramLabel = ss.str();
+
+
+	// Color the bar based on usage
+	if (usagePct > 95.0f) ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+	else if (usagePct > 80.0f) ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 165, 0, 255));
+	else ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+
+	ImGui::Text("%s", vramLabel.c_str());
+	ImGui::PopStyleColor();
+
+	ImGui::End();
+
 
 	// Rendering
 	// (Your code clears your framebuffer, renders your other stuff etc.)

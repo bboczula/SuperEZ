@@ -7,6 +7,7 @@ class Texture
 {
 public:
 	Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON);
+	~Texture();
 	ID3D12Resource* GetResource();
 	D3D12_RESOURCE_STATES GetCurrentState()
 	{

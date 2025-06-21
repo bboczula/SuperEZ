@@ -82,7 +82,10 @@ void DeviceContext::EnumAndChoseAdapter()
 	}
 
 	// Finally we pick the first adapter
-	ExitIfFailed(dxgiFactory2->EnumAdapters(0, &dxgiAdapter));
+	IDXGIAdapter* baseAdapter = nullptr;
+	dxgiFactory2->EnumAdapters(0, &baseAdapter);
+	ExitIfFailed(dxgiFactory2->EnumAdapters(0, &baseAdapter));
+	baseAdapter->QueryInterface(IID_PPV_ARGS(&dxgiAdapter)); // save as IDXGIAdapter3*
 	OutputDebugString(L"Successfully picked adapter\n");
 }
 
@@ -158,6 +161,17 @@ void DeviceContext::Flush()
 {
 	Signal();
 	WaitForGpu();
+}
+
+void DeviceContext::GetMemoryUsage(float& currentMB, float& budgetMB, float& usagePct)
+{
+	DXGI_QUERY_VIDEO_MEMORY_INFO memInfo = {};
+	dxgiAdapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &memInfo);
+
+	currentMB = static_cast<float>(memInfo.CurrentUsage) / (1024.0f * 1024.0f);
+	budgetMB = static_cast<float>(memInfo.Budget) / (1024.0f * 1024.0f);
+	usagePct = (currentMB / budgetMB) * 100.0f;
+
 }
 
 void DeviceContext::LogAdapterInfo(IDXGIAdapter* adapter)

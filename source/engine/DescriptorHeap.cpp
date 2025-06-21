@@ -73,3 +73,9 @@ UINT DescriptorHeap::Size()
 {
 	return size;
 }
+
+void DescriptorHeap::Reset()
+{
+	size = heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ? 4 : 0;
+	freeList = std::stack<uint32_t>();
+}

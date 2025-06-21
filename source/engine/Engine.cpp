@@ -16,6 +16,7 @@
 #include "states/LoadAssetsState.h"
 #include "states/GameLoopState.h"
 #include "states/ExitState.h"
+#include "states/UnloadAssetsState.h"
 
 #define FRAME_COUNT 2
 
@@ -204,6 +205,11 @@ void Engine::LoadSceneAssets(std::string sceneName)
 	LoadAssets(gameObjects, currentPath);
 }
 
+void Engine::UnloadSceneAssets()
+{
+	renderContext.UnloadAssets();
+}
+
 void Engine::ChangeState(IEngineState* newState)
 {
 	if (currentState)
@@ -245,6 +251,9 @@ void Engine::ProcessGlobalCommands()
 		}
 		case EngineCommandType::GameLoop:
 			ChangeState(new GameLoopState());
+			break;
+		case EngineCommandType::UnloadAssets:
+			ChangeState(new UnloadAssetsState());
 			break;
 		case EngineCommandType::Exit:
 			ChangeState(new ExitState());

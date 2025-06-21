@@ -21,6 +21,7 @@ public:
 	void Run();
 	void ProcessSingleFrame();
 	void LoadSceneAssets(std::string sceneName);
+	void UnloadSceneAssets();
 	void ChangeState(IEngineState* newState);
 	void ProcessGlobalCommands();
 private:
