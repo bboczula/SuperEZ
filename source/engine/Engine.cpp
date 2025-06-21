@@ -15,6 +15,7 @@
 #include "states/StartupState.h"
 #include "states/LoadAssetsState.h"
 #include "states/GameLoopState.h"
+#include "states/ExitState.h"
 
 #define FRAME_COUNT 2
 
@@ -159,7 +160,7 @@ void Engine::Tick()
 	if (rawInput.IsKeyDown(VK_ESCAPE))
 	{
 		OutputDebugString(L"Engine::Tick() - Escape key pressed\n");
-		exit(0);
+		GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Exit });
 	}
 	renderGraph.Execute();
 	deviceContext.Flush();
@@ -246,6 +247,7 @@ void Engine::ProcessGlobalCommands()
 			ChangeState(new GameLoopState());
 			break;
 		case EngineCommandType::Exit:
+			ChangeState(new ExitState());
 			break;
 		default:
 			break;

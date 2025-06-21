@@ -4,6 +4,7 @@
 #include "RenderContext.h"
 #include "DescriptorHeap.h"
 #include "Mesh.h"
+#include "states/EngineCommandQueue.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
@@ -102,8 +103,10 @@ void ImGuiPass::Execute()
 			ImGui::Separator();
 
 			// Exit
-			if (ImGui::MenuItem("Exit", "Alt+F4")) {
-				//should_exit = true;
+			if (ImGui::MenuItem("Exit", "Alt+F4"))
+			{
+				GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::UnloadAssets });
+				GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Exit });
 			}
 
 			ImGui::EndMenu();

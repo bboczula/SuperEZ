@@ -9,6 +9,7 @@ enum class EngineCommandType
 	Startup,
 	LoadAssets,
 	GameLoop,
+	UnloadAssets,
 	Exit
 };
 
