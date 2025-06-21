@@ -25,6 +25,7 @@ public:
 	UINT64 GetCopyableFootprintsSize(D3D12_RESOURCE_DESC& resourceDesc, D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout);
 	void Present();
 	void Flush();
+	void GetMemoryUsage(float& currentMb, float& budgetMb, float& usagePct);
 private:
 	void CreateDxgiFactory();
 	void GetAdapterCapabilities();
@@ -41,7 +42,7 @@ private:
 	void ReportLiveObjects();
 	void SetDebugNames();
 	IDXGIFactory2* dxgiFactory2;
-	IDXGIAdapter* dxgiAdapter;
+	IDXGIAdapter3* dxgiAdapter;
 	IDXGISwapChain3* swapChain;
 	ID3D12Device* device;
 	ID3D12CommandQueue* commandQueue;

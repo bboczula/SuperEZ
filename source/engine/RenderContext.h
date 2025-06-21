@@ -42,6 +42,7 @@ public:
 	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
 	UINT GetNumOfMeshes() { return static_cast<UINT>(meshes.size()); }
 	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
+	void UnloadAssets();
 	// High Level
 	HRenderTarget CreateRenderTarget();
 	HDepthBuffer CreateDepthBuffer();

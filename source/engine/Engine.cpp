@@ -11,6 +11,13 @@
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "../externals/TinyXML2/tinyxml2.h"
 
+#include "states/EngineCommandQueue.h"
+#include "states/StartupState.h"
+#include "states/LoadAssetsState.h"
+#include "states/GameLoopState.h"
+#include "states/ExitState.h"
+#include "states/UnloadAssetsState.h"
+
 #define FRAME_COUNT 2
 
 // Global Entities
@@ -26,6 +33,7 @@ ImGuiHandler imGuiHandler;
 Engine::Engine()
 {
 	OutputDebugString(L"Engine Constructor\n");
+	GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Startup });
 }
 
 Engine::~Engine()
@@ -127,15 +135,14 @@ void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& curre
 	assert(scene != nullptr, "Scene element not found in sponza.xml");
 
 	tinyxml2::XMLElement* meshLib = scene->FirstChildElement("MeshLibrary");
-	if (meshLib) {
+	if (meshLib)
+	{
 		const char* meshFile = meshLib->Attribute("file");
 		std::cout << "Mesh file: " << (meshFile ? meshFile : "none") << "\n";
 		currentPath.append(meshFile);
 	}
 
-	for (tinyxml2::XMLElement* go = scene->FirstChildElement("GameObject");
-		go != nullptr;
-		go = go->NextSiblingElement("GameObject"))
+	for (tinyxml2::XMLElement* go = scene->FirstChildElement("GameObject"); go != nullptr; go = go->NextSiblingElement("GameObject"))
 	{
 		const char* name = go->Attribute("name");
 		const char* mesh = go->Attribute("mesh");
@@ -154,7 +161,7 @@ void Engine::Tick()
 	if (rawInput.IsKeyDown(VK_ESCAPE))
 	{
 		OutputDebugString(L"Engine::Tick() - Escape key pressed\n");
-		exit(0);
+		GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Exit });
 	}
 	renderGraph.Execute();
 	deviceContext.Flush();
@@ -164,30 +171,97 @@ void Engine::Tick()
 
 void Engine::Run()
 {
-	Initialize();
+	while (1)
+	{
+		ProcessGlobalCommands();
+		currentState->Update(*this);
+	}
+}
 
+void Engine::ProcessSingleFrame()
+{
+	MSG msg{ 0 };
+	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+	{
+		if (msg.message == WM_QUIT)
+		{
+			OutputDebugString(L"Engine::Run() - WM_QUIT received\n");
+			GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::Exit });
+		}
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+	Tick();
+	winMessageSubject.RunPostFrame();
+}
+
+void Engine::LoadSceneAssets(std::string sceneName)
+{
 	GameObjects gameObjects;
 	std::filesystem::path currentPath = std::filesystem::current_path();
 	currentPath.append("assets");
-	// Scenes: chess, sponza, milkyway
-	ProcessScene(gameObjects, currentPath, "chess");
+	ProcessScene(gameObjects, currentPath, sceneName.c_str());
 	LoadAssets(gameObjects, currentPath);
+}
 
-	MSG msg{ 0 };
-	while (1)
+void Engine::UnloadSceneAssets()
+{
+	renderContext.UnloadAssets();
+}
+
+void Engine::ChangeState(IEngineState* newState)
+{
+	if (currentState)
 	{
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			if (msg.message == WM_QUIT)
-			{
-				OutputDebugString(L"Engine::Run() - WM_QUIT received\n");
-				exit(0);
-			}
+		currentState->Exit(*this);
+		delete currentState;
+	}
 
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+	currentState = newState;
+
+	if (currentState)
+	{
+		currentState->Enter(*this);
+	}
+	else
+	{
+		OutputDebugString(L"Engine::ChangeState() - No new state provided\n");
+	}
+}
+
+void Engine::ProcessGlobalCommands()
+{
+	auto commands = GlobalCommandQueue::Consume();
+	while (!commands.empty())
+	{
+		EngineCommand cmd = commands.front();
+
+		switch (cmd.type)
+		{
+		case EngineCommandType::Startup:
+			ChangeState(new StartupState());
+			break;
+		case EngineCommandType::LoadAssets:
+		{
+			// Why do I need braces here???
+			auto payload = std::get<LoadAssetsPayload>(cmd.payload);
+			ChangeState(new LoadAssetsState(payload.sceneName));
+			break;
 		}
-		Tick();
-		winMessageSubject.RunPostFrame();
+		case EngineCommandType::GameLoop:
+			ChangeState(new GameLoopState());
+			break;
+		case EngineCommandType::UnloadAssets:
+			ChangeState(new UnloadAssetsState());
+			break;
+		case EngineCommandType::Exit:
+			ChangeState(new ExitState());
+			break;
+		default:
+			break;
+		}
+
+		commands.pop();
 	}
 }
