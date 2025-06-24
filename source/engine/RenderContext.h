@@ -18,6 +18,7 @@ class VertexBuffer;
 class Mesh;
 class Material;
 class InputLayout;
+class Shader;
 
 class RenderContext
 {
@@ -27,8 +28,8 @@ public:
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	HRootSignature CreateRootSignature(DeviceContext* deviceContext);
-	HShader CreateShaders(LPCWSTR shaderFileName);
-	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayout);
+	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout);
 	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
@@ -101,8 +102,7 @@ private:
 	std::vector<VertexBuffer*> vertexBuffers;
 	std::vector<Mesh*> meshes;
 	std::vector<Material*> materials;
-	std::vector<ID3DBlob*> vertexShaders;
-	std::vector<ID3DBlob*> pixelShaders;
+	std::vector<Shader*> shaders;
 	std::vector<ID3D12RootSignature*> rootSignatures;
 	std::vector<ID3D12PipelineState*> pipelineStates;
 	std::vector<CD3DX12_VIEWPORT> viewports;

@@ -33,13 +33,9 @@ RenderContext::~RenderContext()
 	{
 		SafeRelease(&pipelineState);
 	}
-	for (auto& vertexShader : vertexShaders)
+	for (auto& shader : shaders)
 	{
-		SafeRelease(&vertexShader);
-	}
-	for (auto& pixelShader : pixelShaders)
-	{
-		SafeRelease(&pixelShader);
+		delete shader;
 	}
 	for (auto& rootSignature : rootSignatures)
 	{
@@ -184,32 +180,28 @@ HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	return HRootSignature(rootSignatures.size() - 1);
 }
 
-HShader RenderContext::CreateShaders(LPCWSTR shaderFileName)
+HShader RenderContext::CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel)
 {
 	OutputDebugString(L"CreateShaders\n");
 
-	// Both shaders are compiled from the same file, so we can use the same shaderName
-	Shader ps;
-	ps.Compile(shaderFileName, "PSMain", "ps_5_0");
-	Shader vs;
-	vs.Compile(shaderFileName, "VSMain", "vs_5_0");
+	Shader* shader = new Shader();
+	shader->Compile(shaderFileName, entryPoint, shaderModel);
 
-	vertexShaders.push_back(vs.GetBlob());
-	pixelShaders.push_back(ps.GetBlob());
+	shaders.push_back(shader);
 	OutputDebugString(L"CreateShaders succeeded\n");
 
-	return HShader(vertexShaders.size() - 1);
+	return HShader(shaders.size() - 1);
 }
 
-HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shader.Index()]);
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shader.Index()]);
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob());
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(shaders[pixelShader.Index()]->GetBlob());
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
