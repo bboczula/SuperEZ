@@ -8,6 +8,7 @@
 #include "VertexBuffer.h"
 #include "InputLayout.h"
 #include "Buffer.h"
+#include "Shader.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -32,13 +33,9 @@ RenderContext::~RenderContext()
 	{
 		SafeRelease(&pipelineState);
 	}
-	for (auto& vertexShader : vertexShaders)
+	for (auto& shader : shaders)
 	{
-		SafeRelease(&vertexShader);
-	}
-	for (auto& pixelShader : pixelShaders)
-	{
-		SafeRelease(&pixelShader);
+		delete shader;
 	}
 	for (auto& rootSignature : rootSignatures)
 	{
@@ -183,40 +180,28 @@ HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 	return HRootSignature(rootSignatures.size() - 1);
 }
 
-HShader RenderContext::CreateShaders(LPCWSTR shaderName)
+HShader RenderContext::CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel)
 {
 	OutputDebugString(L"CreateShaders\n");
 
-#if defined(DEBUG)
-	// Enable better shader debugging with the graphics debugging tools.
-	UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-	UINT compileFlags = 0;
-#endif
+	Shader* shader = new Shader();
+	shader->Compile(shaderFileName, entryPoint, shaderModel);
 
-	ID3DBlob* vertexShader;
-	ID3DBlob* pixelShader;
-
-	// In final we will copy shaders to the bin directory
-	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-	ExitIfFailed(D3DCompileFromFile(shaderName, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-
-	vertexShaders.push_back(vertexShader);
-	pixelShaders.push_back(pixelShader);
+	shaders.push_back(shader);
 	OutputDebugString(L"CreateShaders succeeded\n");
 
-	return HShader(vertexShaders.size() - 1);
+	return HShader(shaders.size() - 1);
 }
 
-HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader shader, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShaders[shader.Index()]);
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShaders[shader.Index()]);
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob());
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(shaders[pixelShader.Index()]->GetBlob());
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);

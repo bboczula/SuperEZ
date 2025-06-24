@@ -28,7 +28,8 @@ public:
 	RenderPass::Type GetType() const { return type; }
 protected:
 	RenderPass::Type type;
-	HShader shader;
+	HShader vertexShader;
+	HShader pixelShader;
 	HRootSignature rootSignature;
 	HInputLayout inputLayout;
 	HPipelineState pipelineState;
