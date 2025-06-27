@@ -19,9 +19,13 @@ source/externals/googletest/
 # Mono auto generated files
 mono_crash.*
 
-# Build results
+# 1. Ignore all bin/ and build/ folders anywhere
 [Bb]in/
 [Bb]uild/
+
+# 2. EXCEPTION: allow bin/ inside source/externals/
+!source/externals/**/[Bb]in/
+!source/externals/**/[Bb]in/**
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
