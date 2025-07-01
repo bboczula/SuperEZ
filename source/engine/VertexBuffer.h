@@ -22,7 +22,7 @@ public:
 	}
 private:
 	ID3D12Resource* resource;
-	CHAR name[32];
+	CHAR name[64];
 	UINT sizeInBytes;
 	UINT numOfVertices;
 };
