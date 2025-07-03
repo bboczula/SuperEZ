@@ -5,7 +5,7 @@
 #include "CommCtrl.h"
 
 #define WINDOW_CLASS_NAME L"SuperEZMyWindowWin32Class"
-#define WINDOW_TITLE L"SuperEZ Engine v1.3"
+#define WINDOW_TITLE L"SuperEZ Engine v1.4"
 #define DEFAULT_WINDOW_STYLE WS_VISIBLE | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_BORDER
 
 #define ID_FILE_ABOUT 1
