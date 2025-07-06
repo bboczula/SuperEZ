@@ -3,10 +3,13 @@
 #include "TestPass.h"
 #include "ImGuiPass.h"
 #include "BlitPass.h"
+#include "SelectionPass.h"
 
 RenderGraph::RenderGraph()
 {
-	// Here we could define our render passes
+	RenderPass* selectionPass = new SelectionPass();
+	renderPasses.push_back(selectionPass);
+
 	RenderPass* testPass = new TestPass();
 	renderPasses.push_back(testPass);
 

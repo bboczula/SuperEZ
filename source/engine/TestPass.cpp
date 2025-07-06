@@ -15,7 +15,7 @@ extern RenderContext renderContext;
 extern WindowContext windowContext;
 extern RawInput rawInput;
 
-TestPass::TestPass() : RenderPass(L"Test", Type::Default)
+TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Default)
 {
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 	camera = new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));

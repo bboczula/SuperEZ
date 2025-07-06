@@ -16,7 +16,7 @@ extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", Type::Drawless)
+ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", L"", Type::Drawless)
 {
 }
 

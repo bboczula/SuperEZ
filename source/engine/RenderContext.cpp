@@ -197,6 +197,9 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
+	assert(inputLayout.IsValid() && "InputLayout is not valid");
+	assert(rootSignature.IsValid() && "RootSignature is not valid");
+
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
 	psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];

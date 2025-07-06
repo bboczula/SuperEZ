@@ -12,7 +12,7 @@
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
 
-RenderPass::RenderPass(PCWSTR name, Type type) : shaderSourceFileName(L"shaders.hlsl"), name(name), type(type)
+RenderPass::RenderPass(PCWSTR name, LPCWSTR shaderName, Type type) : shaderSourceFileName(shaderName), name(name), type(type)
 {
 }
 

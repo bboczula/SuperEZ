@@ -15,7 +15,7 @@ public:
 		Default,
 		Drawless
 	};
-	RenderPass(PCWSTR name, RenderPass::Type type);
+	RenderPass(PCWSTR name, LPCWSTR shaderName, RenderPass::Type type);
 	~RenderPass();
 	virtual void ConfigurePipelineState() = 0;
 	void AutomaticInitialize();
