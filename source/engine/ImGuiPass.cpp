@@ -71,7 +71,7 @@ void ImGuiPass::Execute()
 {
 	//renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
 	renderContext.SetDescriptorHeap(commandList);
-	renderContext.BindRenderTarget(commandList, HRenderTarget(2));
+	renderContext.BindRenderTarget(commandList, HRenderTarget(3));
 	// We don't really want to clear, we want to draw on top of the existing content
 	//renderContext.CleraRenderTarget(commandList, renderTarget);
 	//renderContext.ClearDepthBuffer(commandList, depthBuffer);
