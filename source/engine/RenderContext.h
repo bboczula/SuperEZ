@@ -19,6 +19,7 @@ class Mesh;
 class Material;
 class InputLayout;
 class Shader;
+class Camera;
 
 class RenderContext
 {
@@ -53,6 +54,7 @@ public:
 	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
+	Camera* GetCamera(UINT index) { return cameras[index]; }
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
@@ -108,4 +110,5 @@ private:
 	std::vector<CD3DX12_VIEWPORT> viewports;
 	std::vector<CD3DX12_RECT> scissorRects;
 	std::vector<InputLayout*> inputLayouts;
+	std::vector<Camera*> cameras;
 };

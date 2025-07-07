@@ -17,9 +17,7 @@ extern RawInput rawInput;
 
 TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Default)
 {
-	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	camera = new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
-	arcballCamera = new Orbit(camera);
+	arcballCamera = new Orbit(renderContext.GetCamera(0));
 }
 
 void TestPass::SetOrthographicProperties(const float aspectRatio)
@@ -31,13 +29,12 @@ void TestPass::SetOrthographicProperties(const float aspectRatio)
 	width *= 2.0f;
 	height *= 2.0f;
 
-	camera->SetWidth(width);
-	camera->SetHeight(height);
+	renderContext.GetCamera(0)->SetWidth(width);
+	renderContext.GetCamera(0)->SetHeight(height);
 }
 
 TestPass::~TestPass()
 {
-	delete camera;
 }
 
 void TestPass::ConfigurePipelineState()
@@ -78,8 +75,8 @@ void TestPass::Update()
 	{
 		// There is a crash, somehow we keep entering this condition, even though we don't press any key
 		auto radius = arcballCamera->GetRadius();
-		camera->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
-		camera->SetPosition(DirectX::SimpleMath::Vector3(
+		renderContext.GetCamera(0)->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
+		renderContext.GetCamera(0)->SetPosition(DirectX::SimpleMath::Vector3(
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD1),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD7),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD3) + 0.0000001));
@@ -105,7 +102,8 @@ void TestPass::Execute()
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
-	renderContext.SetInlineConstants(commandList, 16, camera->GetViewProjectionMatrixPtr(type));
+	renderContext.GetCamera(0)->SetType(type);
+	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr());
 	
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{

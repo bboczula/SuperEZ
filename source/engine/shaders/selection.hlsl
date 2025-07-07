@@ -26,8 +26,7 @@ PSInput VSMain(float4 position : POSITION)
 {
     PSInput result;
 
-    //result.position = mul(position, viewProjection);
-	result.position = position;
+    result.position = mul(position, viewProjection);
 
     return result;
 }

@@ -2,6 +2,7 @@
 #include "RenderContext.h"
 #include "InputLayout.h"
 #include "DeviceContext.h"
+#include "camera/Camera.h"
 
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
@@ -36,8 +37,7 @@ void SelectionPass::Execute()
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
-	//auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
-	//renderContext.SetInlineConstants(commandList, 16, camera->GetViewProjectionMatrixPtr(type));
+	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr());
 
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{

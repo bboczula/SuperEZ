@@ -9,6 +9,7 @@
 #include "InputLayout.h"
 #include "Buffer.h"
 #include "Shader.h"
+#include "camera/Camera.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -22,6 +23,9 @@ extern DeviceContext deviceContext;
 RenderContext::RenderContext()
 {
 	OutputDebugString(L"RenderContext Constructor\n");
+
+	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
+	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f)));
 }
 
 RenderContext::~RenderContext()
