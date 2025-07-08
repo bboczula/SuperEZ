@@ -20,7 +20,7 @@ void SelectionPass::ConfigurePipelineState()
 
 void SelectionPass::Initialize()
 {
-	renderTarget = renderContext.CreateRenderTarget();
+	renderTarget = renderContext.CreateRenderTarget("RT_Selection", RenderTargetFormat::R32_UINT);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	deviceContext.Flush();
 }

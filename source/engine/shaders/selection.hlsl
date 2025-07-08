@@ -31,7 +31,8 @@ PSInput VSMain(float4 position : POSITION)
     return result;
 }
 
-float4 PSMain(PSInput input) : SV_TARGET
+uint PSMain(PSInput input) : SV_TARGET
 {
-    return float4(1.0f, 0.0f, 0.0f, 1.0f);
+    // Render Target is R32_UINT
+    return uint(1);
 }

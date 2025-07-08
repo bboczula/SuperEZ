@@ -46,7 +46,7 @@ void TestPass::ConfigurePipelineState()
 
 void TestPass::Initialize()
 {
-	renderTarget = renderContext.CreateRenderTarget();
+	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	deviceContext.Flush();
 }

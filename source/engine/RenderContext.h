@@ -21,6 +21,12 @@ class InputLayout;
 class Shader;
 class Camera;
 
+enum RenderTargetFormat
+{
+	RGB8_UNORM,
+	R32_UINT
+};
+
 class RenderContext
 {
 public:
@@ -46,7 +52,7 @@ public:
 	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	void UnloadAssets();
 	// High Level
-	HRenderTarget CreateRenderTarget();
+	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
@@ -58,7 +64,7 @@ public:
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
-	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
+	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);

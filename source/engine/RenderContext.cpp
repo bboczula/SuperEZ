@@ -102,14 +102,25 @@ void RenderContext::UnloadAssets()
 	cbvSrvUavHeap.Reset();
 }
 
-HRenderTarget RenderContext::CreateRenderTarget()
+HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	HTexture texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
+	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	switch (format)
+	{
+	case RenderTargetFormat::RGB8_UNORM:
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case RenderTargetFormat::R32_UINT:
+		dxgiFormat = DXGI_FORMAT_R32_UINT;
+		break;
+	};
+
+	HTexture texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), name, dxgiFormat);
 	deviceContext.GetDevice()->CreateRenderTargetView(textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, "RT_Custom"));
+	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, name, dxgiFormat));
 
 	// We also need naming, for debugging purposes
 
@@ -144,7 +155,8 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0]));
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
-		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1, rtvHeap.Size() - 1, "RT_BackBuffer"));
+		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
+			rtvHeap.Size() - 1, "RT_BackBuffer", backBuffer[i]->GetDesc().Format));
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
@@ -401,13 +413,13 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	return HTexture(textures.size() - 1);
 }
 
-HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM,
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
 		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -722,9 +734,21 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
+	auto format = renderTargets[renderTarget.Index()]->GetFormat();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
-	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
-	commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	if (format == DXGI_FORMAT_R8G8B8A8_UNORM)
+	{
+		float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
+		commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	}
+	else if (format == DXGI_FORMAT_R32_UINT)
+	{
+		// Clear to zero for R32_UINT format
+		float clearValue = 0.0f;
+		commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, &clearValue, 0, nullptr);
+		return;
+	}
 }
 
 void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)
