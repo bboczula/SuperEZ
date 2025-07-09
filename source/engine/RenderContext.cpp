@@ -162,17 +162,11 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 	}
 }
 
-HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
+HRootSignature RenderContext::CreateRootSignature(RootSignatureBuilder& builder)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
-	RootSignatureBuilder builder;
-
-	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
-	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
-	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
-
-	ID3D12RootSignature* rootSignature = builder.Build(deviceContext, L"RenderContextRootSignature");
+	ID3D12RootSignature* rootSignature = builder.Build(&deviceContext, L"RenderContextRootSignature");
 	if (!rootSignature)
 	{
 		OutputDebugString(L"Failed to create root signature\n");
@@ -220,8 +214,10 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	psoDesc.SampleDesc.Count = 1;
+
 	ID3D12PipelineState* pipelineState;
-	ExitIfFailed(deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)));
+	HRESULT hr = deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+	DX_TRY(hr, "CreateGraphicsPipelineState", "Did you forget to update your root signature or input layout?");
 	pipelineState->SetName(L"Render Context Pipeline State");
 
 	pipelineStates.push_back(pipelineState);
@@ -679,9 +675,9 @@ void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& buffer
 {
 }
 
-void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
+void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(slot, numOfConstants, data, 0);
 }
 
 void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
@@ -700,12 +696,13 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
-void RenderContext::BindTexture(HCommandList commandList, HTexture texture)
+void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
-	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(), materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
+		materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
 
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, textureHandle);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot + 1, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
 }
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)

@@ -20,6 +20,7 @@ class Material;
 class InputLayout;
 class Shader;
 class Camera;
+class RootSignatureBuilder;
 
 enum RenderTargetFormat
 {
@@ -34,7 +35,7 @@ public:
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
-	HRootSignature CreateRootSignature(DeviceContext* deviceContext);
+	HRootSignature CreateRootSignature(RootSignatureBuilder& builder);
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout);
 	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext);
@@ -74,7 +75,7 @@ public:
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
-	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data);
+	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
@@ -84,7 +85,7 @@ public:
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void SetDescriptorHeap(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
-	void BindTexture(HCommandList commandList, HTexture texture);
+	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);

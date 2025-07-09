@@ -7,6 +7,7 @@
 #include "camera/Camera.h"
 #include "camera/Orbit.h"
 #include "input/RawInput.h"
+#include "RootSignatureBuilder.h"
 
 #include <pix3.h>
 
@@ -42,6 +43,13 @@ void TestPass::ConfigurePipelineState()
 	// Pre-AutomaticInitialize Procedure
 	inputLayout = renderContext.CreateInputLayout();
 	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
+
+	// Now we can create the root signature
+	RootSignatureBuilder builder;
+	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
+	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
+	rootSignature = renderContext.CreateRootSignature(builder);
 }
 
 void TestPass::Initialize()
@@ -103,12 +111,12 @@ void TestPass::Execute()
 
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.GetCamera(0)->SetType(type);
-	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr());
+	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
 	
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
 		renderContext.BindGeometry(commandList, HMesh(i));
-		renderContext.BindTexture(commandList, HTexture(i));
+		renderContext.BindTexture(commandList, HTexture(i), 1);
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 }
