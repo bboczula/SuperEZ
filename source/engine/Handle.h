@@ -19,6 +19,8 @@ public:
 
 	static constexpr IndexType InvalidIndex() { return static_cast<IndexType>(-1); }
 
+	static Handle<T> Invalid() { return Handle<T>(InvalidIndex()); }
+
 private:
 	IndexType m_index;
 };

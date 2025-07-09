@@ -10,6 +10,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "camera/Camera.h"
+#include "RootSignatureBuilder.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -165,34 +166,22 @@ HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
-	// Build Common Root Signature
-	CD3DX12_ROOT_PARAMETER rootParameters[3];
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	rootParameters[0].Constants.Num32BitValues = 16;
-	rootParameters[0].Constants.RegisterSpace = 0;
-	rootParameters[0].Constants.ShaderRegister = 0;
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	RootSignatureBuilder builder;
 
-	CD3DX12_DESCRIPTOR_RANGE texRange;
-	texRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0
-	rootParameters[1].InitAsDescriptorTable(1, &texRange, D3D12_SHADER_VISIBILITY_PIXEL);
+	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
+	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 
-	CD3DX12_DESCRIPTOR_RANGE samplerRange;
-	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0); // s0
-	rootParameters[2].InitAsDescriptorTable(1, &samplerRange, D3D12_SHADER_VISIBILITY_PIXEL);
+	ID3D12RootSignature* rootSignature = builder.Build(deviceContext, L"RenderContextRootSignature");
+	if (!rootSignature)
+	{
+		OutputDebugString(L"Failed to create root signature\n");
+		return HRootSignature::Invalid();
+	}
 
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	ID3DBlob* signature;
-	ID3DBlob* error;
-	ExitIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-	ID3D12RootSignature* rootSignature;
-	ExitIfFailed(deviceContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
-	rootSignature->SetName(L"Render Context Root Signature");
-	
 	rootSignatures.push_back(rootSignature);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
+
 	return HRootSignature(rootSignatures.size() - 1);
 }
 
