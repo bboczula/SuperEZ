@@ -500,6 +500,20 @@ void RenderContext::CreateDefaultSamplers()
 	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate());
 }
 
+void RenderContext::CreateReadbackBuffer()
+{
+	D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
+	UINT readbackBufferSize = 1024 * 1024 * 4; // 4 MB buffer size
+	D3D12_RESOURCE_DESC readbackBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(readbackBufferSize);
+	ID3D12Resource* readbackBuffer;
+	deviceContext.CreateReadbackResource(flags, &readbackBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, IID_PPV_ARGS(&readbackBuffer));
+
+	CHAR name[] = "ReadbackBuffer";
+	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
+	buffers.push_back(new Buffer(readbackBuffer, layout, name));
+}
+
 void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");

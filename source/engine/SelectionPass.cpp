@@ -31,6 +31,7 @@ void SelectionPass::Initialize()
 {
 	renderTarget = renderContext.CreateRenderTarget("RT_Selection", RenderTargetFormat::R32_UINT);
 	depthBuffer = renderContext.CreateDepthBuffer();
+	renderContext.CreateReadbackBuffer();
 	deviceContext.Flush();
 }
 

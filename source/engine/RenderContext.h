@@ -70,6 +70,8 @@ public:
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
 	void CreateDefaultSamplers();
+	// Buffers
+	void CreateReadbackBuffer();
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
