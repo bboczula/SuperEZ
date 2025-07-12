@@ -11,4 +11,8 @@ public:
 	void Allocate(DeviceContext* deviceContext) override;
 private:
 	HBuffer readbackBuffer;
+	HANDLE readbackEvent = nullptr;
+	UINT64 fenceValue = 0;
+	ID3D12Fence* readbackFence = nullptr;
+	bool skipFrame = true; // Skip frame if no selection is made
 };

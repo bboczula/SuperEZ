@@ -10,6 +10,16 @@ extern DeviceContext deviceContext;
 
 SelectionPass::SelectionPass() : RenderPass(L"Selection", L"selection.hlsl", Type::Default)
 {
+	deviceContext.GetDevice()->CreateFence(
+		0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&readbackFence)
+	);
+	readbackFence->SetName(L"Selection Pass Fence");
+
+	readbackEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (!readbackEvent)
+		exit(1);
+
+	fenceValue = 1; // start at 1 for first signal
 }
 
 void SelectionPass::ConfigurePipelineState()
@@ -37,6 +47,26 @@ void SelectionPass::Initialize()
 
 void SelectionPass::Update()
 {
+	if (skipFrame)
+	{
+		skipFrame = false;
+		return; // Skip the frame if no selection is made
+	}
+
+	if (readbackFence->GetCompletedValue() >= fenceValue)
+	{
+		// Reset the fence value for the next frame
+		fenceValue++;
+	}
+	else
+	{
+		// Wait for the fence to be signaled
+		HANDLE eventHandle = readbackEvent;
+		if (eventHandle)
+		{
+			WaitForSingleObject(eventHandle, INFINITE);
+		}
+	}
 }
 
 void SelectionPass::Execute()
@@ -60,6 +90,10 @@ void SelectionPass::Execute()
 
 	auto texture = renderContext.GetTexture(renderTarget);
 	renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer);
+
+	// Signal
+	deviceContext.GetCommandQueue()->Signal(readbackFence, fenceValue);
+	skipFrame = false;
 }
 
 void SelectionPass::Allocate(DeviceContext* deviceContext)
