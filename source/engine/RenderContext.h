@@ -6,6 +6,7 @@
 #include "DescriptorHeap.h"
 #include "CommandList.h"
 #include "Handle.h"
+#include "RenderTarget.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -62,6 +63,7 @@ public:
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
+	HTexture GetTexture(HRenderTarget renderTarget);
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
@@ -69,9 +71,10 @@ public:
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer);
 	void CreateDefaultSamplers();
 	// Buffers
-	void CreateReadbackBuffer();
+	HBuffer CreateReadbackBuffer();
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);

@@ -1,7 +1,6 @@
 #include "RenderContext.h"
 #include "DeviceContext.h"
 #include "WindowContext.h"
-#include "RenderTarget.h"
 #include "DepthBuffer.h"
 #include "Mesh.h"
 #include "Material.h"
@@ -480,6 +479,33 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 
 }
 
+void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer)
+{
+	auto readbackBuffer = buffers[buffer.Index()]->GetResource();
+	D3D12_TEXTURE_COPY_LOCATION dst = {};
+	dst.pResource = readbackBuffer;
+	dst.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	dst.PlacedFootprint.Offset = 0;
+	dst.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R32_UINT; // Match your texture format
+	dst.PlacedFootprint.Footprint.Width = 1;
+	dst.PlacedFootprint.Footprint.Height = 1;
+	dst.PlacedFootprint.Footprint.Depth = 1;
+	dst.PlacedFootprint.Footprint.RowPitch = 4; // 1 texel × 4 bytes (R32_UINT)
+
+	auto sourceTexture = textures[texture.Index()]->GetResource();
+	D3D12_TEXTURE_COPY_LOCATION src = {};
+	src.pResource = sourceTexture;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	src.SubresourceIndex = 0;
+
+	D3D12_BOX srcBox = {};
+	srcBox.right = 1;
+	srcBox.bottom = 1;
+	srcBox.back = 1;
+
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&dst, 0, 0, 0, &src, &srcBox);
+}
+
 void RenderContext::CreateDefaultSamplers()
 {
 	D3D12_SAMPLER_DESC samplerDesc = {};
@@ -500,7 +526,7 @@ void RenderContext::CreateDefaultSamplers()
 	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate());
 }
 
-void RenderContext::CreateReadbackBuffer()
+HBuffer RenderContext::CreateReadbackBuffer()
 {
 	D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
 	UINT readbackBufferSize = 1024 * 1024 * 4; // 4 MB buffer size
@@ -512,6 +538,8 @@ void RenderContext::CreateReadbackBuffer()
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
 	buffers.push_back(new Buffer(readbackBuffer, layout, name));
+
+	return HBuffer(buffers.size() - 1);
 }
 
 void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
@@ -687,6 +715,11 @@ void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bu
 
 void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle)
 {
+}
+
+HTexture RenderContext::GetTexture(HRenderTarget renderTarget)
+{
+	return HTexture(renderTargets[renderTarget.Index()]->GetTextureIndex());
 }
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)

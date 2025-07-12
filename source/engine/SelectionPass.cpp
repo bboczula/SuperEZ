@@ -31,7 +31,7 @@ void SelectionPass::Initialize()
 {
 	renderTarget = renderContext.CreateRenderTarget("RT_Selection", RenderTargetFormat::R32_UINT);
 	depthBuffer = renderContext.CreateDepthBuffer();
-	renderContext.CreateReadbackBuffer();
+	readbackBuffer = renderContext.CreateReadbackBuffer();
 	deviceContext.Flush();
 }
 
@@ -57,6 +57,9 @@ void SelectionPass::Execute()
 		renderContext.BindTexture(commandList, HTexture(i), 2);
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
+
+	auto texture = renderContext.GetTexture(renderTarget);
+	renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer);
 }
 
 void SelectionPass::Allocate(DeviceContext* deviceContext)

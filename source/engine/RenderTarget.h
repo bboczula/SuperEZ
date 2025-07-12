@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Texture.h"
 
 class RenderTarget
@@ -9,6 +11,7 @@ public:
 	UINT GetWidth() const { return width; }
 	UINT GetHeight() const { return height; }
 	DXGI_FORMAT GetFormat() const { return format; }
+	size_t GetTextureIndex() const { return textureIndex; }
 private:
 	char name[32];
 	size_t textureIndex;
