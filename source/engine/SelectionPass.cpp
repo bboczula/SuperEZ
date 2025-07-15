@@ -63,7 +63,8 @@ void SelectionPass::Update()
 		if (!data.empty())
 		{
 			UINT32 objectID = *reinterpret_cast<const UINT32*>(data.data());
-			printf("Selected Object ID: %u\n", objectID);
+			//printf("Selected Object ID: %u\n", objectID);
+			renderContext.SetSelectedObjectId(objectID);
 		}
 	}
 	else

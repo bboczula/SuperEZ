@@ -65,6 +65,8 @@ public:
 	Camera* GetCamera(UINT index) { return cameras[index]; }
 	HTexture GetTexture(HRenderTarget renderTarget);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
+	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
+	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
@@ -124,4 +126,6 @@ private:
 	std::vector<CD3DX12_RECT> scissorRects;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
+private:
+	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 };

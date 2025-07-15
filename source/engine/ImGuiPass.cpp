@@ -129,7 +129,8 @@ void ImGuiPass::Execute()
 	
 	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	
-	static int selectedIndex = -1;
+	static uint32_t selectedIndex = -1;
+	selectedIndex = renderContext.GetSelectedObjectId();
 	
 	ImGui::Text("Game Objects");
 	ImGui::Separator();
