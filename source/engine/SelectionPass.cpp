@@ -57,16 +57,24 @@ void SelectionPass::Update()
 	{
 		// Reset the fence value for the next frame
 		fenceValue++;
+
+		auto data = renderContext.ReadbackBufferData(readbackBuffer, sizeof(UINT32));
+
+		if (!data.empty())
+		{
+			UINT32 objectID = *reinterpret_cast<const UINT32*>(data.data());
+			printf("Selected Object ID: %u\n", objectID);
+		}
 	}
 	else
 	{
-		// Wait for the fence to be signaled
 		HANDLE eventHandle = readbackEvent;
 		if (eventHandle)
 		{
 			WaitForSingleObject(eventHandle, INFINITE);
 		}
 	}
+
 }
 
 void SelectionPass::Execute()

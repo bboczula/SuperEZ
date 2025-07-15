@@ -64,6 +64,7 @@ public:
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
 	HTexture GetTexture(HRenderTarget renderTarget);
+	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);

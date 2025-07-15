@@ -458,6 +458,26 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	return HBuffer(buffers.size() - 1);
 }
 
+std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t size)
+{
+	Buffer* buffer = buffers[handle.Index()];
+	void* mappedData = nullptr;
+	D3D12_RANGE readRange = { 0, size };
+	HRESULT hr = buffer->GetResource()->Map(0, &readRange, &mappedData);
+
+	std::vector<uint8_t> data;
+	if (SUCCEEDED(hr))
+	{
+		data.resize(size);
+		memcpy(data.data(), mappedData, size);
+		D3D12_RANGE writtenRange = { 0, 0 };
+		buffer->GetResource()->Unmap(0, &writtenRange);
+	}
+
+	return data;
+}
+
+
 void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
