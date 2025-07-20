@@ -62,6 +62,9 @@ void RawInput::HandleMouseWheel(const USHORT flags, const USHORT data)
 
 void RawInput::HandleMousePosition(const RAWMOUSE& mouseData)
 {
+	mousePosition.first = mouseData.lLastX;
+	mousePosition.second = mouseData.lLastY;
+
 	mouseDelta.first += mouseData.lLastX;
 	mouseDelta.second += mouseData.lLastY;
 }

@@ -499,7 +499,7 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 
 }
 
-void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer)
+void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY)
 {
 	auto readbackBuffer = buffers[buffer.Index()]->GetResource();
 	D3D12_TEXTURE_COPY_LOCATION dst = {};
@@ -519,8 +519,11 @@ void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture textu
 	src.SubresourceIndex = 0;
 
 	D3D12_BOX srcBox = {};
-	srcBox.right = 1;
-	srcBox.bottom = 1;
+	srcBox.left = mouseX;
+	srcBox.top = mouseY;
+	srcBox.front = 0;
+	srcBox.right = mouseX + 1;
+	srcBox.bottom = mouseY + 1;
 	srcBox.back = 1;
 
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&dst, 0, 0, 0, &src, &srcBox);

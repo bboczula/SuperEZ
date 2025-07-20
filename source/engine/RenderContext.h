@@ -74,7 +74,7 @@ public:
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
-	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer);
+	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
 	// Buffers
 	HBuffer CreateReadbackBuffer();

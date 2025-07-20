@@ -4,9 +4,13 @@
 #include "DeviceContext.h"
 #include "camera/Camera.h"
 #include "RootSignatureBuilder.h"
+#include "input/RawInput.h"
+#include "input/CursorInput.h"
 
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
+extern RawInput rawInput;
+extern CursorInput cursorInput;
 
 SelectionPass::SelectionPass() : RenderPass(L"Selection", L"selection.hlsl", Type::Default)
 {
@@ -97,8 +101,15 @@ void SelectionPass::Execute()
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 
-	auto texture = renderContext.GetTexture(renderTarget);
-	renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer);
+	// Here we can pass the mouse position to the shader
+	auto mousePositionX = cursorInput.GetMouseX();
+	auto mousePositionY = cursorInput.GetMouseY();
+
+	if (cursorInput.WasLeftButtonClicked())
+	{
+		auto texture = renderContext.GetTexture(renderTarget);
+		renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
+	}
 
 	// Signal
 	deviceContext.GetCommandQueue()->Signal(readbackFence, fenceValue);
