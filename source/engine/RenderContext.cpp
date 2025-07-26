@@ -652,7 +652,7 @@ void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, H
 			UINT r = data[index++];
 			UINT g = data[index++];
 			UINT b = data[index++];
-			UINT32 packed = (b << 16) | (g << 8) | r;
+			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
 			pixels[y * width + x] = packed;
 		}
 	}

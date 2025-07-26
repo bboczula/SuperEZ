@@ -67,6 +67,7 @@ public:
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
+	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);

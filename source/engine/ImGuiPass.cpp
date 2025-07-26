@@ -172,9 +172,25 @@ void ImGuiPass::Execute()
 	
 	ImGui::End();
 
+	ImVec2 viewport_pos = ImVec2(400, menuHeight);     // Top-left corner
+	ImVec2 viewport_size = ImVec2(1920 - 400, 1080 - menuHeight - 25);      // 300 px wide, height auto
+
+	ImGui::SetNextWindowPos(viewport_pos, ImGuiCond_Always);
+	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
+	ImGui::Begin("Viewport");
+	// Here we need a texture, woudl be the same one as in the blit pass
+	HRenderTarget renderTarget = HRenderTarget(3);
+	auto finalTexture = renderContext.GetTexture(renderTarget);
+	renderContext.TransitionTo(commandList, finalTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	auto rtAbstract = renderContext.GetRenderTarget(renderTarget);
+	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(10);
+	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
+	ImVec2 size = ImGui::GetContentRegionAvail();
+	ImGui::Image(textureID, size);
+	ImGui::End();
+
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 25));
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 25));
-
 	ImGui::Begin("StatusBar", nullptr,
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoResize |
@@ -207,6 +223,8 @@ void ImGuiPass::Execute()
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderContext.GetCommandList(commandList)->GetCommandList());
 	// (Your code calls ExecuteCommandLists, swapchain's Present(), etc.)
+
+	renderContext.TransitionBack(commandList, finalTexture);
 }
 
 void ImGuiPass::Allocate(DeviceContext* deviceContext)
