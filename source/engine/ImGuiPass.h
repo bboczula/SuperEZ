@@ -17,4 +17,5 @@ public:
 	void Allocate(DeviceContext* deviceContext) override;
 private:
 	std::string OpenFileDialog_Win32(HWND owner = NULL);
+	HTexture colorCopyTexture; // Texture to copy color data for ImGui rendering
 };

@@ -61,6 +61,9 @@ void ImGuiPass::Initialize()
 	ImGui_ImplDX12_Init(&init_info);
 
 	ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\CascadiaMono.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
+
+	// Create a texture for the color
+	colorCopyTexture = renderContext.CreateEmptyTexture(1920, 1080, "Color_Copy");
 }
 
 void ImGuiPass::Update()
@@ -69,7 +72,10 @@ void ImGuiPass::Update()
 
 void ImGuiPass::Execute()
 {
-	//renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
+	HRenderTarget renderTarget = HRenderTarget(3);
+	auto finalTexture = renderContext.GetTexture(renderTarget);
+	renderContext.CopyTexture(commandList, finalTexture, colorCopyTexture);
+
 	renderContext.SetDescriptorHeap(commandList);
 	renderContext.BindRenderTarget(commandList, HRenderTarget(3));
 	// We don't really want to clear, we want to draw on top of the existing content
@@ -178,12 +184,9 @@ void ImGuiPass::Execute()
 	ImGui::SetNextWindowPos(viewport_pos, ImGuiCond_Always);
 	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
 	ImGui::Begin("Viewport");
-	// Here we need a texture, woudl be the same one as in the blit pass
-	HRenderTarget renderTarget = HRenderTarget(3);
-	auto finalTexture = renderContext.GetTexture(renderTarget);
-	renderContext.TransitionTo(commandList, finalTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	auto rtAbstract = renderContext.GetRenderTarget(renderTarget);
-	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(10);
+
+	auto texture = renderContext.GetTexture(colorCopyTexture);
+	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(texture->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
 	ImGui::Image(textureID, size);
@@ -222,9 +225,6 @@ void ImGuiPass::Execute()
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderContext.GetCommandList(commandList)->GetCommandList());
-	// (Your code calls ExecuteCommandLists, swapchain's Present(), etc.)
-
-	renderContext.TransitionBack(commandList, finalTexture);
 }
 
 void ImGuiPass::Allocate(DeviceContext* deviceContext)

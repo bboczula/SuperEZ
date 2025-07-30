@@ -113,7 +113,7 @@ HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFo
 		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		break;
 	case RenderTargetFormat::R32_UINT:
-		dxgiFormat = DXGI_FORMAT_R32_UINT;
+		dxgiFormat = DXGI_FORMAT_R32_FLOAT;
 		break;
 	};
 
@@ -152,7 +152,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		ExitIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer[i])));
 		backBuffer[i]->SetName(L"Render Context Back Buffer");
 		CHAR name[] = "BackBuffer";
-		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0]));
+		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0], 0));
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
 		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
@@ -360,6 +360,9 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	ID3D12Resource* resource;
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Empty Texture");
+
+	size_t textureHandleIndex = textures.size();
+	auto descHandleOffset = CreateShaderResourceView(resource, false);
 	
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -367,9 +370,9 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0]));
-	
-	return HTexture(textures.size() - 1);
+	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
+
+	return HTexture(textureHandleIndex);
 }
 
 HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
@@ -386,13 +389,15 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Depth Texture");
 
+	auto descHandleOffset = CreateShaderResourceView(resource, true);
+
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
 	WCHAR wName[32];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0]));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
 
 	return HTexture(textures.size() - 1);
 }
@@ -411,13 +416,23 @@ HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const
 	ID3D12Resource* resource;
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 
+	UINT descHandleOffset;
+	if(format == DXGI_FORMAT_R32_FLOAT)
+	{
+		descHandleOffset = CreateShaderResourceView(resource, true);
+	}
+	else
+	{
+		descHandleOffset = CreateShaderResourceView(resource, false);
+	}
+
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
 	WCHAR wName[32];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], descHandleOffset, initResourceState));
 
 	return HTexture(textures.size() - 1);
 }
@@ -594,8 +609,6 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 	auto textureHandle = CreateEmptyTexture(width, height, name);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
-	auto descHandleOffset = CreateShaderResourceView(textureHandle);
-
 	if (data == nullptr)
 	{
 		FillTextureUploadBuffer(width, height, bufferHandle);
@@ -618,6 +631,7 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 
 	ExecuteCommandList(uploadCommandList);
 
+	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
 	materials.push_back(new Material(textureHandle, descHandleOffset, name));
 }
 
@@ -634,6 +648,25 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 
 	deviceContext.GetDevice()->CreateShaderResourceView(
 		textures[textureHandle.Index()]->GetResource(),            // Your texture resource
+		&srvDesc,
+		descriptorHandle);
+
+	return offset;
+}
+
+UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, bool isDepth)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = isDepth ? DXGI_FORMAT_R32_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	auto descriptorHandle = cbvSrvUavHeap.Allocate();
+	auto offset = cbvSrvUavHeap.Size() - 1;
+
+	deviceContext.GetDevice()->CreateShaderResourceView(
+		resource,            // Your texture resource
 		&srvDesc,
 		descriptorHandle);
 

@@ -6,7 +6,7 @@
 class Texture
 {
 public:
-	Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON);
+	Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, size_t srvDescriptorIndex, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON);
 	~Texture();
 	ID3D12Resource* GetResource();
 	D3D12_RESOURCE_STATES GetCurrentState()
@@ -22,6 +22,10 @@ public:
 		previousState = currentState;
 		currentState = state;
 	}
+	size_t GetSrvDescriptorIndex() const
+	{
+		return srvDescriptorIndex;
+	}
 private:
 	ID3D12Resource* resource;
 	D3D12_RESOURCE_STATES currentState;
@@ -29,4 +33,5 @@ private:
 	CHAR name[32];
 	UINT width;
 	UINT height;
+	size_t srvDescriptorIndex;
 };

@@ -59,6 +59,7 @@ public:
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateShaderResourceView(HTexture& textureHandle);
+	UINT CreateShaderResourceView(ID3D12Resource* resource, bool isDepth);
 	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
@@ -77,6 +78,7 @@ public:
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
+	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();
 	// Geometry
