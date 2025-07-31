@@ -26,6 +26,9 @@ void ImGuiPass::ConfigurePipelineState()
 
 void ImGuiPass::Initialize()
 {
+	// Create the custom Render Target for ImGui
+	renderTarget = renderContext.CreateRenderTarget("RT_ImGui", RenderTargetFormat::RGB8_UNORM);
+
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -77,9 +80,9 @@ void ImGuiPass::Execute()
 	renderContext.CopyTexture(commandList, finalTexture, colorCopyTexture);
 
 	renderContext.SetDescriptorHeap(commandList);
-	renderContext.BindRenderTarget(commandList, HRenderTarget(3));
+	renderContext.BindRenderTarget(commandList, renderTarget);
 	// We don't really want to clear, we want to draw on top of the existing content
-	//renderContext.CleraRenderTarget(commandList, renderTarget);
+	renderContext.CleraRenderTarget(commandList, renderTarget);
 	//renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
 	// (Your code process and dispatch Win32 messages)
