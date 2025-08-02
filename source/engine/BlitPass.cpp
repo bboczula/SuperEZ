@@ -25,10 +25,10 @@ void BlitPass::Initialize()
 
 void BlitPass::Execute()
 {
-	renderContext.TransitionTo(commandList, HTexture(4), D3D12_RESOURCE_STATE_COPY_SOURCE);
+	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_COPY_SOURCE);
 	
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
-	HTexture renderTarget = HTexture(4);
+	HTexture renderTarget = HTexture(6); // ImGui Render Target
 	HTexture backBuffer = HTexture(frameIndex);
 	HTexture frameTexture = HTexture(frameIndex);
 	renderContext.TransitionTo(commandList, frameTexture, D3D12_RESOURCE_STATE_COPY_DEST);

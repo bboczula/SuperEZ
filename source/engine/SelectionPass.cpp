@@ -43,7 +43,12 @@ void SelectionPass::ConfigurePipelineState()
 
 void SelectionPass::Initialize()
 {
-	renderTarget = renderContext.CreateRenderTarget("RT_Selection", RenderTargetFormat::R32_UINT);
+	// Menu height seems to be 20 pixels
+	// The actual viewport size is this ImVec2(1920 - 400, 1080 - menuHeight - 25);
+	const int menuHeight = 20;
+	const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
+	const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
+	renderTarget = renderContext.CreateRenderTarget("RT_Selection", RenderTargetFormat::R32_UINT, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	readbackBuffer = renderContext.CreateReadbackBuffer();
 	deviceContext.Flush();

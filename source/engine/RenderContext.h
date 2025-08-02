@@ -55,6 +55,7 @@ public:
 	void UnloadAssets();
 	// High Level
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
+	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);

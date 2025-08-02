@@ -104,6 +104,13 @@ void RenderContext::UnloadAssets()
 
 HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
 {
+	int width = windowContext.GetWidth();
+	int height = windowContext.GetHeight();
+	return CreateRenderTarget(name, format, width, height);
+}
+
+HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height)
+{
 	OutputDebugString(L"CreateRenderTarget\n");
 
 	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
@@ -117,12 +124,12 @@ HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFo
 		break;
 	};
 
-	HTexture texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), name, dxgiFormat);
-	deviceContext.GetDevice()->CreateRenderTargetView(textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
+	HTexture texture = CreateRenderTargetTexture(width, height, name, dxgiFormat);
+	deviceContext.GetDevice()->CreateRenderTargetView(
+		textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, name, dxgiFormat));
-
-	// We also need naming, for debugging purposes
+	renderTargets.push_back(new RenderTarget(
+		width, height, texture.Index(), rtvHeap.Size() - 1, name, dxgiFormat));
 
 	return HRenderTarget(renderTargets.size() - 1);
 }

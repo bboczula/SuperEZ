@@ -75,10 +75,6 @@ void ImGuiPass::Update()
 
 void ImGuiPass::Execute()
 {
-	HRenderTarget renderTarget = HRenderTarget(3);
-	auto finalTexture = renderContext.GetTexture(renderTarget);
-	renderContext.CopyTexture(commandList, finalTexture, colorCopyTexture);
-
 	renderContext.SetDescriptorHeap(commandList);
 	renderContext.BindRenderTarget(commandList, renderTarget);
 	// We don't really want to clear, we want to draw on top of the existing content
@@ -189,7 +185,10 @@ void ImGuiPass::Execute()
 	ImGui::Begin("Viewport");
 
 	auto texture = renderContext.GetTexture(colorCopyTexture);
-	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(texture->GetSrvDescriptorIndex());
+	HRenderTarget colorRenderTarget = HRenderTarget(3);
+	auto finalTexture = renderContext.GetTexture(colorRenderTarget);
+	auto finalFinalTexture = renderContext.GetTexture(finalTexture);
+	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(finalFinalTexture->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
 	ImGui::Image(textureID, size);
