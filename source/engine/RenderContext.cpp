@@ -198,7 +198,8 @@ HShader RenderContext::CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, L
 	return HShader(shaders.size() - 1);
 }
 
-HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
+	HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget)
 {
 	OutputDebugString(L"CreatePipelineState\n");
 
@@ -217,7 +218,7 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.RTVFormats[0] = GetRenderTarget(renderTarget)->GetFormat();
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	psoDesc.SampleDesc.Count = 1;
 

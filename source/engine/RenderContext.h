@@ -38,7 +38,8 @@ public:
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
 	HRootSignature CreateRootSignature(RootSignatureBuilder& builder);
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
-	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
+		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
 	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }

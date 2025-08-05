@@ -50,10 +50,7 @@ void TestPass::ConfigurePipelineState()
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 	rootSignature = renderContext.CreateRootSignature(builder);
-}
 
-void TestPass::Initialize()
-{
 	// Menu height seems to be 20 pixels
 	// The actual viewport size is this ImVec2(1920 - 400, 1080 - menuHeight - 25);
 	const int menuHeight = 20;
@@ -62,6 +59,10 @@ void TestPass::Initialize()
 	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	deviceContext.Flush();
+}
+
+void TestPass::Initialize()
+{
 }
 
 void TestPass::Update()
