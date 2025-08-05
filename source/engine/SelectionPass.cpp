@@ -109,8 +109,10 @@ void SelectionPass::Execute()
 	// Here we can pass the mouse position to the shader
 	auto mousePositionX = cursorInput.GetMouseX();
 	auto mousePositionY = cursorInput.GetMouseY();
+	mousePositionX -= 400;
+	mousePositionY -= 20; // Adjust for the menu height
 
-	if (cursorInput.WasLeftButtonClicked())
+	if (cursorInput.WasLeftButtonClicked() && mousePositionX > 0 && mousePositionY > 0)
 	{
 		auto texture = renderContext.GetTexture(renderTarget);
 		renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
