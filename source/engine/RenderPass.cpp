@@ -27,7 +27,7 @@ void RenderPass::AutomaticInitialize()
 		vertexShader = renderContext.CreateShader(shaderSourceFileName, "VSMain", "vs_5_0");
 		pixelShader = renderContext.CreateShader(shaderSourceFileName, "PSMain", "ps_5_0");
 		pipelineState = renderContext.CreatePipelineState(&deviceContext, rootSignature, vertexShader, pixelShader, inputLayout, renderTarget);
-		viewportAndScissors = renderContext.CreateViewportAndScissorRect(&deviceContext);
+		viewportAndScissors = renderContext.CreateViewportAndScissorRect(&deviceContext, renderTarget);
 	}
 
 	commandList = renderContext.CreateCommandList();

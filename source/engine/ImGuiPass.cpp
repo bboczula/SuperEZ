@@ -188,6 +188,7 @@ void ImGuiPass::Execute()
 	HRenderTarget colorRenderTarget = HRenderTarget(3);
 	auto finalTexture = renderContext.GetTexture(colorRenderTarget);
 	auto finalFinalTexture = renderContext.GetTexture(finalTexture);
+	renderContext.TransitionTo(commandList, finalTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(finalFinalTexture->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
@@ -227,6 +228,7 @@ void ImGuiPass::Execute()
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderContext.GetCommandList(commandList)->GetCommandList());
+	renderContext.TransitionBack(commandList, finalTexture);
 }
 
 void ImGuiPass::Allocate(DeviceContext* deviceContext)

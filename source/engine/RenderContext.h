@@ -40,7 +40,7 @@ public:
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
 		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
-	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext);
+	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext, HRenderTarget renderTarget);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
 	void CreateIndexBuffer(DeviceContext* deviceContext);

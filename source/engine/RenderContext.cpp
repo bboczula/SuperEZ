@@ -233,12 +233,13 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
-HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
+HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext, HRenderTarget renderTarget)
 {
 	OutputDebugString(L"CreateViewportAndScissorRect\n");
-
-	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(windowContext.GetWidth()), static_cast<float>(windowContext.GetHeight())));
-	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight())));
+	auto width = GetRenderTarget(renderTarget)->GetWidth();
+	auto height = GetRenderTarget(renderTarget)->GetHeight();
+	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)));
+	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
 
 	return HViewportAndScissors(viewports.size() - 1);
