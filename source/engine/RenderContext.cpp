@@ -840,7 +840,7 @@ void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget re
 		float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
 		commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	}
-	else if (format == DXGI_FORMAT_R32_UINT)
+	else if (format == DXGI_FORMAT_R32_UINT || format == DXGI_FORMAT_R32_FLOAT)
 	{
 		// Clear to zero for R32_UINT format
 		float clearValue = 0.0f;

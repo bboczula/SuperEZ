@@ -73,8 +73,14 @@ void SelectionPass::Update()
 		if (!data.empty())
 		{
 			UINT32 objectID = *reinterpret_cast<const UINT32*>(data.data());
-			//printf("Selected Object ID: %u\n", objectID);
-			renderContext.SetSelectedObjectId(objectID);
+			if(objectID != 0)
+			{
+				renderContext.SetSelectedObjectId(objectID - 1); // Adjust for 0-based index
+			}
+			else
+			{
+				renderContext.SetSelectedObjectId(UINT32_MAX); // Reset selection if no object is selected
+			}
 		}
 	}
 	else
@@ -100,7 +106,7 @@ void SelectionPass::Execute()
 
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
-		UINT id = i;
+		UINT id = i + 1;
 		renderContext.SetInlineConstants(commandList, 1, &id, 1);
 		renderContext.BindGeometry(commandList, HMesh(i));
 		renderContext.BindTexture(commandList, HTexture(i), 2);
