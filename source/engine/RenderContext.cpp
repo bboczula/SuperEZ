@@ -1,7 +1,6 @@
 #include "RenderContext.h"
 #include "DeviceContext.h"
 #include "WindowContext.h"
-#include "RenderTarget.h"
 #include "DepthBuffer.h"
 #include "Mesh.h"
 #include "Material.h"
@@ -9,6 +8,8 @@
 #include "InputLayout.h"
 #include "Buffer.h"
 #include "Shader.h"
+#include "camera/Camera.h"
+#include "RootSignatureBuilder.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -22,6 +23,9 @@ extern DeviceContext deviceContext;
 RenderContext::RenderContext()
 {
 	OutputDebugString(L"RenderContext Constructor\n");
+
+	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
+	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f)));
 }
 
 RenderContext::~RenderContext()
@@ -98,16 +102,34 @@ void RenderContext::UnloadAssets()
 	cbvSrvUavHeap.Reset();
 }
 
-HRenderTarget RenderContext::CreateRenderTarget()
+HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
+{
+	int width = windowContext.GetWidth();
+	int height = windowContext.GetHeight();
+	return CreateRenderTarget(name, format, width, height);
+}
+
+HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height)
 {
 	OutputDebugString(L"CreateRenderTarget\n");
 
-	HTexture texture = CreateRenderTargetTexture(windowContext.GetWidth(), windowContext.GetHeight(), "RT_Custom_Texture");
-	deviceContext.GetDevice()->CreateRenderTargetView(textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
+	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	switch (format)
+	{
+	case RenderTargetFormat::RGB8_UNORM:
+		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		break;
+	case RenderTargetFormat::R32_UINT:
+		dxgiFormat = DXGI_FORMAT_R32_FLOAT;
+		break;
+	};
 
-	renderTargets.push_back(new RenderTarget(1920, 1080, texture.Index(), rtvHeap.Size() - 1, "RT_Custom"));
+	HTexture texture = CreateRenderTargetTexture(width, height, name, dxgiFormat);
+	deviceContext.GetDevice()->CreateRenderTargetView(
+		textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
-	// We also need naming, for debugging purposes
+	renderTargets.push_back(new RenderTarget(
+		width, height, texture.Index(), rtvHeap.Size() - 1, name, dxgiFormat));
 
 	return HRenderTarget(renderTargets.size() - 1);
 }
@@ -137,46 +159,29 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		ExitIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer[i])));
 		backBuffer[i]->SetName(L"Render Context Back Buffer");
 		CHAR name[] = "BackBuffer";
-		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0]));
+		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0], 0));
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
-		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1, rtvHeap.Size() - 1, "RT_BackBuffer"));
+		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
+			rtvHeap.Size() - 1, "RT_BackBuffer", backBuffer[i]->GetDesc().Format));
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
 
-HRootSignature RenderContext::CreateRootSignature(DeviceContext* deviceContext)
+HRootSignature RenderContext::CreateRootSignature(RootSignatureBuilder& builder)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
-	// Build Common Root Signature
-	CD3DX12_ROOT_PARAMETER rootParameters[3];
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	rootParameters[0].Constants.Num32BitValues = 16;
-	rootParameters[0].Constants.RegisterSpace = 0;
-	rootParameters[0].Constants.ShaderRegister = 0;
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	ID3D12RootSignature* rootSignature = builder.Build(&deviceContext, L"RenderContextRootSignature");
+	if (!rootSignature)
+	{
+		OutputDebugString(L"Failed to create root signature\n");
+		return HRootSignature::Invalid();
+	}
 
-	CD3DX12_DESCRIPTOR_RANGE texRange;
-	texRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0
-	rootParameters[1].InitAsDescriptorTable(1, &texRange, D3D12_SHADER_VISIBILITY_PIXEL);
-
-	CD3DX12_DESCRIPTOR_RANGE samplerRange;
-	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0); // s0
-	rootParameters[2].InitAsDescriptorTable(1, &samplerRange, D3D12_SHADER_VISIBILITY_PIXEL);
-
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	ID3DBlob* signature;
-	ID3DBlob* error;
-	ExitIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-	ID3D12RootSignature* rootSignature;
-	ExitIfFailed(deviceContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&rootSignature)));
-	rootSignature->SetName(L"Render Context Root Signature");
-	
 	rootSignatures.push_back(rootSignature);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
+
 	return HRootSignature(rootSignatures.size() - 1);
 }
 
@@ -193,9 +198,13 @@ HShader RenderContext::CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, L
 	return HShader(shaders.size() - 1);
 }
 
-HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout)
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
+	HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget)
 {
 	OutputDebugString(L"CreatePipelineState\n");
+
+	assert(inputLayout.IsValid() && "InputLayout is not valid");
+	assert(rootSignature.IsValid() && "RootSignature is not valid");
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
@@ -209,11 +218,13 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.RTVFormats[0] = GetRenderTarget(renderTarget)->GetFormat();
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	psoDesc.SampleDesc.Count = 1;
+
 	ID3D12PipelineState* pipelineState;
-	ExitIfFailed(deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState)));
+	HRESULT hr = deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+	DX_TRY(hr, "CreateGraphicsPipelineState", "Did you forget to update your root signature or input layout?");
 	pipelineState->SetName(L"Render Context Pipeline State");
 
 	pipelineStates.push_back(pipelineState);
@@ -222,12 +233,13 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
-HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext)
+HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext, HRenderTarget renderTarget)
 {
 	OutputDebugString(L"CreateViewportAndScissorRect\n");
-
-	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(windowContext.GetWidth()), static_cast<float>(windowContext.GetHeight())));
-	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(windowContext.GetWidth()), static_cast<LONG>(windowContext.GetHeight())));
+	auto width = GetRenderTarget(renderTarget)->GetWidth();
+	auto height = GetRenderTarget(renderTarget)->GetHeight();
+	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)));
+	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)));
 	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
 
 	return HViewportAndScissors(viewports.size() - 1);
@@ -357,6 +369,9 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	ID3D12Resource* resource;
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Empty Texture");
+
+	size_t textureHandleIndex = textures.size();
+	auto descHandleOffset = CreateShaderResourceView(resource, false);
 	
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -364,9 +379,9 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0]));
-	
-	return HTexture(textures.size() - 1);
+	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
+
+	return HTexture(textureHandleIndex);
 }
 
 HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
@@ -383,24 +398,26 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Depth Texture");
 
+	auto descHandleOffset = CreateShaderResourceView(resource, true);
+
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
 	WCHAR wName[32];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0]));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
 
 	return HTexture(textures.size() - 1);
 }
 
-HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM,
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
 		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -408,13 +425,23 @@ HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const
 	ID3D12Resource* resource;
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 
+	UINT descHandleOffset;
+	if(format == DXGI_FORMAT_R32_FLOAT)
+	{
+		descHandleOffset = CreateShaderResourceView(resource, true);
+	}
+	else
+	{
+		descHandleOffset = CreateShaderResourceView(resource, false);
+	}
+
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
 	WCHAR wName[32];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], initResourceState));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], descHandleOffset, initResourceState));
 
 	return HTexture(textures.size() - 1);
 }
@@ -455,6 +482,26 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	return HBuffer(buffers.size() - 1);
 }
 
+std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t size)
+{
+	Buffer* buffer = buffers[handle.Index()];
+	void* mappedData = nullptr;
+	D3D12_RANGE readRange = { 0, size };
+	HRESULT hr = buffer->GetResource()->Map(0, &readRange, &mappedData);
+
+	std::vector<uint8_t> data;
+	if (SUCCEEDED(hr))
+	{
+		data.resize(size);
+		memcpy(data.data(), mappedData, size);
+		D3D12_RANGE writtenRange = { 0, 0 };
+		buffer->GetResource()->Unmap(0, &writtenRange);
+	}
+
+	return data;
+}
+
+
 void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
@@ -476,6 +523,36 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 
 }
 
+void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY)
+{
+	auto readbackBuffer = buffers[buffer.Index()]->GetResource();
+	D3D12_TEXTURE_COPY_LOCATION dst = {};
+	dst.pResource = readbackBuffer;
+	dst.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	dst.PlacedFootprint.Offset = 0;
+	dst.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R32_UINT; // Match your texture format
+	dst.PlacedFootprint.Footprint.Width = 1;
+	dst.PlacedFootprint.Footprint.Height = 1;
+	dst.PlacedFootprint.Footprint.Depth = 1;
+	dst.PlacedFootprint.Footprint.RowPitch = 4; // 1 texel × 4 bytes (R32_UINT)
+
+	auto sourceTexture = textures[texture.Index()]->GetResource();
+	D3D12_TEXTURE_COPY_LOCATION src = {};
+	src.pResource = sourceTexture;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	src.SubresourceIndex = 0;
+
+	D3D12_BOX srcBox = {};
+	srcBox.left = mouseX;
+	srcBox.top = mouseY;
+	srcBox.front = 0;
+	srcBox.right = mouseX + 1;
+	srcBox.bottom = mouseY + 1;
+	srcBox.back = 1;
+
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&dst, 0, 0, 0, &src, &srcBox);
+}
+
 void RenderContext::CreateDefaultSamplers()
 {
 	D3D12_SAMPLER_DESC samplerDesc = {};
@@ -494,6 +571,29 @@ void RenderContext::CreateDefaultSamplers()
 	samplerDesc.BorderColor[3] = 0.0f;
 
 	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate());
+}
+
+HBuffer RenderContext::CreateReadbackBuffer()
+{
+	D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
+	UINT readbackBufferSize = 1024 * 1024 * 4; // 4 MB buffer size
+	D3D12_RESOURCE_DESC readbackBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(readbackBufferSize);
+	ID3D12Resource* readbackBuffer;
+	deviceContext.CreateReadbackResource(flags, &readbackBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, IID_PPV_ARGS(&readbackBuffer));
+
+	CHAR name[] = "ReadbackBuffer";
+	CHAR tempName[32];
+	strcpy_s(tempName, name);
+	WCHAR wName[32];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	readbackBuffer->SetName(wName);
+
+	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
+	buffers.push_back(new Buffer(readbackBuffer, layout, name));
+
+	return HBuffer(buffers.size() - 1);
 }
 
 void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
@@ -525,8 +625,6 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 	auto textureHandle = CreateEmptyTexture(width, height, name);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
-	auto descHandleOffset = CreateShaderResourceView(textureHandle);
-
 	if (data == nullptr)
 	{
 		FillTextureUploadBuffer(width, height, bufferHandle);
@@ -549,6 +647,7 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 
 	ExecuteCommandList(uploadCommandList);
 
+	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
 	materials.push_back(new Material(textureHandle, descHandleOffset, name));
 }
 
@@ -571,6 +670,25 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 	return offset;
 }
 
+UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, bool isDepth)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = isDepth ? DXGI_FORMAT_R32_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	auto descriptorHandle = cbvSrvUavHeap.Allocate();
+	auto offset = cbvSrvUavHeap.Size() - 1;
+
+	deviceContext.GetDevice()->CreateShaderResourceView(
+		resource,            // Your texture resource
+		&srvDesc,
+		descriptorHandle);
+
+	return offset;
+}
+
 void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)
 {
 	unsigned int index = 0;
@@ -583,7 +701,7 @@ void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, H
 			UINT r = data[index++];
 			UINT g = data[index++];
 			UINT b = data[index++];
-			UINT32 packed = (b << 16) | (g << 8) | r;
+			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
 			pixels[y * width + x] = packed;
 		}
 	}
@@ -671,9 +789,14 @@ void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& buffer
 {
 }
 
-void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data)
+HTexture RenderContext::GetTexture(HRenderTarget renderTarget)
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(0, numOfConstants, data, 0);
+	return HTexture(renderTargets[renderTarget.Index()]->GetTextureIndex());
+}
+
+void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)
+{
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(slot, numOfConstants, data, 0);
 }
 
 void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
@@ -692,12 +815,13 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 }
 
-void RenderContext::BindTexture(HCommandList commandList, HTexture texture)
+void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
-	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(), materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
+		materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
 
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(2, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(1, textureHandle);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot + 1, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
 }
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
@@ -715,9 +839,21 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
+	auto format = renderTargets[renderTarget.Index()]->GetFormat();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
-	float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
-	commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+	if (format == DXGI_FORMAT_R8G8B8A8_UNORM)
+	{
+		float clearColor[] = { 1.000f, 0.980f, 0.900f, 1.0f };
+		commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	}
+	else if (format == DXGI_FORMAT_R32_UINT || format == DXGI_FORMAT_R32_FLOAT)
+	{
+		// Clear to zero for R32_UINT format
+		float clearValue = 0.0f;
+		commandLists[commandList.Index()]->GetCommandList()->ClearRenderTargetView(rtvHandle, &clearValue, 0, nullptr);
+		return;
+	}
 }
 
 void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)

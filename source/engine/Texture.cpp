@@ -2,8 +2,8 @@
 
 #include <string>
 
-Texture::Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, D3D12_RESOURCE_STATES initState)
-	: width(width), height(height), resource(resource), currentState(initState)
+Texture::Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, size_t srvDescriptorIndex, D3D12_RESOURCE_STATES initState)
+	: width(width), height(height), resource(resource), currentState(initState), srvDescriptorIndex(srvDescriptorIndex)
 {
 	strcpy_s(this->name, name);
 }

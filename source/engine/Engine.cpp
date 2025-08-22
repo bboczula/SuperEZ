@@ -8,6 +8,7 @@
 #include "Observer.h"
 #include "input/RawInput.h"
 #include "input/ImGuiHandler.h"
+#include "input/CursorInput.h"
 #include "../externals/AssetSuite/inc/AssetSuite.h"
 #include "../externals/TinyXML2/tinyxml2.h"
 
@@ -28,6 +29,7 @@ RenderContext renderContext;
 RenderGraph renderGraph;
 Subject<WinMessageEvent> winMessageSubject;
 RawInput rawInput;
+CursorInput cursorInput;
 ImGuiHandler imGuiHandler;
 
 Engine::Engine()
@@ -48,6 +50,7 @@ void Engine::Initialize()
 	imGuiHandler.Initialize();
 	winMessageSubject.Subscribe(&imGuiHandler);
 	winMessageSubject.Subscribe(&rawInput);
+	winMessageSubject.Subscribe(&cursorInput);
 	renderContext.CreateDescriptorHeap(&deviceContext);
 	renderContext.CreateDefaultSamplers();
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);

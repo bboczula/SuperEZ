@@ -10,7 +10,7 @@ void StartupState::Enter(Engine& engine)
 	engine.Initialize();
 
 	// Provide the scene name via the command payload
-	LoadAssetsPayload payload{ "chess" };
+	LoadAssetsPayload payload{ "sponza" };
 
 	// Transition to the next state
 	GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::LoadAssets, payload });

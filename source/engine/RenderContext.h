@@ -6,6 +6,7 @@
 #include "DescriptorHeap.h"
 #include "CommandList.h"
 #include "Handle.h"
+#include "RenderTarget.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -19,6 +20,14 @@ class Mesh;
 class Material;
 class InputLayout;
 class Shader;
+class Camera;
+class RootSignatureBuilder;
+
+enum RenderTargetFormat
+{
+	RGB8_UNORM,
+	R32_UINT
+};
 
 class RenderContext
 {
@@ -27,10 +36,11 @@ public:
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
-	HRootSignature CreateRootSignature(DeviceContext* deviceContext);
+	HRootSignature CreateRootSignature(RootSignatureBuilder& builder);
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
-	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader, HShader pixelShader, HInputLayout inputLayout);
-	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
+		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
+	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext, HRenderTarget renderTarget);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
 	void CreateIndexBuffer(DeviceContext* deviceContext);
@@ -45,28 +55,42 @@ public:
 	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	void UnloadAssets();
 	// High Level
-	HRenderTarget CreateRenderTarget();
+	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
+	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateShaderResourceView(HTexture& textureHandle);
+	UINT CreateShaderResourceView(ID3D12Resource* resource, bool isDepth);
 	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
+	Camera* GetCamera(UINT index) { return cameras[index]; }
+	HTexture GetTexture(HRenderTarget renderTarget);
+	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
+	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
+	bool WasObjectSelected() { return wasObjectSeleced; }
+	void SetWasObjectSelected(bool value) { wasObjectSeleced = value; }
+	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
+	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
 	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
-	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name);
+	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
+	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
+	// Buffers
+	HBuffer CreateReadbackBuffer();
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
-	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data);
+	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
@@ -76,7 +100,7 @@ public:
 	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
 	void SetDescriptorHeap(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
-	void BindTexture(HCommandList commandList, HTexture texture);
+	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
@@ -108,4 +132,8 @@ private:
 	std::vector<CD3DX12_VIEWPORT> viewports;
 	std::vector<CD3DX12_RECT> scissorRects;
 	std::vector<InputLayout*> inputLayouts;
+	std::vector<Camera*> cameras;
+private:
+	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
+	bool wasObjectSeleced = false;
 };

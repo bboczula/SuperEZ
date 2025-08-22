@@ -14,12 +14,14 @@ public:
 		ORTHOGRAPHIC
 	};
 	Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position);
-	DirectX::SimpleMath::Matrix* GetViewProjectionMatrixPtr(CameraType type);
+	DirectX::SimpleMath::Matrix* GetViewProjectionMatrixPtr();
 	void SetPosition(DirectX::SimpleMath::Vector3 position);
 	DirectX::SimpleMath::Vector3 GetPosition();
 	void SetRotation(DirectX::SimpleMath::Vector3 rotation);
 	DirectX::SimpleMath::Vector3 GetRotation();
-	void CalculateViewProjectionMatrix(CameraType type);
+	void CalculateViewProjectionMatrix();
+	void SetType(CameraType type) { this->type = type; }
+	CameraType GetType() { return type; }
 	void SetWidth(float width) { this->width = width; }
 	float GetWidth() { return width; }
 	void SetHeight(float height) { this->height = height; }
@@ -56,6 +58,7 @@ protected:
 	float width;
 	float height;
 	// Common
+	CameraType type;
 	float nearPlane = 0.1f;
 	float farPlane = 1000.0f;
 	float roll = 0.0f;

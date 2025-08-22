@@ -2,16 +2,16 @@
 
 Camera::Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
 	: position(position), rotation(0.0f, 0.0f, 0.0f), aspectRatio(aspectRatio), width(1.0f), height(1.0f),
-	forward(DEFAULT_FORWARD), up(DEFAULT_UP),	right(DEFAULT_RIGTH), target(0.0f, 0.0f, 0.0f)
+	forward(DEFAULT_FORWARD), up(DEFAULT_UP), right(DEFAULT_RIGTH), target(0.0f, 0.0f, 0.0f), type(CameraType::PERSPECTIVE)
 {
 	forward = target - position;
 	forward.Normalize();
 	InitializeYawAndPitchFromPosition();
 }
 
-DirectX::SimpleMath::Matrix* Camera::GetViewProjectionMatrixPtr(CameraType type)
+DirectX::SimpleMath::Matrix* Camera::GetViewProjectionMatrixPtr()
 {
-	CalculateViewProjectionMatrix(type);
+	CalculateViewProjectionMatrix();
 	return &viewProjection;
 }
 
@@ -54,7 +54,7 @@ void Camera::InitializeYawAndPitchFromPosition()
 	yaw = atan2f(offset.x, offset.z);
 }
 
-void Camera::CalculateViewProjectionMatrix(CameraType type)
+void Camera::CalculateViewProjectionMatrix()
 {
 	auto target = position + forward;
 	switch (type)

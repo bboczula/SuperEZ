@@ -16,7 +16,7 @@ extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 
-ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", Type::Drawless)
+ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", L"", Type::Drawless)
 {
 }
 
@@ -26,6 +26,9 @@ void ImGuiPass::ConfigurePipelineState()
 
 void ImGuiPass::Initialize()
 {
+	// Create the custom Render Target for ImGui
+	renderTarget = renderContext.CreateRenderTarget("RT_ImGui", RenderTargetFormat::RGB8_UNORM);
+
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -61,6 +64,9 @@ void ImGuiPass::Initialize()
 	ImGui_ImplDX12_Init(&init_info);
 
 	ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\CascadiaMono.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
+
+	// Create a texture for the color
+	colorCopyTexture = renderContext.CreateEmptyTexture(1920, 1080, "Color_Copy");
 }
 
 void ImGuiPass::Update()
@@ -69,11 +75,10 @@ void ImGuiPass::Update()
 
 void ImGuiPass::Execute()
 {
-	//renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
 	renderContext.SetDescriptorHeap(commandList);
-	renderContext.BindRenderTarget(commandList, HRenderTarget(2));
+	renderContext.BindRenderTarget(commandList, renderTarget);
 	// We don't really want to clear, we want to draw on top of the existing content
-	//renderContext.CleraRenderTarget(commandList, renderTarget);
+	renderContext.CleraRenderTarget(commandList, renderTarget);
 	//renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
 	// (Your code process and dispatch Win32 messages)
@@ -128,8 +133,20 @@ void ImGuiPass::Execute()
 	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 	
 	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	
-	static int selectedIndex = -1;
+
+	static uint32_t selectedIndex = UINT32_MAX;
+	auto selectedObjectId = renderContext.GetSelectedObjectId();
+	if (renderContext.WasObjectSelected())
+	{
+		if (selectedObjectId != UINT32_MAX)
+		{
+			selectedIndex = selectedObjectId;
+		}
+		else
+		{
+			selectedIndex = -1; // Reset selection if no object is selected
+		}
+	}
 	
 	ImGui::Text("Game Objects");
 	ImGui::Separator();
@@ -171,9 +188,26 @@ void ImGuiPass::Execute()
 	
 	ImGui::End();
 
+	ImVec2 viewport_pos = ImVec2(400, menuHeight);     // Top-left corner
+	ImVec2 viewport_size = ImVec2(1920 - 400, 1080 - menuHeight - 25);      // 300 px wide, height auto
+
+	ImGui::SetNextWindowPos(viewport_pos, ImGuiCond_Always);
+	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
+	ImGui::Begin("Viewport");
+
+	auto texture = renderContext.GetTexture(colorCopyTexture);
+	HRenderTarget colorRenderTarget = HRenderTarget(3);
+	auto finalTexture = renderContext.GetTexture(colorRenderTarget);
+	auto finalFinalTexture = renderContext.GetTexture(finalTexture);
+	renderContext.TransitionTo(commandList, finalTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(finalFinalTexture->GetSrvDescriptorIndex());
+	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
+	ImVec2 size = ImGui::GetContentRegionAvail();
+	ImGui::Image(textureID, size);
+	ImGui::End();
+
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 25));
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 25));
-
 	ImGui::Begin("StatusBar", nullptr,
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoResize |
@@ -205,7 +239,7 @@ void ImGuiPass::Execute()
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderContext.GetCommandList(commandList)->GetCommandList());
-	// (Your code calls ExecuteCommandLists, swapchain's Present(), etc.)
+	renderContext.TransitionBack(commandList, finalTexture);
 }
 
 void ImGuiPass::Allocate(DeviceContext* deviceContext)

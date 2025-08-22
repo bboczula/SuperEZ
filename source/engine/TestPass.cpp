@@ -7,6 +7,7 @@
 #include "camera/Camera.h"
 #include "camera/Orbit.h"
 #include "input/RawInput.h"
+#include "RootSignatureBuilder.h"
 
 #include <pix3.h>
 
@@ -15,11 +16,9 @@ extern RenderContext renderContext;
 extern WindowContext windowContext;
 extern RawInput rawInput;
 
-TestPass::TestPass() : RenderPass(L"Test", Type::Default)
+TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Default)
 {
-	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	camera = new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f));
-	arcballCamera = new Orbit(camera);
+	arcballCamera = new Orbit(renderContext.GetCamera(0));
 }
 
 void TestPass::SetOrthographicProperties(const float aspectRatio)
@@ -31,13 +30,12 @@ void TestPass::SetOrthographicProperties(const float aspectRatio)
 	width *= 2.0f;
 	height *= 2.0f;
 
-	camera->SetWidth(width);
-	camera->SetHeight(height);
+	renderContext.GetCamera(0)->SetWidth(width);
+	renderContext.GetCamera(0)->SetHeight(height);
 }
 
 TestPass::~TestPass()
 {
-	delete camera;
 }
 
 void TestPass::ConfigurePipelineState()
@@ -45,13 +43,26 @@ void TestPass::ConfigurePipelineState()
 	// Pre-AutomaticInitialize Procedure
 	inputLayout = renderContext.CreateInputLayout();
 	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
+
+	// Now we can create the root signature
+	RootSignatureBuilder builder;
+	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
+	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
+	rootSignature = renderContext.CreateRootSignature(builder);
+
+	// Menu height seems to be 20 pixels
+	// The actual viewport size is this ImVec2(1920 - 400, 1080 - menuHeight - 25);
+	const int menuHeight = 20;
+	const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
+	const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
+	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
+	depthBuffer = renderContext.CreateDepthBuffer();
+	deviceContext.Flush();
 }
 
 void TestPass::Initialize()
 {
-	renderTarget = renderContext.CreateRenderTarget();
-	depthBuffer = renderContext.CreateDepthBuffer();
-	deviceContext.Flush();
 }
 
 void TestPass::Update()
@@ -78,8 +89,8 @@ void TestPass::Update()
 	{
 		// There is a crash, somehow we keep entering this condition, even though we don't press any key
 		auto radius = arcballCamera->GetRadius();
-		camera->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
-		camera->SetPosition(DirectX::SimpleMath::Vector3(
+		renderContext.GetCamera(0)->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
+		renderContext.GetCamera(0)->SetPosition(DirectX::SimpleMath::Vector3(
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD1),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD7),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD3) + 0.0000001));
@@ -105,12 +116,13 @@ void TestPass::Execute()
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
-	renderContext.SetInlineConstants(commandList, 16, camera->GetViewProjectionMatrixPtr(type));
+	renderContext.GetCamera(0)->SetType(type);
+	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
 	
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
 		renderContext.BindGeometry(commandList, HMesh(i));
-		renderContext.BindTexture(commandList, HTexture(i));
+		renderContext.BindTexture(commandList, HTexture(i), 1);
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 }

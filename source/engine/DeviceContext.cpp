@@ -49,7 +49,6 @@ void DeviceContext::Present()
 {
 	swapChain->Present(1, 0);
 	currentBackBufferIndex = swapChain->GetCurrentBackBufferIndex();
-	//Sleep(500);
 }
 
 void DeviceContext::CreateDxgiFactory()
@@ -272,6 +271,13 @@ void DeviceContext::CreateUploadResource(D3D12_HEAP_FLAGS heapFlags, const D3D12
 {
 	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_UPLOAD);
 
+	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
+}
+
+void DeviceContext::CreateReadbackResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RESOURCE_DESC* desc,
+	D3D12_RESOURCE_STATES initResourceState, const IID& riidResource, void** ppResource)
+{
+	CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_READBACK);
 	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
 }
 

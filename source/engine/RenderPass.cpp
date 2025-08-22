@@ -12,7 +12,7 @@
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
 
-RenderPass::RenderPass(PCWSTR name, Type type) : shaderSourceFileName(L"shaders.hlsl"), name(name), type(type)
+RenderPass::RenderPass(PCWSTR name, LPCWSTR shaderName, Type type) : shaderSourceFileName(shaderName), name(name), type(type)
 {
 }
 
@@ -24,11 +24,10 @@ void RenderPass::AutomaticInitialize()
 {
 	if (GetType() == Type::Default)
 	{
-		rootSignature = renderContext.CreateRootSignature(&deviceContext);
 		vertexShader = renderContext.CreateShader(shaderSourceFileName, "VSMain", "vs_5_0");
 		pixelShader = renderContext.CreateShader(shaderSourceFileName, "PSMain", "ps_5_0");
-		pipelineState = renderContext.CreatePipelineState(&deviceContext, rootSignature, vertexShader, pixelShader, inputLayout);
-		viewportAndScissors = renderContext.CreateViewportAndScissorRect(&deviceContext);
+		pipelineState = renderContext.CreatePipelineState(&deviceContext, rootSignature, vertexShader, pixelShader, inputLayout, renderTarget);
+		viewportAndScissors = renderContext.CreateViewportAndScissorRect(&deviceContext, renderTarget);
 	}
 
 	commandList = renderContext.CreateCommandList();
