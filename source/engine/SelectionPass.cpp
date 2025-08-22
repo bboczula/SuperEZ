@@ -68,6 +68,11 @@ void SelectionPass::Update()
 		// Reset the fence value for the next frame
 		fenceValue++;
 
+		if (!renderContext.WasObjectSelected())
+		{
+			return; // Skip if the viewport was not clicked
+		}
+
 		auto data = renderContext.ReadbackBufferData(readbackBuffer, sizeof(UINT32));
 
 		if (!data.empty())
@@ -119,10 +124,20 @@ void SelectionPass::Execute()
 	mousePositionX -= 400;
 	mousePositionY -= 20; // Adjust for the menu height
 
-	if (cursorInput.WasLeftButtonClicked() && mousePositionX > 0 && mousePositionY > 0)
+	if (cursorInput.WasLeftButtonClicked())
 	{
-		auto texture = renderContext.GetTexture(renderTarget);
-		renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
+		const bool wasViewportClicked = mousePositionX > 0 && mousePositionY > 0;
+		if (wasViewportClicked)
+		{
+			auto texture = renderContext.GetTexture(renderTarget);
+			renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
+		}
+		else
+		{
+			// Reset selection if clicked outside the viewport
+			renderContext.SetSelectedObjectId(UINT32_MAX);
+		}
+		renderContext.SetWasObjectSelected(wasViewportClicked);
 	}
 
 	// Signal

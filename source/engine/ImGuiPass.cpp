@@ -133,9 +133,20 @@ void ImGuiPass::Execute()
 	ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
 	
 	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	
-	static uint32_t selectedIndex = -1;
-	selectedIndex = renderContext.GetSelectedObjectId();
+
+	static uint32_t selectedIndex = UINT32_MAX;
+	auto selectedObjectId = renderContext.GetSelectedObjectId();
+	if (renderContext.WasObjectSelected())
+	{
+		if (selectedObjectId != UINT32_MAX)
+		{
+			selectedIndex = selectedObjectId;
+		}
+		else
+		{
+			selectedIndex = -1; // Reset selection if no object is selected
+		}
+	}
 	
 	ImGui::Text("Game Objects");
 	ImGui::Separator();

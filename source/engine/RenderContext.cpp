@@ -582,6 +582,13 @@ HBuffer RenderContext::CreateReadbackBuffer()
 	deviceContext.CreateReadbackResource(flags, &readbackBufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, IID_PPV_ARGS(&readbackBuffer));
 
 	CHAR name[] = "ReadbackBuffer";
+	CHAR tempName[32];
+	strcpy_s(tempName, name);
+	WCHAR wName[32];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	readbackBuffer->SetName(wName);
+
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
 	buffers.push_back(new Buffer(readbackBuffer, layout, name));

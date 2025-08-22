@@ -69,6 +69,8 @@ public:
 	HTexture GetTexture(HRenderTarget renderTarget);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
+	bool WasObjectSelected() { return wasObjectSeleced; }
+	void SetWasObjectSelected(bool value) { wasObjectSeleced = value; }
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
@@ -133,4 +135,5 @@ private:
 	std::vector<Camera*> cameras;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
+	bool wasObjectSeleced = false;
 };
