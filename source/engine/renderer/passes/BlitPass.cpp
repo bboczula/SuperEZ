@@ -1,7 +1,7 @@
 #include "BlitPass.h"
-#include "DeviceContext.h"
-#include "RenderContext.h"
-#include "../externals/d3dx12/d3dx12.h"
+#include "../../core/DeviceContext.h"
+#include "../RenderContext.h"
+#include "../../externals/d3dx12/d3dx12.h"
 #include "pix3.h"
 
 extern DeviceContext deviceContext;

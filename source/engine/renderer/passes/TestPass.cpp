@@ -1,13 +1,13 @@
 #include "TestPass.h"
 
-#include "RenderContext.h"
-#include "DeviceContext.h"
-#include "WindowContext.h"
-#include "InputLayout.h"
-#include "camera/Camera.h"
-#include "camera/Orbit.h"
-#include "input/RawInput.h"
-#include "RootSignatureBuilder.h"
+#include "../RenderContext.h"
+#include "../../core/DeviceContext.h"
+#include "../../engine/WindowContext.h"
+#include "../../core/InputLayout.h"
+#include "../../engine/camera/Camera.h"
+#include "../../engine/camera/Orbit.h"
+#include "../../engine/input/RawInput.h"
+#include "../RootSignatureBuilder.h"
 
 #include <pix3.h>
 

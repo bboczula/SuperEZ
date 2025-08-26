@@ -1,11 +1,11 @@
 #include "SelectionPass.h"
-#include "RenderContext.h"
-#include "InputLayout.h"
-#include "DeviceContext.h"
-#include "camera/Camera.h"
-#include "RootSignatureBuilder.h"
-#include "input/RawInput.h"
-#include "input/CursorInput.h"
+#include "../RenderContext.h"
+#include "../../core/InputLayout.h"
+#include "../../core/DeviceContext.h"
+#include "../../engine/camera/Camera.h"
+#include "../RootSignatureBuilder.h"
+#include "../../engine/input/RawInput.h"
+#include "../../engine/input/CursorInput.h"
 
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;

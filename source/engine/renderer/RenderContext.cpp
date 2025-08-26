@@ -1,21 +1,21 @@
 #include "RenderContext.h"
-#include "DeviceContext.h"
-#include "WindowContext.h"
-#include "DepthBuffer.h"
-#include "Mesh.h"
-#include "Material.h"
-#include "VertexBuffer.h"
-#include "InputLayout.h"
-#include "Buffer.h"
+#include "../core/DeviceContext.h"
+#include "../engine/WindowContext.h"
+#include "../core/DepthBuffer.h"
+#include "../asset/Mesh.h"
+#include "../asset/Material.h"
+#include "../core/VertexBuffer.h"
+#include "../core/InputLayout.h"
+#include "../core/Buffer.h"
 #include "Shader.h"
-#include "camera/Camera.h"
+#include "../engine/camera/Camera.h"
 #include "RootSignatureBuilder.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
-#include "../externals/SimpleMath/SimpleMath.h"
+#include "../../externals/SimpleMath/SimpleMath.h"
 #include "debugapi.h"
-#include "Utils.h"
+#include "../Utils.h"
 
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
@@ -85,7 +85,7 @@ void RenderContext::UnloadAssets()
 	// This is very bad, it so happens that first two textures are the back buffer textures
 	// Next is the one we render to, and the last one is the depth buffer
 	// But this is basically just a coincidence I think at least for the last two
-	for (size_t i = 4; i < textures.size(); ++i)
+	for (size_t i = 2; i < textures.size(); ++i)
 	{
 		delete textures[i];
 	}
@@ -100,6 +100,8 @@ void RenderContext::UnloadAssets()
 	}
 
 	cbvSrvUavHeap.Reset();
+	rtvHeap.Reset();
+	dsvHeap.Reset();
 }
 
 HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)

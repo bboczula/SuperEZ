@@ -1,6 +1,6 @@
 #include "RenderPass.h"
 #include "RenderContext.h"
-#include "InputLayout.h"
+#include "../core/InputLayout.h"
 
 #ifdef DEBUG
 #define USE_PIX

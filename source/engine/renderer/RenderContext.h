@@ -2,10 +2,10 @@
 
 #include <d3d12.h>
 #include <vector>
-#include "../externals/d3dx12/d3dx12.h"
-#include "DescriptorHeap.h"
-#include "CommandList.h"
-#include "Handle.h"
+#include "../../externals/d3dx12/d3dx12.h"
+#include "../bind/DescriptorHeap.h"
+#include "../bind/CommandList.h"
+#include "../asset/Handle.h"
 #include "RenderTarget.h"
 
 #pragma comment(lib, "D3DCompiler.lib")

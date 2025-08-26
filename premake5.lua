@@ -126,7 +126,7 @@ project "Engine"
 	{
 		"source/engine/**.h",
 		"source/engine/**.cpp",
-		"source/engine/shaders/**.hlsl",
+		"source/engine/renderer/shaders/**.hlsl",
 		"source/externals/TinyXML2/tinyxml2.h",
 		"source/externals/TinyXML2/tinyxml2.cpp"
 	}
@@ -143,7 +143,7 @@ project "Engine"
 		defines { "FINAL" }
 		buildcommands
 		{
-			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]",
+			"{COPYFILE} %[%{!wks.location}../source/engine/renderer/shaders/**.hlsl] %[%{!cfg.targetdir}]",
 			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
 		} -- Runs before the compilation
 		links
@@ -156,7 +156,7 @@ project "Engine"
 		runtime "Debug"
 		buildcommands
 		{
-			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]", -- Copy shaders
+			"{COPYFILE} %[%{!wks.location}../source/engine/renderer/shaders/**.hlsl] %[%{!cfg.targetdir}]", -- Copy shaders
 			"{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]", -- This really only applies to Debug builds
 			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_d.dll] %[%{!cfg.targetdir}]" -- Copy AssetSuite DLL
 		}
@@ -180,7 +180,7 @@ project "Engine"
 		optimize "on"
 		buildcommands
 		{
-			"{COPYFILE} %[%{!wks.location}../source/engine/shaders/**.hlsl] %[%{!cfg.targetdir}]",
+			"{COPYFILE} %[%{!wks.location}../source/engine/renderer/shaders/**.hlsl] %[%{!cfg.targetdir}]",
 			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_r.dll] %[%{!cfg.targetdir}]"
 		} -- Runs before the compilation
 		buildoutputs { "%{cfg.targetdir}/.timestamp" } -- This will trigger buildcommands all the time

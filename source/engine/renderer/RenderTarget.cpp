@@ -1,6 +1,6 @@
 #include "RenderTarget.h"
 #include "RenderContext.h"
-#include "DeviceContext.h"
+#include "../core/DeviceContext.h"
 
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;

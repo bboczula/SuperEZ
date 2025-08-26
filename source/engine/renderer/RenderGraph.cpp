@@ -1,9 +1,9 @@
 #include "RenderGraph.h"
 #include "RenderPass.h"
-#include "TestPass.h"
-#include "ImGuiPass.h"
-#include "BlitPass.h"
-#include "SelectionPass.h"
+#include "passes/TestPass.h"
+#include "passes/ImGuiPass.h"
+#include "passes/BlitPass.h"
+#include "passes/SelectionPass.h"
 
 RenderGraph::RenderGraph()
 {

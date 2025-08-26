@@ -1,5 +1,5 @@
 #include "DepthBuffer.h"
-#include "RenderContext.h"
+#include "../renderer/RenderContext.h"
 #include "DeviceContext.h"
 
 extern RenderContext renderContext;

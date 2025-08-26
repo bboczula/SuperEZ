@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderPass.h"
+#include "../RenderPass.h"
 
 // This pass will copy whichever texture requested to the back buffer
 

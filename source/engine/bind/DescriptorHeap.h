@@ -2,7 +2,7 @@
 
 #include <d3d12.h>
 #include <stack>
-#include "../externals/d3dx12/d3dx12.h"
+#include "../../externals/d3dx12/d3dx12.h"
 
 class DeviceContext;
 

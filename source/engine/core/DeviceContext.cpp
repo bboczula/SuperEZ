@@ -1,9 +1,9 @@
 #include "DeviceContext.h"
-#include "WindowContext.h"
+#include "../engine/WindowContext.h"
 #include "debugapi.h"
-#include "Utils.h"
-#include "../externals/SimpleMath/SimpleMath.h"
-#include "../externals/d3dx12/d3dx12.h"
+#include "../Utils.h"
+#include "../../externals/SimpleMath/SimpleMath.h"
+#include "../../externals/d3dx12/d3dx12.h"
 
 #include <stdio.h>
 #include <dxgidebug.h>

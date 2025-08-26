@@ -1,6 +1,6 @@
 #include "CommandList.h"
-#include "Utils.h"
-#include "DeviceContext.h"
+#include "../Utils.h"
+#include "../core/DeviceContext.h"
 
 extern DeviceContext deviceContext;
 

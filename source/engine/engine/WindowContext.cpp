@@ -1,7 +1,7 @@
 #include <list>
 
 #include "WindowContext.h"
-#include "Utils.h"
+#include "../Utils.h"
 #include "CommCtrl.h"
 
 #define WINDOW_CLASS_NAME L"SuperEZMyWindowWin32Class"

@@ -1,10 +1,10 @@
 ﻿#include "ImGuiPass.h"
-#include "WindowContext.h"
-#include "DeviceContext.h"
-#include "RenderContext.h"
-#include "DescriptorHeap.h"
-#include "Mesh.h"
-#include "states/EngineCommandQueue.h"
+#include "../../engine/WindowContext.h"
+#include "../../core/DeviceContext.h"
+#include "../RenderContext.h"
+#include "../../bind/DescriptorHeap.h"
+#include "../../asset/Mesh.h"
+#include "../../engine/states/EngineCommandQueue.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>

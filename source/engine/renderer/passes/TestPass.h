@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderPass.h"
+#include "../RenderPass.h"
 
 
 // The test pass first will create its own Render Target and Vertex Buffer,
