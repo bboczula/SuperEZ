@@ -1,5 +1,5 @@
 #include "Engine.h"
-#include "debugapi.h"
+
 #include "../core/DeviceContext.h"
 #include "WindowContext.h"
 #include "../renderer/RenderContext.h"
@@ -67,9 +67,9 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
 
-	std::vector<FLOAT> meshOutput;
+	std::vector<float> meshOutput;
 	AssetSuite::MeshDescriptor meshDescriptor{};
-	std::vector<BYTE> imageOutput;
+	std::vector<uint8_t> imageOutput;
 	AssetSuite::ImageDescriptor imageDescriptor{};
 
 	auto LogMeshError = [](const std::string& meshName)
@@ -98,7 +98,7 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 			return renderContext.CreateVertexBuffer(meshDescriptor.numOfVertices * 3, components, meshOutput.data(), name.c_str());
 		};
 
-		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<BYTE>& data)
+		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data)
 		{
 			std::string name = "TEX_" + meshName;
 			renderContext.CreateTexture(desc.width, desc.height, data.data(), name.c_str());

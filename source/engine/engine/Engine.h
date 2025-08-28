@@ -1,5 +1,5 @@
 #pragma once
-#include <Windows.h>
+
 #include <vector>
 #include <filesystem>
 #include <string>
@@ -27,41 +27,3 @@ public:
 private:
 	IEngineState* currentState = nullptr;
 };
-
-//class RenderState : public IEngineState
-//{
-//	public:
-//	void Enter(Engine& engine) override
-//	{
-//		OutputDebugString(L"Entering RenderState\n");
-//	}
-//	void Exit(Engine& engine) override
-//	{
-//		OutputDebugString(L"Exiting RenderState\n");
-//	}
-//	void Update(Engine& engine) override
-//	{
-//		engine.Tick();
-//	}
-//};
-//
-//class LoadAssetsState : public IEngineState
-//{
-//	public:
-//	void Enter(Engine& engine) override
-//	{
-//		OutputDebugString(L"Entering LoadAssetsState\n");
-//	}
-//	void Exit(Engine& engine) override
-//	{
-//		OutputDebugString(L"Exiting LoadAssetsState\n");
-//	}
-//	void Update(Engine& engine) override
-//	{
-//		GameObjects gameObjects;
-//		std::filesystem::path currentPath = "Assets/Scenes/Scene1";
-//		engine.LoadAssets(gameObjects, currentPath);
-//		engine.ProcessScene(gameObjects, currentPath, "Scene1");
-//		engine.ChangeState(new StartupState());
-//	}
-//};
