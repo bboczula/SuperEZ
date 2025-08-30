@@ -1,7 +1,10 @@
 #pragma once
 
-#include <Windows.h>
 #include "Observer.h"
+
+// Forward-declare Windows handle types so we can expose them without including <Windows.h>
+struct HWND__;      using HWND = HWND__*;
+struct HINSTANCE__; using HINSTANCE = HINSTANCE__*;
 
 extern Subject<WinMessageEvent> winMessageSubject;
 
@@ -10,15 +13,10 @@ class WindowContext
 public:
 	WindowContext();
 	~WindowContext();
-	HWND GetWindowHandle() { return hwnd; }
-	LONG GetWidth() { return width; }
-	LONG GetHeight() { return height; }
+	HWND GetWindowHandle();
+	long GetWidth();
+	long GetHeight();
 private:
-	void RegisterWindowClass();
-	void CreateWindowInstance();
-	HWND hwnd;
-	HWND button;
-	HINSTANCE instance;
-	LONG width;
-	LONG height;
+	struct Impl;
+	Impl* pImpl;
 };

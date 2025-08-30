@@ -2,18 +2,11 @@
 #include <vector>
 #include <algorithm>
 
+#include "WinMessageEvent.h"
+
 // Forward declarations (to get rid of Windows.h dependency)
 struct HWND__;
 using HWND = HWND__*;
-
-// Define your WinMessageEvent struct
-struct WinMessageEvent
-{
-      HWND hwnd;
-      uint32_t msg;
-      std::uintptr_t wParam;
-      std::intptr_t lParam;
-};
 
 // Generic observer interface
 template<typename Event>
