@@ -5,6 +5,7 @@
 #include "../../externals/d3dx12/d3dx12.h"
 #include "../bind/DescriptorHeap.h"
 #include "../bind/CommandList.h"
+#include "../bind/PipelineState.h"
 #include "../asset/Handle.h"
 #include "RenderTarget.h"
 
@@ -128,7 +129,8 @@ private:
 	std::vector<Material*> materials;
 	std::vector<Shader*> shaders;
 	std::vector<ID3D12RootSignature*> rootSignatures;
-	std::vector<ID3D12PipelineState*> pipelineStates;
+	//std::vector<ID3D12PipelineState*> pipelineStates;
+	std::vector<PipelineState*> pipelineStates;
 	std::vector<CD3DX12_VIEWPORT> viewports;
 	std::vector<CD3DX12_RECT> scissorRects;
 	std::vector<InputLayout*> inputLayouts;

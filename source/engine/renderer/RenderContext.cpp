@@ -35,7 +35,7 @@ RenderContext::~RenderContext()
 	// Reelease Render Resources
 	for (auto& pipelineState : pipelineStates)
 	{
-		SafeRelease(&pipelineState);
+		delete pipelineState;
 	}
 	for (auto& shader : shaders)
 	{
@@ -208,26 +208,33 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	assert(inputLayout.IsValid() && "InputLayout is not valid");
 	assert(rootSignature.IsValid() && "RootSignature is not valid");
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
-	psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];
-	psoDesc.VS = CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob());
-	psoDesc.PS = CD3DX12_SHADER_BYTECODE(shaders[pixelShader.Index()]->GetBlob());
-	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = GetRenderTarget(renderTarget)->GetFormat();
-	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-	psoDesc.SampleDesc.Count = 1;
+	//D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	//psoDesc.InputLayout = inputLayouts[inputLayout.Index()]->GetInputLayoutDesc();
+	//psoDesc.pRootSignature = rootSignatures[rootSignature.Index()];
+	//psoDesc.VS = CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob());
+	//psoDesc.PS = CD3DX12_SHADER_BYTECODE(shaders[pixelShader.Index()]->GetBlob());
+	//psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	//psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+	//psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	//psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	//psoDesc.SampleMask = UINT_MAX;
+	//psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	//psoDesc.NumRenderTargets = 1;
+	//psoDesc.RTVFormats[0] = GetRenderTarget(renderTarget)->GetFormat();
+	//psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	//psoDesc.SampleDesc.Count = 1;
+	//
+	//ID3D12PipelineState* pipelineState;
+	//HRESULT hr = deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+	//DX_TRY(hr, "CreateGraphicsPipelineState", "Did you forget to update your root signature or input layout?");
+	//pipelineState->SetName(L"Render Context Pipeline State");
 
-	ID3D12PipelineState* pipelineState;
-	HRESULT hr = deviceContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
-	DX_TRY(hr, "CreateGraphicsPipelineState", "Did you forget to update your root signature or input layout?");
-	pipelineState->SetName(L"Render Context Pipeline State");
+	PipelineState* pipelineState = new PipelineState();
+	pipelineState->Create(inputLayouts[inputLayout.Index()]->GetInputLayoutDesc(),
+		rootSignatures[rootSignature.Index()],
+		CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob()),
+		CD3DX12_SHADER_BYTECODE(shaders[pixelShader.Index()]->GetBlob()),
+		GetRenderTarget(renderTarget)->GetFormat());
 
 	pipelineStates.push_back(pipelineState);
 
@@ -867,7 +874,7 @@ void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer dept
 
 void RenderContext::ResetCommandList(HCommandList commandList, HPipelineState pipelineState)
 {
-	commandLists[commandList.Index()]->Reset(pipelineStates[pipelineState.Index()]);
+	commandLists[commandList.Index()]->Reset(pipelineStates[pipelineState.Index()]->GetPipelineState());
 }
 
 void RenderContext::ResetCommandList(HCommandList commandList)
@@ -883,7 +890,7 @@ void RenderContext::CloseCommandList(HCommandList commandList)
 void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors)
 {
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]);
-	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]);
+	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]->GetPipelineState());
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
 }
