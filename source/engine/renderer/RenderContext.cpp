@@ -238,18 +238,6 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
-HViewportAndScissors RenderContext::CreateViewportAndScissorRect(DeviceContext* deviceContext, HRenderTarget renderTarget)
-{
-	OutputDebugString(L"CreateViewportAndScissorRect\n");
-	auto width = GetRenderTarget(renderTarget)->GetWidth();
-	auto height = GetRenderTarget(renderTarget)->GetHeight();
-	viewports.push_back(CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)));
-	scissorRects.push_back(CD3DX12_RECT(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)));
-	OutputDebugString(L"CreateViewportAndScissorRect succeeded\n");
-
-	return HViewportAndScissors(viewports.size() - 1);
-}
-
 HInputLayout RenderContext::CreateInputLayout()
 {
 	OutputDebugString(L"CreateInputLayout\n");
@@ -808,7 +796,11 @@ void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget ren
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	auto viewport = renderTargets[renderTarget.Index()]->GetViewport();
+	auto scissorRect = renderTargets[renderTarget.Index()]->GetScissorRect();
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewport);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 }
 
 void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer)
@@ -817,7 +809,11 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
 	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
 	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
+	auto viewport = renderTargets[renderTarget.Index()]->GetViewport();
+	auto scissorRect = renderTargets[renderTarget.Index()]->GetScissorRect();
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewport);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 }
 
 void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
@@ -887,8 +883,6 @@ void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pip
 {
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]->GetRootSignature());
 	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]->GetPipelineState());
-	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
-	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
 }
 
 void RenderContext::SetDescriptorHeap(HCommandList commandList)

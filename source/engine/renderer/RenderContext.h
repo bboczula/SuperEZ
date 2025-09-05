@@ -1,6 +1,5 @@
 #pragma once
 
-#include <d3d12.h>
 #include <vector>
 #include "../../externals/d3dx12/d3dx12.h"
 #include "../bind/DescriptorHeap.h"
@@ -42,7 +41,6 @@ public:
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
 		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
-	HViewportAndScissors CreateViewportAndScissorRect(DeviceContext* deviceContext, HRenderTarget renderTarget);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
 	void CreateIndexBuffer(DeviceContext* deviceContext);
@@ -129,11 +127,8 @@ private:
 	std::vector<Mesh*> meshes;
 	std::vector<Material*> materials;
 	std::vector<Shader*> shaders;
-	//std::vector<ID3D12RootSignature*> rootSignatures;
 	std::vector<RootSignature*> rootSignatures;
 	std::vector<PipelineState*> pipelineStates;
-	std::vector<CD3DX12_VIEWPORT> viewports;
-	std::vector<CD3DX12_RECT> scissorRects;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
 private:

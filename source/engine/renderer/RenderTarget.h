@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../core/Texture.h"
+#include "d3dx12.h"
 
 class RenderTarget
 {
@@ -12,6 +13,8 @@ public:
 	UINT GetHeight() const { return height; }
 	DXGI_FORMAT GetFormat() const { return format; }
 	size_t GetTextureIndex() const { return textureIndex; }
+	CD3DX12_VIEWPORT GetViewport() { return viewport; }
+	CD3DX12_RECT GetScissorRect() { return scissorRect; }
 private:
 	char name[32];
 	size_t textureIndex;
@@ -19,4 +22,6 @@ private:
 	UINT width;
 	UINT height;
 	DXGI_FORMAT format;
+	CD3DX12_VIEWPORT viewport;
+	CD3DX12_RECT scissorRect;
 };
