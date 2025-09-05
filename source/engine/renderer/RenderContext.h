@@ -6,6 +6,7 @@
 #include "../bind/DescriptorHeap.h"
 #include "../bind/CommandList.h"
 #include "../bind/PipelineState.h"
+#include "../bind/RootSignature.h"
 #include "../asset/Handle.h"
 #include "RenderTarget.h"
 
@@ -128,8 +129,8 @@ private:
 	std::vector<Mesh*> meshes;
 	std::vector<Material*> materials;
 	std::vector<Shader*> shaders;
-	std::vector<ID3D12RootSignature*> rootSignatures;
-	//std::vector<ID3D12PipelineState*> pipelineStates;
+	//std::vector<ID3D12RootSignature*> rootSignatures;
+	std::vector<RootSignature*> rootSignatures;
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<CD3DX12_VIEWPORT> viewports;
 	std::vector<CD3DX12_RECT> scissorRects;

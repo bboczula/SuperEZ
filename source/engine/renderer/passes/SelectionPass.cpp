@@ -3,7 +3,7 @@
 #include "../../core/InputLayout.h"
 #include "../../core/DeviceContext.h"
 #include "../../engine/camera/Camera.h"
-#include "../RootSignatureBuilder.h"
+#include "../../bind/RootSignatureBuilder.h"
 #include "../../engine/input/RawInput.h"
 #include "../../engine/input/CursorInput.h"
 

@@ -7,7 +7,7 @@
 #include "../../engine/camera/Camera.h"
 #include "../../engine/camera/Orbit.h"
 #include "../../engine/input/RawInput.h"
-#include "../RootSignatureBuilder.h"
+#include "../../bind/RootSignatureBuilder.h"
 
 #include <pix3.h>
 

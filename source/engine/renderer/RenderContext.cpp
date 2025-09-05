@@ -9,7 +9,7 @@
 #include "../core/Buffer.h"
 #include "Shader.h"
 #include "../engine/camera/Camera.h"
-#include "RootSignatureBuilder.h"
+#include "../bind/RootSignatureBuilder.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -43,7 +43,7 @@ RenderContext::~RenderContext()
 	}
 	for (auto& rootSignature : rootSignatures)
 	{
-		SafeRelease(&rootSignature);
+		delete rootSignature;
 	}
 	
 	for (int i = 0; i < FRAME_COUNT; i++)
@@ -174,14 +174,10 @@ HRootSignature RenderContext::CreateRootSignature(RootSignatureBuilder& builder)
 {
 	OutputDebugString(L"CreateRootSignature\n");
 
-	ID3D12RootSignature* rootSignature = builder.Build(&deviceContext, L"RenderContextRootSignature");
-	if (!rootSignature)
-	{
-		OutputDebugString(L"Failed to create root signature\n");
-		return HRootSignature::Invalid();
-	}
+	RootSignature* rootSig = new RootSignature();
+	rootSig->Create(builder);
 
-	rootSignatures.push_back(rootSignature);
+	rootSignatures.push_back(rootSig);
 	OutputDebugString(L"CreateRootSignature succeeded\n");
 
 	return HRootSignature(rootSignatures.size() - 1);
@@ -231,7 +227,7 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 
 	PipelineState* pipelineState = new PipelineState();
 	pipelineState->Create(inputLayouts[inputLayout.Index()]->GetInputLayoutDesc(),
-		rootSignatures[rootSignature.Index()],
+		rootSignatures[rootSignature.Index()]->GetRootSignature(),
 		CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob()),
 		CD3DX12_SHADER_BYTECODE(shaders[pixelShader.Index()]->GetBlob()),
 		GetRenderTarget(renderTarget)->GetFormat());
@@ -889,7 +885,7 @@ void RenderContext::CloseCommandList(HCommandList commandList)
 
 void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors)
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]);
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]->GetRootSignature());
 	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]->GetPipelineState());
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewports[viewportAndScissors.Index()]);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRects[viewportAndScissors.Index()]);
