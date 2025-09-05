@@ -1,13 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../../externals/d3dx12/d3dx12.h"
-#include "../bind/DescriptorHeap.h"
-#include "../bind/CommandList.h"
-#include "../bind/PipelineState.h"
-#include "../bind/RootSignature.h"
+#include "../bind/DescriptorHeap.h" // It includes d3d12.h
 #include "../asset/Handle.h"
-#include "RenderTarget.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -47,7 +42,6 @@ public:
 	void CreateConstantBuffer(DeviceContext* deviceContext);
 	void CreateSampler(DeviceContext* deviceContext);
 	void CreateShader(DeviceContext* deviceContext);
-	ID3D12Resource* GetCurrentBackBuffer();
 	void ExecuteCommandList(HCommandList commandList);
 	HCommandList CreateCommandList();
 	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
@@ -116,7 +110,6 @@ private:
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
 	DescriptorHeap samplerHeap;
-	ID3D12Resource* backBuffer[2];
 private:
 	std::vector<RenderTarget*> renderTargets;
 	std::vector<DepthBuffer*> depthBuffers;

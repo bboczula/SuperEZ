@@ -10,6 +10,10 @@
 #include "Shader.h"
 #include "../engine/camera/Camera.h"
 #include "../bind/RootSignatureBuilder.h"
+#include "../bind/CommandList.h"
+#include "../bind/PipelineState.h"
+#include "../bind/RootSignature.h"
+#include "RenderTarget.h"
 
 #include <Windows.h>
 #include <d3dcompiler.h>
@@ -44,11 +48,6 @@ RenderContext::~RenderContext()
 	for (auto& rootSignature : rootSignatures)
 	{
 		delete rootSignature;
-	}
-	
-	for (int i = 0; i < FRAME_COUNT; i++)
-	{
-		SafeRelease(&backBuffer[i]);
 	}
 }
 
@@ -153,6 +152,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 	OutputDebugString(L"CreateRenderTargetFromBackBuffer\n");
 	
 	// Create a RTV for each frame
+	ID3D12Resource* backBuffer[2];
 	for (UINT i = 0; i < FRAME_COUNT; i++)
 	{
 		// Here, we don't really create the underlying resource for the RTV
@@ -947,12 +947,6 @@ void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
 {
 	UINT vertexCount = meshes[mesh.Index()]->GetVertexCount();
 	commandLists[commandList.Index()]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
-}
-
-ID3D12Resource* RenderContext::GetCurrentBackBuffer()
-{
-	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
-	return backBuffer[frameIndex];
 }
 
 void RenderContext::ExecuteCommandList(HCommandList commandList)

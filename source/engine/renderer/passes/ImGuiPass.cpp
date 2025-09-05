@@ -5,6 +5,8 @@
 #include "../../bind/DescriptorHeap.h"
 #include "../../asset/Mesh.h"
 #include "../../engine/states/EngineCommandQueue.h"
+#include "../../bind/CommandList.h"
+#include "../RenderTarget.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
