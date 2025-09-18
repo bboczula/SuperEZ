@@ -84,13 +84,16 @@ void RenderContext::UnloadAssets()
 	// This is very bad, it so happens that first two textures are the back buffer textures
 	// Next is the one we render to, and the last one is the depth buffer
 	// But this is basically just a coincidence I think at least for the last two
-	for (size_t i = 2; i < textures.size(); ++i)
+	for (size_t i = 0; i < textures.size(); ++i)
 	{
-		delete textures[i];
+		if (textures[i]->GetLifeSpan() == SCENE)
+		{
+			delete textures[i];
+		}
 	}
 
 	// Shrink the vector to just keep the first two
-	textures.resize(4);
+	//textures.resize(4);
 
 	while(!materials.empty())
 	{
@@ -372,7 +375,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset), D3D12_RESOURCE_STATE_COMMON, SCENE));
 
 	return HTexture(textureHandleIndex);
 }
