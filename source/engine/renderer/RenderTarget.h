@@ -1,0 +1,27 @@
+#pragma once
+
+#include "../core/Texture.h"
+#include "d3dx12.h"
+
+class RenderTarget
+{
+public:
+	RenderTarget(UINT width, UINT height, size_t textureIndex, size_t rtvDescriptorIndex, const char* name, DXGI_FORMAT format);
+	size_t GetDescriptorIndex();
+	const char* GetName() const { return name; }
+	UINT GetWidth() const { return width; }
+	UINT GetHeight() const { return height; }
+	DXGI_FORMAT GetFormat() const { return format; }
+	size_t GetTextureIndex() const { return textureIndex; }
+	CD3DX12_VIEWPORT GetViewport() { return viewport; }
+	CD3DX12_RECT GetScissorRect() { return scissorRect; }
+private:
+	char name[32];
+	size_t textureIndex;
+	size_t rtvDescriptorIndex;
+	UINT width;
+	UINT height;
+	DXGI_FORMAT format;
+	CD3DX12_VIEWPORT viewport;
+	CD3DX12_RECT scissorRect;
+};
