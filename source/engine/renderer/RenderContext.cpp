@@ -133,7 +133,7 @@ HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFo
 		textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
 
 	renderTargets.push_back(new RenderTarget(
-		width, height, texture.Index(), rtvHeap.Size() - 1, name, dxgiFormat));
+		width, height, texture.Index(), rtvHeap.DynamicSize() - 1, name, dxgiFormat));
 
 	return HRenderTarget(renderTargets.size() - 1);
 }
@@ -145,7 +145,7 @@ HDepthBuffer RenderContext::CreateDepthBuffer()
 	HTexture depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
 	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate());
 
-	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size() - 1, "DB_Custom"));
+	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.DynamicSize() - 1, "DB_Custom"));
 
 	return HDepthBuffer(depthBuffers.size() - 1);
 }
@@ -168,7 +168,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
 		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
-			rtvHeap.Size() - 1, "RT_BackBuffer", backBuffer[i]->GetDesc().Format));
+			rtvHeap.DynamicSize() - 1, "RT_BackBuffer", backBuffer[i]->GetDesc().Format));
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
@@ -656,7 +656,7 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 	srvDesc.Texture2D.MipLevels = 1;
 
 	auto descriptorHandle = cbvSrvUavHeap.Allocate();
-	auto offset = cbvSrvUavHeap.Size() - 1;
+	auto offset = cbvSrvUavHeap.DynamicSize() - 1;
 
 	deviceContext.GetDevice()->CreateShaderResourceView(
 		textures[textureHandle.Index()]->GetResource(),            // Your texture resource
@@ -675,7 +675,7 @@ UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, bool isDe
 	srvDesc.Texture2D.MipLevels = 1;
 
 	auto descriptorHandle = cbvSrvUavHeap.Allocate();
-	auto offset = cbvSrvUavHeap.Size() - 1;
+	auto offset = cbvSrvUavHeap.DynamicSize() - 1;
 
 	deviceContext.GetDevice()->CreateShaderResourceView(
 		resource,            // Your texture resource
