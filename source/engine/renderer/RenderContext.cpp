@@ -130,10 +130,10 @@ HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFo
 
 	HTexture texture = CreateRenderTargetTexture(width, height, name, dxgiFormat);
 	deviceContext.GetDevice()->CreateRenderTargetView(
-		textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate());
+		textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC));
 
 	renderTargets.push_back(new RenderTarget(
-		width, height, texture.Index(), rtvHeap.DynamicSize() - 1, name, dxgiFormat));
+		width, height, texture.Index(), rtvHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1, name, dxgiFormat));
 
 	return HRenderTarget(renderTargets.size() - 1);
 }
@@ -143,9 +143,9 @@ HDepthBuffer RenderContext::CreateDepthBuffer()
 	OutputDebugString(L"CreateDepthBuffer\n");
 
 	HTexture depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
-	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate());
+	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC));
 
-	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.DynamicSize() - 1, "DB_Custom"));
+	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1, "DB_Custom"));
 
 	return HDepthBuffer(depthBuffers.size() - 1);
 }
@@ -166,9 +166,9 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		CHAR name[] = "BackBuffer";
 		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0], 0));
 
-		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate());
+		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC));
 		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
-			rtvHeap.DynamicSize() - 1, "RT_BackBuffer", backBuffer[i]->GetDesc().Format));
+			rtvHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1, "RT_BackBuffer", backBuffer[i]->GetDesc().Format));
 		OutputDebugString(L"CreateRenderTargetFromBackBuffer succeeded\n");
 	}
 }
@@ -566,7 +566,7 @@ void RenderContext::CreateDefaultSamplers()
 	samplerDesc.BorderColor[2] = 0.0f;
 	samplerDesc.BorderColor[3] = 0.0f;
 
-	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate());
+	deviceContext.GetDevice()->CreateSampler(&samplerDesc, samplerHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
 }
 
 HBuffer RenderContext::CreateReadbackBuffer()
@@ -655,8 +655,8 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
-	auto descriptorHandle = cbvSrvUavHeap.Allocate();
-	auto offset = cbvSrvUavHeap.DynamicSize() - 1;
+	auto descriptorHandle = cbvSrvUavHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC);
+	auto offset = cbvSrvUavHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1;
 
 	deviceContext.GetDevice()->CreateShaderResourceView(
 		textures[textureHandle.Index()]->GetResource(),            // Your texture resource
@@ -674,8 +674,8 @@ UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, bool isDe
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
-	auto descriptorHandle = cbvSrvUavHeap.Allocate();
-	auto offset = cbvSrvUavHeap.DynamicSize() - 1;
+	auto descriptorHandle = cbvSrvUavHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC);
+	auto offset = cbvSrvUavHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1;
 
 	deviceContext.GetDevice()->CreateShaderResourceView(
 		resource,            // Your texture resource
@@ -798,7 +798,7 @@ void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConst
 void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
-	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	auto rtvHandle = rtvHeap.Get(DescriptorHeap::HeapPartition::DYNAMIC, rtvHandleIndex);
 	auto viewport = renderTargets[renderTarget.Index()]->GetViewport();
 	auto scissorRect = renderTargets[renderTarget.Index()]->GetScissorRect();
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
@@ -809,9 +809,9 @@ void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget ren
 void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
-	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	auto rtvHandle = rtvHeap.Get(DescriptorHeap::HeapPartition::DYNAMIC, rtvHandleIndex);
 	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
-	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
+	auto dsvHandle = dsvHeap.Get(DescriptorHeap::HeapPartition::DYNAMIC, dsvHandleIndex);
 	auto viewport = renderTargets[renderTarget.Index()]->GetViewport();
 	auto scissorRect = renderTargets[renderTarget.Index()]->GetScissorRect();
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
@@ -844,7 +844,7 @@ void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget re
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
 	auto format = renderTargets[renderTarget.Index()]->GetFormat();
-	auto rtvHandle = rtvHeap.Get(rtvHandleIndex);
+	auto rtvHandle = rtvHeap.Get(DescriptorHeap::HeapPartition::DYNAMIC, rtvHandleIndex);
 
 	if (format == DXGI_FORMAT_R8G8B8A8_UNORM)
 	{
@@ -863,7 +863,7 @@ void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget re
 void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)
 {
 	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
-	auto dsvHandle = dsvHeap.Get(dsvHandleIndex);
+	auto dsvHandle = dsvHeap.Get(DescriptorHeap::HeapPartition::DYNAMIC, dsvHandleIndex);
 	commandLists[commandList.Index()]->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
