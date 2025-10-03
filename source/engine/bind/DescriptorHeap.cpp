@@ -52,9 +52,9 @@ CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Allocate(HeapPartition partition)
 
 void DescriptorHeap::Allocate(D3D12_CPU_DESCRIPTOR_HANDLE* outCpu, D3D12_GPU_DESCRIPTOR_HANDLE* outGpu)
 {
-	Allocate(HeapPartition::DYNAMIC);
-	*outCpu = Get(HeapPartition::DYNAMIC, staticCapacity + dynamicSize - 1);
-	*outGpu = GetGPU(HeapPartition::DYNAMIC, staticCapacity + dynamicSize - 1);
+	Allocate(HeapPartition::STATIC);
+	*outCpu = Get(HeapPartition::STATIC, staticSize - 1);
+	*outGpu = GetGPU(HeapPartition::STATIC, staticSize - 1);
 	// Is this a correct?
 	//++dynamicSize;
 }
