@@ -2,8 +2,6 @@
 #include "../core/DeviceContext.h"
 #include "../Utils.h"
 
-constexpr uint32_t MAX_NUM_OF_DESCRIPTORS = 100;
-
 void DescriptorHeap::Create(D3D12_DESCRIPTOR_HEAP_TYPE type, DeviceContext* deviceContext)
 {
 	heapType = type;
@@ -19,63 +17,96 @@ void DescriptorHeap::Create(D3D12_DESCRIPTOR_HEAP_TYPE type, DeviceContext* devi
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.Type = type;
 	heapDesc.Flags = isShaderVisibleForHeapType(type) ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	heapDesc.NumDescriptors = MAX_NUM_OF_DESCRIPTORS;
+	heapDesc.NumDescriptors = staticCapacity + dynamicCapacity;
 
 	ExitIfFailed(deviceContext->GetDevice()->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&heap)));
 	heap->SetName(L"Descriptor Heap");
 
 	descriptorSize = deviceContext->GetDevice()->GetDescriptorHandleIncrementSize(type);
 
-	size = 0;
+	dynamicSize = 0;
+	staticSize = 0;
 }
 
-CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Allocate()
+CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Allocate(HeapPartition partition)
 {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(heap->GetCPUDescriptorHandleForHeapStart());
-	rtvHandle.Offset(size++, descriptorSize);
-	assert(size <= MAX_NUM_OF_DESCRIPTORS, "Descriptor heap is full!");
+	switch (partition)
+	{
+	case STATIC:
+	{
+		rtvHandle.Offset(staticSize++, descriptorSize);
+		assert(staticSize <= staticCapacity, "Static Descriptor Heap partition is full!");
+		break;
+	}
+	case DYNAMIC:
+	{
+		rtvHandle.Offset(staticCapacity + dynamicSize++, descriptorSize);
+		assert(dynamicSize <= dynamicCapacity, "Dynamic Descriptor Heap partition is full!");
+		break;
+	}
+	}
 
 	return rtvHandle;
 }
 
 void DescriptorHeap::Allocate(D3D12_CPU_DESCRIPTOR_HANDLE* outCpu, D3D12_GPU_DESCRIPTOR_HANDLE* outGpu)
 {
-	assert(size < MAX_NUM_OF_DESCRIPTORS && "Descriptor heap is full!");
-
-	Allocate();
-	*outCpu = Get(size);
-	*outGpu = GetGPU(size);
-	++size;
+	Allocate(HeapPartition::STATIC);
+	*outCpu = Get(HeapPartition::STATIC, staticSize - 1);
+	*outGpu = GetGPU(HeapPartition::STATIC, staticSize - 1);
+	// Is this a correct?
+	//++dynamicSize;
 }
 
 void DescriptorHeap::Free(D3D12_CPU_DESCRIPTOR_HANDLE cpu, D3D12_GPU_DESCRIPTOR_HANDLE gpu)
 {
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Get(size_t index) const
+D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::Get(HeapPartition partition, size_t index) const
 {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(heap->GetCPUDescriptorHandleForHeapStart());
-	rtvHandle.Offset(static_cast<INT>(index), descriptorSize);
+	switch (partition)
+	{
+	case STATIC:
+	{
+		rtvHandle.Offset(static_cast<INT>(index), descriptorSize);
+		break;
+	}
+	case DYNAMIC:
+	{
+		// Here, we shouldn't care about the offset, index is not relative
+		rtvHandle.Offset(static_cast<INT>(index), descriptorSize);
+		break;
+	}
+	};
 
 	return rtvHandle;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::GetGPU(size_t index) const
+D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::GetGPU(HeapPartition partition, size_t index) const
 {
-	assert((heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) || (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER), "GPU handle not supported for non-shader-visible heaps!");
+	assert((heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) || (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER),
+		"GPU handle not supported for non-shader-visible heaps!");
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(heap->GetGPUDescriptorHandleForHeapStart());
-	gpuHandle.Offset(static_cast<INT>(index), descriptorSize);
+	switch (partition)
+	{
+	case STATIC:
+	{
+		gpuHandle.Offset(static_cast<INT>(index), descriptorSize);
+		break;
+	}
+	case DYNAMIC:
+	{
+		gpuHandle.Offset(static_cast<INT>(index), descriptorSize);
+		break;
+	}
+	}
 	return gpuHandle;
-}
-
-UINT DescriptorHeap::Size()
-{
-	return size;
 }
 
 void DescriptorHeap::Reset()
 {
-	size = heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ? 4 : 0;
-	freeList = std::stack<uint32_t>();
+	dynamicSize = 0;
 }
