@@ -32,6 +32,17 @@ void RootSignatureBuilder::AddSRVTable(UINT baseRegister, UINT numDescriptors, D
       ++m_paramCount;
 }
 
+void RootSignatureBuilder::AddUAVTable(UINT baseRegister, UINT numDescriptors, D3D12_SHADER_VISIBILITY visibility)
+{
+      if (m_paramCount >= MaxParams || m_rangeCount >= MaxParams) return;
+
+      m_ranges[m_rangeCount].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, numDescriptors, baseRegister);
+      m_rootParams[m_paramCount].InitAsDescriptorTable(1, &m_ranges[m_rangeCount], visibility);
+
+      ++m_rangeCount;
+      ++m_paramCount;
+}
+
 void RootSignatureBuilder::AddSamplerTable(UINT baseRegister, UINT numDescriptors, D3D12_SHADER_VISIBILITY visibility)
 {
       if (m_paramCount >= MaxParams || m_rangeCount >= MaxParams) return;

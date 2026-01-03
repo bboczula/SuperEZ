@@ -25,8 +25,22 @@ void PipelineState::Create(const D3D12_INPUT_LAYOUT_DESC& inputLayoutDesc, ID3D1
 	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	psoDesc.SampleDesc.Count = 1;
 
-	//ID3D12PipelineState* pipelineState;
 	HRESULT hr = deviceContext.GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
 	DX_TRY(hr, "CreateGraphicsPipelineState", "Did you forget to update your root signature or input layout?");
-	pipelineState->SetName(L"Render Context Pipeline State");
-};
+	pipelineState->SetName(L"Graphics Pipeline State");
+	type = Type::Graphics;
+}
+
+void PipelineState::Create(ID3D12RootSignature* rootSignature, const D3D12_SHADER_BYTECODE& computeShader)
+{
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.pRootSignature = rootSignature;
+	psoDesc.CS = computeShader;
+	psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+
+	HRESULT hr = deviceContext.GetDevice()->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
+	DX_TRY(hr, "CreateComputePipelineState", "There was an error during Compute PSO creation.");
+	pipelineState->SetName(L"Compute Pipeline State");
+	type = Type::Compute;
+}
