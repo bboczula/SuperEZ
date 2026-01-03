@@ -109,7 +109,7 @@ void TestPass::Update()
 
 void TestPass::Execute()
 {
-	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
+	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeap(commandList);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.CleraRenderTarget(commandList, renderTarget);

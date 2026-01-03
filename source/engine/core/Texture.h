@@ -33,6 +33,14 @@ public:
 	{
 		return srvDescriptorIndex;
 	}
+	void SetUavDescriptorIndex(size_t index)
+	{
+		uavDescriptorIndex = index;
+	}
+	size_t GetUavDescriptorIndex() const
+	{
+		return uavDescriptorIndex;
+	}
 	TextuureLifeSpan GetLifeSpan() const
 	{
 		return lifeSpan;
@@ -46,4 +54,5 @@ private:
 	UINT width;
 	UINT height;
 	size_t srvDescriptorIndex;
+	size_t uavDescriptorIndex;
 };
