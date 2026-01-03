@@ -101,7 +101,7 @@ void SelectionPass::Update()
 
 void SelectionPass::Execute()
 {
-	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature, viewportAndScissors);
+	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeap(commandList);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.CleraRenderTarget(commandList, renderTarget);

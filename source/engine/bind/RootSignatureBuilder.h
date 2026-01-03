@@ -12,6 +12,7 @@ public:
 	void AddConstants(UINT num32BitValues, UINT shaderRegister, UINT registerSpace, D3D12_SHADER_VISIBILITY visibility);
 	void AddCBV(UINT shaderRegister, D3D12_SHADER_VISIBILITY visibility);
 	void AddSRVTable(UINT baseRegister, UINT numDescriptors, D3D12_SHADER_VISIBILITY visibility);
+	void AddUAVTable(UINT baseRegister, UINT numDescriptors, D3D12_SHADER_VISIBILITY visibility);
 	void AddSamplerTable(UINT baseRegister, UINT numDescriptors, D3D12_SHADER_VISIBILITY visibility);
 
 	ID3D12RootSignature* Build(DeviceContext* deviceContext, const std::wstring& name);

@@ -29,6 +29,11 @@ void RenderPass::AutomaticInitialize()
 		pixelShader = renderContext.CreateShader(shaderSourceFileName, "PSMain", "ps_5_0");
 		pipelineState = renderContext.CreatePipelineState(&deviceContext, rootSignature, vertexShader, pixelShader, inputLayout, renderTarget);
 	}
+	else if (GetType() == Type::Compute)
+	{
+		computeShader = renderContext.CreateShader(shaderSourceFileName, "CSMain", "cs_5_0");
+		pipelineState = renderContext.CreatePipelineState(&deviceContext, rootSignature, computeShader);
+	}
 
 	commandList = renderContext.CreateCommandList();
 }
@@ -49,7 +54,7 @@ void RenderPass::Update()
 
 void RenderPass::PreExecute()
 {
-	if (GetType() == Type::Default)
+	if (GetType() == Type::Default || GetType() == Type::Compute)
 	{
 		renderContext.ResetCommandList(commandList, pipelineState);
 	}

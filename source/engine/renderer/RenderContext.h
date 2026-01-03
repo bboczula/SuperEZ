@@ -36,6 +36,7 @@ public:
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
 		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
+	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader computeShader);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
 	void CreateIndexBuffer(DeviceContext* deviceContext);
@@ -56,6 +57,7 @@ public:
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateShaderResourceView(HTexture& textureHandle);
 	UINT CreateShaderResourceView(ID3D12Resource* resource, bool isDepth, bool isStatic);
+	UINT CreateUnorderedAccessView(ID3D12Resource* resource, bool isDepth, bool isStatic);
 	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
@@ -68,7 +70,7 @@ public:
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name);
+	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name, bool isUav = false);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
@@ -91,10 +93,13 @@ public:
 	void ResetCommandList(HCommandList commandList, HPipelineState pipelineState);
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
-	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors);
+	void SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature);
 	void SetDescriptorHeap(HCommandList commandList);
+	void SetDescriptorHeapCompute(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
 	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
+	void BindTextureOnlyUAV(HCommandList commandList, HTexture texture, UINT slot);
+	void BindTextureOnlySRV(HCommandList commandList, HTexture texture, UINT slot);
 	// Clearing
 	void CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void ClearDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
@@ -105,6 +110,7 @@ public:
 	void TransitionBack(HCommandList commandList, HBuffer buffer);
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
+	void Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;

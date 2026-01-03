@@ -13,6 +13,7 @@ public:
 	enum Type
 	{
 		Default,
+		Compute,
 		Drawless
 	};
 	RenderPass(PCWSTR name, LPCWSTR shaderName, RenderPass::Type type);
@@ -30,6 +31,7 @@ protected:
 	RenderPass::Type type;
 	HShader vertexShader;
 	HShader pixelShader;
+	HShader computeShader;
 	HRootSignature rootSignature;
 	HInputLayout inputLayout;
 	HPipelineState pipelineState;

@@ -241,6 +241,22 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
+HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader computeShader)
+{
+	OutputDebugString(L"CreateComputePipelineState\n");
+
+	assert(rootSignature.IsValid() && "RootSignature is not valid");
+
+	PipelineState* pipelineState = new PipelineState();
+	pipelineState->Create(rootSignatures[rootSignature.Index()]->GetRootSignature(),
+		CD3DX12_SHADER_BYTECODE(shaders[computeShader.Index()]->GetBlob()));
+
+	pipelineStates.push_back(pipelineState);
+
+	OutputDebugString(L"CreatePipelineState succeeded\n");
+	return HPipelineState(pipelineStates.size() - 1);
+}
+
 HInputLayout RenderContext::CreateInputLayout()
 {
 	OutputDebugString(L"CreateInputLayout\n");
@@ -351,14 +367,19 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	return vertexBuffer;
 }
 
-HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* name)
+HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* name, bool isUav)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
+	D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_NONE;
+	if(isUav)
+	{
+		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
 	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_NONE);
+		width, height, 1, 0, 1, 0, resourceFlags);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
 
@@ -376,6 +397,12 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
 	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset), D3D12_RESOURCE_STATE_COMMON, SCENE));
+
+	if (isUav)
+	{
+		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, false, true);
+		textures[textureHandleIndex]->SetUavDescriptorIndex(uavDescHandleOffset);
+	}
 
 	return HTexture(textureHandleIndex);
 }
@@ -686,6 +713,26 @@ UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, bool isDe
 	return offset;
 }
 
+UINT RenderContext::CreateUnorderedAccessView(ID3D12Resource* resource, bool isDepth, bool isStatic)
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+	uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	uavDesc.Texture2D.MipSlice = 0;
+
+	auto heapType = isStatic ? DescriptorHeap::HeapPartition::STATIC : DescriptorHeap::HeapPartition::DYNAMIC;
+	auto descriptorHandle = cbvSrvUavHeap.Allocate(heapType);
+	auto offset = cbvSrvUavHeap.Size(heapType) - 1;
+
+	deviceContext.GetDevice()->CreateUnorderedAccessView(
+		resource,            // Your texture resource
+		nullptr,	// Counter resource, whatever that is
+		&uavDesc,
+		descriptorHandle);
+
+	return offset;
+}
+
 void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)
 {
 	unsigned int index = 0;
@@ -829,6 +876,22 @@ void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
 }
 
+void RenderContext::BindTextureOnlyUAV(HCommandList commandList, HTexture texture, UINT slot)
+{
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
+		textures[texture.Index()]->GetUavDescriptorIndex(), cbvSrvUavHeap.GetDescriptorSize());
+
+	commandLists[commandList.Index()]->GetCommandList()->SetComputeRootDescriptorTable(slot, textureHandle);
+}
+
+void RenderContext::BindTextureOnlySRV(HCommandList commandList, HTexture texture, UINT slot)
+{
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
+		textures[texture.Index()]->GetSrvDescriptorIndex(), cbvSrvUavHeap.GetDescriptorSize());
+
+	commandLists[commandList.Index()]->GetCommandList()->SetComputeRootDescriptorTable(slot, textureHandle);
+}
+
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 {
 	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -870,7 +933,7 @@ void RenderContext::ClearDepthBuffer(HCommandList commandList, HDepthBuffer dept
 
 void RenderContext::ResetCommandList(HCommandList commandList, HPipelineState pipelineState)
 {
-	commandLists[commandList.Index()]->Reset(pipelineStates[pipelineState.Index()]->GetPipelineState());
+	commandLists[commandList.Index()]->Reset(pipelineStates[pipelineState.Index()]->Get());
 }
 
 void RenderContext::ResetCommandList(HCommandList commandList)
@@ -883,15 +946,32 @@ void RenderContext::CloseCommandList(HCommandList commandList)
 	commandLists[commandList.Index()]->Close();
 }
 
-void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature, HViewportAndScissors viewportAndScissors)
+void RenderContext::SetupRenderPass(HCommandList commandList, HPipelineState pipelineState, HRootSignature rootSignature)
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]->GetRootSignature());
-	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pipelineStates[pipelineState.Index()]->GetPipelineState());
+	auto pso = pipelineStates[pipelineState.Index()];
+	assert(pso->IsValid());
+	if(pso->IsGrpahics())
+	{
+		commandLists[commandList.Index()]->GetCommandList()->
+			SetGraphicsRootSignature(rootSignatures[rootSignature.Index()]->GetRootSignature());
+	}
+	else if(pso->IsCompute())
+	{
+		commandLists[commandList.Index()]->GetCommandList()->
+			SetComputeRootSignature(rootSignatures[rootSignature.Index()]->GetRootSignature());
+	}
+	commandLists[commandList.Index()]->GetCommandList()->SetPipelineState(pso->Get());
 }
 
 void RenderContext::SetDescriptorHeap(HCommandList commandList)
 {
 	ID3D12DescriptorHeap* heaps[] = { samplerHeap.GetHeap(), cbvSrvUavHeap.GetHeap() };
+	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
+}
+
+void RenderContext::SetDescriptorHeapCompute(HCommandList commandList)
+{
+	ID3D12DescriptorHeap* heaps[] = { cbvSrvUavHeap.GetHeap() };
 	commandLists[commandList.Index()]->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
 }
 
@@ -951,6 +1031,11 @@ void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
 {
 	UINT vertexCount = meshes[mesh.Index()]->GetVertexCount();
 	commandLists[commandList.Index()]->GetCommandList()->DrawInstanced(vertexCount, 1, 0, 0);
+}
+
+void RenderContext::Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ)
+{
+	commandLists[commandList.Index()]->GetCommandList()->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 }
 
 void RenderContext::ExecuteCommandList(HCommandList commandList)
