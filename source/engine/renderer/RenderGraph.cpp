@@ -4,6 +4,7 @@
 #include "passes/ImGuiPass.h"
 #include "passes/BlitPass.h"
 #include "passes/SelectionPass.h"
+#include "passes/HighlightInputPass.h"
 #include "passes/HighlightPass.h"
 #include "passes/GrayscalePass.h"
 
@@ -14,6 +15,9 @@ RenderGraph::RenderGraph()
 
 	RenderPass* testPass = new TestPass();
 	renderPasses.push_back(testPass);
+
+	RenderPass* highlightInputPass = new HighlightInputPass();
+	renderPasses.push_back(highlightInputPass);
 
 	RenderPass* highlightPass = new HighlightPass();
 	renderPasses.push_back(highlightPass);

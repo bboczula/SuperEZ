@@ -9,4 +9,6 @@ public:
 	void Update() override;
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
+private:
+	HTexture outputTexture;
 };

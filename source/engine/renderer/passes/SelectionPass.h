@@ -13,6 +13,8 @@ private:
 	HBuffer readbackBuffer;
 	HANDLE readbackEvent = nullptr;
 	UINT64 fenceValue = 0;
+	UINT64 lastRequestedFenceValue = 0;
+	bool waitingForReadback = false;
 	ID3D12Fence* readbackFence = nullptr;
 	bool skipFrame = true; // Skip frame if no selection is made
 };

@@ -22,6 +22,7 @@ class RootSignatureBuilder;
 enum RenderTargetFormat
 {
 	RGB8_UNORM,
+	R32G32_UINT,
 	R32_UINT
 };
 

@@ -123,6 +123,9 @@ HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFo
 	case RenderTargetFormat::RGB8_UNORM:
 		dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		break;
+	case RenderTargetFormat::R32G32_UINT:
+		dxgiFormat = DXGI_FORMAT_R32G32_UINT;
+		break;
 	case RenderTargetFormat::R32_UINT:
 		dxgiFormat = DXGI_FORMAT_R32_FLOAT;
 		break;

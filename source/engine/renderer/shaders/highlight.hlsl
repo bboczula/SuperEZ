@@ -1,18 +1,11 @@
-struct PSInput
+Texture2D InputTexture : register(t0); // SRV
+RWTexture2D<float4> OutColor : register(u0); // UAV
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 dtid : SV_DispatchThreadID)
 {
-    float4 position : SV_POSITION;
-};
-
-PSInput VSMain(float4 position : POSITION)
-{
-    PSInput result;
-
-    result.position = position;
-
-    return result;
-}
-
-float4 PSMain(PSInput input) : SV_TARGET
-{
-    return float4(1.0f, 0.0f, 0.0f, 1.0f);
+    float4 color = InputTexture.Load(int3(dtid.xy, 0));
+    float luma = dot(color.rgb, float3(0.299f, 0.587f, 0.114f));
+    float4 grayscale = float4(luma, luma, luma, color.a);
+    OutColor[dtid.xy] = grayscale;
 }

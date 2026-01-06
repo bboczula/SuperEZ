@@ -12,18 +12,15 @@ extern DeviceContext deviceContext;
 extern RawInput rawInput;
 extern CursorInput cursorInput;
 
-SelectionPass::SelectionPass() : RenderPass(L"Selection", L"selection.hlsl", Type::Default)
+SelectionPass::SelectionPass() : RenderPass(L"Selection", L"selection.hlsl", Type::Graphics)
 {
-	deviceContext.GetDevice()->CreateFence(
-		0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&readbackFence)
-	);
+	deviceContext.GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&readbackFence));
 	readbackFence->SetName(L"Selection Pass Fence");
 
-	readbackEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	if (!readbackEvent)
-		exit(1);
-
-	fenceValue = 1; // start at 1 for first signal
+	// We don't strictly need an Event for polling, but if you keep it, ensure you don't use it to block the main thread.
+	fenceValue = 0;
+	lastRequestedFenceValue = 0;
+	waitingForReadback = false;
 }
 
 void SelectionPass::ConfigurePipelineState()
@@ -57,44 +54,29 @@ void SelectionPass::Initialize()
 
 void SelectionPass::Update()
 {
-	if (skipFrame)
+	// 1. Check if we are waiting for data from the GPU
+	if (waitingForReadback)
 	{
-		skipFrame = false;
-		return; // Skip the frame if no selection is made
-	}
-
-	if (readbackFence->GetCompletedValue() >= fenceValue)
-	{
-		// Reset the fence value for the next frame
-		fenceValue++;
-
-		if (!renderContext.WasObjectSelected())
+		// NON-BLOCKING CHECK: Is the GPU done with the frame where we clicked?
+		if (readbackFence->GetCompletedValue() >= lastRequestedFenceValue)
 		{
-			return; // Skip if the viewport was not clicked
-		}
-
-		auto data = renderContext.ReadbackBufferData(readbackBuffer, sizeof(UINT32));
-
-		if (!data.empty())
-		{
-			UINT32 objectID = *reinterpret_cast<const UINT32*>(data.data());
-			if(objectID != 0)
+			// GPU is done! Read the data.
+			auto data = renderContext.ReadbackBufferData(readbackBuffer, sizeof(UINT32));
+			if (!data.empty())
 			{
-				renderContext.SetSelectedObjectId(objectID - 1); // Adjust for 0-based index
+				UINT32 rawID = *reinterpret_cast<const UINT32*>(data.data());
+
+				if (rawID != 0) // Assuming 0 is background
+					renderContext.SetSelectedObjectId(rawID - 1);
+				else
+					renderContext.SetSelectedObjectId(UINT32_MAX);
 			}
-			else
-			{
-				renderContext.SetSelectedObjectId(UINT32_MAX); // Reset selection if no object is selected
-			}
+
+			// Reset state
+			waitingForReadback = false;
 		}
-	}
-	else
-	{
-		HANDLE eventHandle = readbackEvent;
-		if (eventHandle)
-		{
-			WaitForSingleObject(eventHandle, INFINITE);
-		}
+		// If fence is not ready, we simply RETURN and try again next frame. 
+		// DO NOT WaitForSingleObject here.
 	}
 
 }
@@ -124,25 +106,33 @@ void SelectionPass::Execute()
 	mousePositionX -= 400;
 	mousePositionY -= 20; // Adjust for the menu height
 
-	if (cursorInput.WasLeftButtonClicked())
+	// Only request a readback if the user actually clicked this frame
+	if (cursorInput.WasLeftButtonClicked() && mousePositionX > 0 && mousePositionY > 0)
 	{
-		const bool wasViewportClicked = mousePositionX > 0 && mousePositionY > 0;
-		if (wasViewportClicked)
-		{
-			auto texture = renderContext.GetTexture(renderTarget);
-			renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
-		}
-		else
-		{
-			// Reset selection if clicked outside the viewport
-			renderContext.SetSelectedObjectId(UINT32_MAX);
-		}
-		renderContext.SetWasObjectSelected(wasViewportClicked);
-	}
+		// 1. Copy the specific pixel to the readback buffer
+		auto texture = renderContext.GetTexture(renderTarget);
+		renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
 
-	// Signal
-	deviceContext.GetCommandQueue()->Signal(readbackFence, fenceValue);
-	skipFrame = false;
+		// 2. Increment fence value for this new request
+		fenceValue++;
+
+		// 3. Insert Signal into Command List
+		deviceContext.GetCommandQueue()->Signal(readbackFence, fenceValue);
+
+		// 4. Update Internal State
+		lastRequestedFenceValue = fenceValue;
+		waitingForReadback = true;
+
+		// Update the context immediately so UI feels responsive (optimistic update),
+		// or wait for the readback (conservative).
+		renderContext.SetWasObjectSelected(true);
+	}
+	else if (cursorInput.WasLeftButtonClicked())
+	{
+		// Clicked outside viewport -> Deselect immediately
+		renderContext.SetSelectedObjectId(UINT32_MAX);
+		renderContext.SetWasObjectSelected(false);
+	}
 }
 
 void SelectionPass::Allocate(DeviceContext* deviceContext)
