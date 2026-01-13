@@ -43,7 +43,7 @@ void RenderGraph::Execute()
 		renderPass->Update();
 		renderPass->PreExecute();
 		renderPass->Execute();
-		renderPass->PostExecute();
+ 		renderPass->PostExecute();
 	}
 }
 

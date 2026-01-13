@@ -391,7 +391,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	resource->SetName(L"Empty Texture");
 
 	size_t textureHandleIndex = textures.size();
-	auto descHandleOffset = CreateShaderResourceView(resource, false, false);
+	auto descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R8G8B8A8_UNORM, false);
 	
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -424,7 +424,7 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Depth Texture");
 
-	auto descHandleOffset = CreateShaderResourceView(resource, true, true);
+	auto descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R32_FLOAT, true);
 
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -454,11 +454,11 @@ HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const
 	UINT descHandleOffset;
 	if(format == DXGI_FORMAT_R32_FLOAT)
 	{
-		descHandleOffset = CreateShaderResourceView(resource, true, true);
+		descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R32_FLOAT, true);
 	}
 	else
 	{
-		descHandleOffset = CreateShaderResourceView(resource, false, true);
+		descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R8G8B8A8_UNORM, true);
 	}
 
 	CHAR tempName[32];
@@ -696,11 +696,11 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 	return offset;
 }
 
-UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, bool isDepth, bool isStatic)
+UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = isDepth ? DXGI_FORMAT_R32_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.Format = format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 

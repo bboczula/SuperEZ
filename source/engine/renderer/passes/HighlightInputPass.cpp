@@ -29,6 +29,7 @@ void HighlightInputPass::ConfigurePipelineState()
     const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
     const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
     renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
+    depthBuffer = renderContext.CreateDepthBuffer();
 }
 
 void HighlightInputPass::Initialize()
@@ -43,8 +44,9 @@ void HighlightInputPass::Execute()
 {
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeap(commandList);
-	renderContext.BindRenderTarget(commandList, renderTarget);
+	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.CleraRenderTarget(commandList, renderTarget);
+	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
 
 	static uint32_t selectedIndex = UINT32_MAX;

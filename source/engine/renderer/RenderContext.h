@@ -56,12 +56,7 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
-	UINT CreateShaderResourceView(HTexture& textureHandle);
-	UINT CreateShaderResourceView(ID3D12Resource* resource, bool isDepth, bool isStatic);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, bool isDepth, bool isStatic);
-	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
-	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
-	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
 	HTexture GetTexture(HRenderTarget renderTarget);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
@@ -79,6 +74,11 @@ public:
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
+	UINT CreateShaderResourceView(HTexture& textureHandle);
+	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
+	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
+	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
+	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();

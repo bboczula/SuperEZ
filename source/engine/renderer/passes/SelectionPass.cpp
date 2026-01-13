@@ -111,7 +111,9 @@ void SelectionPass::Execute()
 	{
 		// 1. Copy the specific pixel to the readback buffer
 		auto texture = renderContext.GetTexture(renderTarget);
+		renderContext.TransitionTo(commandList, texture, D3D12_RESOURCE_STATE_COPY_SOURCE);
 		renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
+		renderContext.TransitionBack(commandList, texture);
 
 		// 2. Increment fence value for this new request
 		fenceValue++;
