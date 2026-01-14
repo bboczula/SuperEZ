@@ -451,15 +451,7 @@ HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const
 	ID3D12Resource* resource;
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 
-	UINT descHandleOffset;
-	if(format == DXGI_FORMAT_R32_FLOAT)
-	{
-		descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R32_FLOAT, true);
-	}
-	else
-	{
-		descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R8G8B8A8_UNORM, true);
-	}
+	UINT descHandleOffset = CreateShaderResourceView(resource, format, true);
 
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
