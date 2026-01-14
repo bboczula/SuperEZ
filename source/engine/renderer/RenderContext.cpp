@@ -370,7 +370,7 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	return vertexBuffer;
 }
 
-HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* name, bool isUav)
+HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav)
 {
 	OutputDebugString(L"CreateEmptyTexture\n");
 
@@ -381,7 +381,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	{
 		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	}
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
 		width, height, 1, 0, 1, 0, resourceFlags);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
@@ -391,7 +391,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 	resource->SetName(L"Empty Texture");
 
 	size_t textureHandleIndex = textures.size();
-	auto descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R8G8B8A8_UNORM, false);
+	auto descHandleOffset = CreateShaderResourceView(resource, format, false);
 	
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -403,7 +403,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, const CHAR* 
 
 	if (isUav)
 	{
-		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, false, true);
+		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, format, true);
 		textures[textureHandleIndex]->SetUavDescriptorIndex(uavDescHandleOffset);
 	}
 
@@ -640,7 +640,7 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 {
 	OutputDebugString(L"CreateTexture\n");
 	
-	auto textureHandle = CreateEmptyTexture(width, height, name);
+	auto textureHandle = CreateEmptyTexture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, name);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
 	if (data == nullptr)
@@ -708,10 +708,10 @@ UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORM
 	return offset;
 }
 
-UINT RenderContext::CreateUnorderedAccessView(ID3D12Resource* resource, bool isDepth, bool isStatic)
+UINT RenderContext::CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-	uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	uavDesc.Format = format;
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 	uavDesc.Texture2D.MipSlice = 0;
 
@@ -836,6 +836,11 @@ HTexture RenderContext::GetTexture(HRenderTarget renderTarget)
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)
 {
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(slot, numOfConstants, data, 0);
+}
+
+void RenderContext::SetInlineConstantsUAV(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)
+{
+	commandLists[commandList.Index()]->GetCommandList()->SetComputeRoot32BitConstants(slot, numOfConstants, data, 0);
 }
 
 void RenderContext::BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget)

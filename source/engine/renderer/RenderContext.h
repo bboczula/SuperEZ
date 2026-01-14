@@ -56,7 +56,7 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
-	UINT CreateUnorderedAccessView(ID3D12Resource* resource, bool isDepth, bool isStatic);
+	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
 	HTexture GetTexture(HRenderTarget renderTarget);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
@@ -66,7 +66,7 @@ public:
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height, const CHAR* name, bool isUav = false);
+	HTexture CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav = false);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
@@ -88,6 +88,7 @@ public:
 	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
 	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
+	void SetInlineConstantsUAV(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
