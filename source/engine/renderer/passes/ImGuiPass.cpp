@@ -207,8 +207,9 @@ void ImGuiPass::Execute()
 	auto texture = renderContext.GetTexture(colorCopyTexture);
 	HRenderTarget colorRenderTarget = HRenderTarget(3);
 	auto finalTexture = renderContext.GetTexture(colorRenderTarget);
-	auto finalFinalTexture = renderContext.GetTexture(finalTexture);
-	renderContext.TransitionTo(commandList, finalTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	auto finalFinalTexture = renderContext.GetTexture(HTexture(10));
+	renderContext.TransitionTo(commandList, HTexture(10), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalFinalTexture->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();

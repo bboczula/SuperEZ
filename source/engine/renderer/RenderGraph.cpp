@@ -8,6 +8,7 @@
 #include "passes/HighlightInputPass.h"
 #include "passes/HighlightPass.h"
 #include "passes/GrayscalePass.h"
+#include "passes/CompositionPass.h"
 
 RenderGraph::RenderGraph()
 {
@@ -28,6 +29,9 @@ RenderGraph::RenderGraph()
 
 	RenderPass* grayscalePass = new GrayscalePass();
 	renderPasses.push_back(grayscalePass);
+
+	RenderPass* compositionPass = new CompositionPass();
+	renderPasses.push_back(compositionPass);
 
 	RenderPass* imguiPass = new ImGuiPass();
 	renderPasses.push_back(imguiPass);

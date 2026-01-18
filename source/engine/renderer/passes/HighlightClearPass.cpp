@@ -21,7 +21,10 @@ void HighlightClearPass::ConfigurePipelineState()
     builder.AddUAVTable(0, 1, D3D12_SHADER_VISIBILITY_ALL); // UAV u0
     rootSignature = renderContext.CreateRootSignature(builder);
 
-    outputTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R32_UINT, "HighlightClearTexture", true);
+    const int menuHeight = 20;
+    const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
+    const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
+    outputTexture = renderContext.CreateEmptyTexture(viewportWidth, viewportHeight, DXGI_FORMAT_R32_UINT, "HighlightClearTexture", true);
 }
 
 void HighlightClearPass::Initialize()
