@@ -405,8 +405,11 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT 
 	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
 	resource->SetName(L"Empty Texture");
 
+	bool isStatic = isUav ? true : false;
+	TextuureLifeSpan span = isUav ? APP : SCENE;
+
 	size_t textureHandleIndex = textures.size();
-	auto descHandleOffset = CreateShaderResourceView(resource, format, false);
+	auto descHandleOffset = CreateShaderResourceView(resource, format, isStatic);
 	
 	CHAR tempName[32];
 	strcpy_s(tempName, name);
@@ -414,7 +417,7 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT 
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset), D3D12_RESOURCE_STATE_COMMON, SCENE));
+	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset), D3D12_RESOURCE_STATE_COMMON, span));
 
 	if (isUav)
 	{
