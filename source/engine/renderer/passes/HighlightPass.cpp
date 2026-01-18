@@ -34,13 +34,15 @@ void HighlightPass::Update()
 
 void HighlightPass::Execute()
 {
+	const int menuHeight = 20;
+	int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
+	int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
+
 	// The input texture needs to be 4, previous ones don't have valid SRV offset
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeapCompute(commandList);
-	unsigned int width = 1920;
-	renderContext.SetInlineConstantsUAV(commandList, 1, &width, 0); // INVALID value
-	unsigned int height = 1080;
-	renderContext.SetInlineConstantsUAV(commandList, 1, &height, 1); // INVALID value
+	renderContext.SetInlineConstantsUAV(commandList, 1, &viewportWidth, 0); // INVALID value
+	renderContext.SetInlineConstantsUAV(commandList, 1, &viewportHeight, 1); // INVALID value
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
