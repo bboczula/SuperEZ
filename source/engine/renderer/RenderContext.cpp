@@ -141,6 +141,19 @@ HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFo
 	return HRenderTarget(renderTargets.size() - 1);
 }
 
+HRenderTarget RenderContext::CreateRenderTarget(const char* name, HTexture texture)
+{
+	OutputDebugString(L"CreateRenderTarget (from Texture)\n");
+
+	deviceContext.GetDevice()->CreateRenderTargetView(
+		textures[texture.Index()]->GetResource(), nullptr, rtvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
+
+	D3D12_RESOURCE_DESC desc = textures[texture.Index()]->GetResource()->GetDesc();
+	renderTargets.push_back(new RenderTarget(
+		static_cast<UINT>(desc.Width), desc.Height, texture.Index(), rtvHeap.Size(DescriptorHeap::HeapPartition::STATIC) - 1, name, desc.Format));
+	return HRenderTarget(renderTargets.size() - 1);
+}
+
 HDepthBuffer RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
@@ -380,6 +393,8 @@ HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT 
 	if(isUav)
 	{
 		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		// This is a hack, but let's roll with it for now
+		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
 	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
 		width, height, 1, 0, 1, 0, resourceFlags);
@@ -831,6 +846,20 @@ void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& buffer
 HTexture RenderContext::GetTexture(HRenderTarget renderTarget)
 {
 	return HTexture(renderTargets[renderTarget.Index()]->GetTextureIndex());
+}
+
+HTexture RenderContext::GetTexture(const char* name)
+{
+	size_t index = 0;
+	for (const auto& texture : textures)
+	{
+		if (texture->GetName() == name)
+		{
+			return HTexture(index);
+		}
+		++index;
+	}
+	return HTexture();
 }
 
 void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)

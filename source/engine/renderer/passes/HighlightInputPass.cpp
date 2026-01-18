@@ -28,7 +28,8 @@ void HighlightInputPass::ConfigurePipelineState()
     const int menuHeight = 20;
     const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
     const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
-    renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", RenderTargetFormat::R32G32_UINT, viewportWidth, viewportHeight);
+    //renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", RenderTargetFormat::R32G32_UINT, viewportWidth, viewportHeight);
+    renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", HTexture(6));
     depthBuffer = renderContext.CreateDepthBuffer();
 }
 
@@ -44,6 +45,7 @@ void HighlightInputPass::Execute()
 {
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeap(commandList);
+	renderContext.TransitionTo(commandList, renderContext.GetTexture(renderTarget), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
@@ -56,6 +58,7 @@ void HighlightInputPass::Execute()
 		renderContext.BindGeometry(commandList, HMesh(selectedObjectId));
 		renderContext.DrawMesh(commandList, HMesh(selectedObjectId));
 	}
+	renderContext.TransitionBack(commandList, renderContext.GetTexture(renderTarget));
 }
 
 void HighlightInputPass::Allocate(DeviceContext* deviceContext)
