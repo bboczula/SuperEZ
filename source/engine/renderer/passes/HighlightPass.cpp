@@ -75,6 +75,38 @@ void HighlightPass::Execute()
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, HTexture(6));
 	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
+
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
+	renderContext.BindTextureOnlySRV(commandList, HTexture(6), 3); // Input Texture (assumed to be at index 0)
+	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
+	renderContext.TransitionBack(commandList, outputTexture);
+	renderContext.TransitionBack(commandList, HTexture(6)); // Input Texture
+
+	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlyUAV(commandList, HTexture(6), 2); // Output Texture
+	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3); // Input Texture (assumed to be at index 0)
+	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
+	renderContext.TransitionBack(commandList, HTexture(6));
+	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
+
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
+	renderContext.BindTextureOnlySRV(commandList, HTexture(6), 3); // Input Texture (assumed to be at index 0)
+	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
+	renderContext.TransitionBack(commandList, outputTexture);
+	renderContext.TransitionBack(commandList, HTexture(6)); // Input Texture
+
+	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlyUAV(commandList, HTexture(6), 2); // Output Texture
+	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3); // Input Texture (assumed to be at index 0)
+	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
+	renderContext.TransitionBack(commandList, HTexture(6));
+	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
 }
 
 void HighlightPass::Allocate(DeviceContext* deviceContext)
