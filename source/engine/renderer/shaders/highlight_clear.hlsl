@@ -1,4 +1,4 @@
-RWTexture2D<uint2> gSeeds : register(u0);
+RWTexture2D<uint> gSeeds : register(u0);
 
 cbuffer WidthCB : register(b0)
 {
@@ -18,5 +18,5 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     if (dtid.x >= width || dtid.y >= height)
         return;
 
-    gSeeds[uint2(dtid.xy)] = uint2(INVALID, INVALID);
+    gSeeds[uint2(dtid.xy)] = uint(INVALID);
 }

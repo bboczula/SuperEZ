@@ -21,7 +21,7 @@ void HighlightClearPass::ConfigurePipelineState()
     builder.AddUAVTable(0, 1, D3D12_SHADER_VISIBILITY_ALL); // UAV u0
     rootSignature = renderContext.CreateRootSignature(builder);
 
-    outputTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R32G32_UINT, "HighlightClearTexture", true);
+    outputTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R32_UINT, "HighlightClearTexture", true);
 }
 
 void HighlightClearPass::Initialize()

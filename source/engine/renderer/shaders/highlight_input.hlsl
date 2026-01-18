@@ -15,7 +15,7 @@ PSInput VSMain(float4 position : POSITION)
     return result;
 }
 
-uint2 PSMain(PSInput input) : SV_TARGET
+uint PSMain(PSInput input) : SV_TARGET
 {
-    return uint2(input.position.xy);
+    return 0;
 }

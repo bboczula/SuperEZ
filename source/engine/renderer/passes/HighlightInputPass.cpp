@@ -47,7 +47,6 @@ void HighlightInputPass::Execute()
 	renderContext.SetDescriptorHeap(commandList);
 	renderContext.TransitionTo(commandList, renderContext.GetTexture(renderTarget), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
-	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
 
