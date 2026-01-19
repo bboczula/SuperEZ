@@ -16,7 +16,7 @@ extern RenderContext renderContext;
 extern WindowContext windowContext;
 extern RawInput rawInput;
 
-TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Default)
+TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Graphics)
 {
 	arcballCamera = new Orbit(renderContext.GetCamera(0));
 }

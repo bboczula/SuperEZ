@@ -23,7 +23,7 @@ RenderPass::~RenderPass()
 
 void RenderPass::AutomaticInitialize()
 {
-	if (GetType() == Type::Default)
+	if (GetType() == Type::Graphics)
 	{
 		vertexShader = renderContext.CreateShader(shaderSourceFileName, "VSMain", "vs_5_0");
 		pixelShader = renderContext.CreateShader(shaderSourceFileName, "PSMain", "ps_5_0");
@@ -54,7 +54,7 @@ void RenderPass::Update()
 
 void RenderPass::PreExecute()
 {
-	if (GetType() == Type::Default || GetType() == Type::Compute)
+	if (GetType() == Type::Graphics || GetType() == Type::Compute)
 	{
 		renderContext.ResetCommandList(commandList, pipelineState);
 	}

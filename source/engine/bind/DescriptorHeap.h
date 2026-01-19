@@ -7,7 +7,7 @@
 class DeviceContext;
 
 constexpr uint32_t MAX_NUM_OF_DESCRIPTORS = 90;
-constexpr uint32_t MAX_NUM_OF_STATIC_DESCRIPTORS = 10;
+constexpr uint32_t MAX_NUM_OF_STATIC_DESCRIPTORS = 20;
 
 class DescriptorHeap
 {

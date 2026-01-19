@@ -45,6 +45,10 @@ public:
 	{
 		return lifeSpan;
 	}
+	const CHAR* GetName() const
+	{
+		return name;
+	}
 private:
 	ID3D12Resource* resource;
 	D3D12_RESOURCE_STATES currentState;

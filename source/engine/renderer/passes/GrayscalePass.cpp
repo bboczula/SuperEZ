@@ -23,7 +23,7 @@ void GrayscalePass::ConfigurePipelineState()
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_ALL); // SRV t0
 	rootSignature = renderContext.CreateRootSignature(builder);
 
-	outputTexture = renderContext.CreateEmptyTexture(1920, 1080, "GrayscaleInputTexture", true);
+	outputTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R8G8B8A8_UNORM, "GrayscaleInputTexture", true);
 }
 
 void GrayscalePass::Initialize()

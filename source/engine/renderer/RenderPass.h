@@ -12,7 +12,7 @@ class RenderPass
 public:
 	enum Type
 	{
-		Default,
+		Graphics,
 		Compute,
 		Drawless
 	};

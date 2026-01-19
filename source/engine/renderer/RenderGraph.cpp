@@ -4,7 +4,11 @@
 #include "passes/ImGuiPass.h"
 #include "passes/BlitPass.h"
 #include "passes/SelectionPass.h"
+#include "passes/HighlightClearPass.h"
+#include "passes/HighlightInputPass.h"
+#include "passes/HighlightPass.h"
 #include "passes/GrayscalePass.h"
+#include "passes/CompositionPass.h"
 
 RenderGraph::RenderGraph()
 {
@@ -14,8 +18,20 @@ RenderGraph::RenderGraph()
 	RenderPass* testPass = new TestPass();
 	renderPasses.push_back(testPass);
 
+	RenderPass* highlightClearPass = new HighlightClearPass();
+	renderPasses.push_back(highlightClearPass);
+
+	RenderPass* highlightInputPass = new HighlightInputPass();
+	renderPasses.push_back(highlightInputPass);
+
+	RenderPass* highlightPass = new HighlightPass();
+	renderPasses.push_back(highlightPass);
+
 	RenderPass* grayscalePass = new GrayscalePass();
 	renderPasses.push_back(grayscalePass);
+
+	RenderPass* compositionPass = new CompositionPass();
+	renderPasses.push_back(compositionPass);
 
 	RenderPass* imguiPass = new ImGuiPass();
 	renderPasses.push_back(imguiPass);
@@ -35,7 +51,7 @@ void RenderGraph::Execute()
 		renderPass->Update();
 		renderPass->PreExecute();
 		renderPass->Execute();
-		renderPass->PostExecute();
+ 		renderPass->PostExecute();
 	}
 }
 

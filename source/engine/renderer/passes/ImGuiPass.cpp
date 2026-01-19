@@ -68,7 +68,7 @@ void ImGuiPass::Initialize()
 	ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\CascadiaMono.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
 
 	// Create a texture for the color
-	colorCopyTexture = renderContext.CreateEmptyTexture(1920, 1080, "Color_Copy");
+	colorCopyTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R8G8B8A8_UNORM, "Color_Copy");
 }
 
 void ImGuiPass::Update()
@@ -136,48 +136,55 @@ void ImGuiPass::Execute()
 	
 	ImGui::Begin("Hierarchy", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
-	static uint32_t selectedIndex = UINT32_MAX;
-	auto selectedObjectId = renderContext.GetSelectedObjectId();
-	if (renderContext.WasObjectSelected())
-	{
-		if (selectedObjectId != UINT32_MAX)
-		{
-			selectedIndex = selectedObjectId;
-		}
-		else
-		{
-			selectedIndex = -1; // Reset selection if no object is selected
-		}
-	}
-	
+	// 1. READ DIRECTLY FROM THE SOURCE
+// We don't need a static variable. We ask the engine "What is selected right now?"
+// This covers both cases: 
+// A) We selected something via Viewport in the previous frame (SelectionPass updated Context).
+// B) We selected something in ImGui in the previous frame (ImGui updated Context).
+	uint32_t currentSelection = renderContext.GetSelectedObjectId();
+
 	ImGui::Text("Game Objects");
 	ImGui::Separator();
-	
+
 	float panelHeight = ImGui::GetContentRegionAvail().y * 0.5f;
-	
+
 	if (ImGui::BeginChild("GameObjectList", ImVec2(0, panelHeight), true))
 	{
 		for (int i = 0; i < renderContext.GetNumOfMeshes(); ++i)
 		{
 			auto mesh = renderContext.GetMesh(HMesh(i));
-			bool selected = (i == selectedIndex);
-			if (ImGui::Selectable(mesh->GetName(), selected))
+
+			// Check equality against the Context directly
+			bool isSelected = (currentSelection == (uint32_t)i);
+
+			if (ImGui::Selectable(mesh->GetName(), isSelected))
 			{
-				selectedIndex = i;
+				// 2. WRITE DIRECTLY TO THE SOURCE
+				// If the user clicks the UI, we update the engine state immediately.
+				renderContext.SetSelectedObjectId(i);
+
+				// This ensures that next frame, the HighlightMaskPass 
+				// will see this new ID and draw the outline.
 			}
 		}
 	}
 	ImGui::EndChild();
-	
+
 	ImGui::Separator();
 	ImGui::Text("Details");
 	ImGui::Separator();
-	
+
 	if (ImGui::BeginChild("DetailsPanel", ImVec2(0, 0), true))
 	{
-		if (selectedIndex >= 0 && selectedIndex < renderContext.GetNumOfMeshes())
+		// Re-fetch or reuse currentSelection. 
+		// Note: If you want immediate feedback within the same frame after a click, 
+		// you might want to update 'currentSelection' inside the loop above, 
+		// but usually, waiting 1 frame for details to update is imperceptible.
+		currentSelection = renderContext.GetSelectedObjectId();
+
+		if (currentSelection != UINT32_MAX && currentSelection < renderContext.GetNumOfMeshes())
 		{
-			const auto mesh = renderContext.GetMesh(HMesh(selectedIndex));
+			const auto mesh = renderContext.GetMesh(HMesh(currentSelection));
 			ImGui::Text("Name: %s", mesh->GetName());
 			ImGui::Text("Vertices: %d", mesh->GetVertexCount());
 		}
@@ -187,7 +194,7 @@ void ImGuiPass::Execute()
 		}
 	}
 	ImGui::EndChild();
-	
+
 	ImGui::End();
 
 	ImVec2 viewport_pos = ImVec2(400, menuHeight);     // Top-left corner
@@ -200,8 +207,9 @@ void ImGuiPass::Execute()
 	auto texture = renderContext.GetTexture(colorCopyTexture);
 	HRenderTarget colorRenderTarget = HRenderTarget(3);
 	auto finalTexture = renderContext.GetTexture(colorRenderTarget);
-	auto finalFinalTexture = renderContext.GetTexture(finalTexture);
-	renderContext.TransitionTo(commandList, finalTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	auto finalFinalTexture = renderContext.GetTexture(HTexture(10));
+	renderContext.TransitionTo(commandList, HTexture(10), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalFinalTexture->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
