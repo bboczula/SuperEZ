@@ -1,8 +1,9 @@
 #include "Free.h"
 #include "Camera.h"
 
-FreeCamera::FreeCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
+FreeCamera::FreeCamera(Camera* camera)
 {
+	SetCamera(camera);
 }
 
 void FreeCamera::MoveForward(float delta)

@@ -6,7 +6,7 @@
 class FreeCamera : public CameraControler
 {
 public:
-	FreeCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position);
+	FreeCamera(Camera* camera);
 	void Rotate(float x, float y, float z) override;
 	// Move
 	void MoveForward(float delta) override;

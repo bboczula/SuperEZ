@@ -6,6 +6,7 @@
 #include "../../core/InputLayout.h"
 #include "../../engine/camera/Camera.h"
 #include "../../engine/camera/Orbit.h"
+#include "../../engine/camera/Free.h"
 #include "../../engine/input/RawInput.h"
 #include "../../bind/RootSignatureBuilder.h"
 
@@ -19,6 +20,7 @@ extern RawInput rawInput;
 TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Graphics)
 {
 	arcballCamera = new Orbit(renderContext.GetCamera(0));
+	freeCamera = new FreeCamera(renderContext.GetCamera(0));
 }
 
 void TestPass::SetOrthographicProperties(const float aspectRatio)
@@ -104,6 +106,31 @@ void TestPass::Update()
 		{
 			SetOrthographicProperties(static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()));
 		}
+	}
+
+	if (rawInput.IsRightButtonDown())
+	{
+		float dx = rawInput.GetMouseXDelta();
+		float dy = rawInput.GetMouseYDelta();
+		float sensitivity = 0.1f;
+		freeCamera->Rotate(dy * sensitivity, -dx * sensitivity, 0.0f); // match your sign convention
+	}
+
+	if(rawInput.IsKeyDown('W'))
+	{
+		freeCamera->MoveForward(0.05f);
+	}
+	if(rawInput.IsKeyDown('S'))
+	{
+		freeCamera->MoveBackward(0.05f);
+	}
+	if(rawInput.IsKeyDown('D'))
+	{
+		freeCamera->MoveLeft(0.05f);
+	}
+	if(rawInput.IsKeyDown('A'))
+	{
+		freeCamera->MoveRight(0.05f);
 	}
 }
 
