@@ -21,7 +21,6 @@ public:
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
-	Orbit* arcballCamera;
 	FreeCamera* freeCamera;
 	BOOL isPerspectiveCamera = TRUE;
 };
