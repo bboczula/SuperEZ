@@ -1,13 +1,40 @@
 #include "Camera.h"
 
 Camera::Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
-	: position(position), rotation(0.0f, 0.0f, 0.0f), aspectRatio(aspectRatio), width(1.0f), height(1.0f),
-	forward(DEFAULT_FORWARD), up(DEFAULT_UP), right(DEFAULT_RIGTH), target(0.0f, 0.0f, 0.0f), type(CameraType::PERSPECTIVE)
+	: position(position)
+	, rotation(0.0f, 0.0f, 0.0f)
+	, aspectRatio(aspectRatio)
+	, width(1.0f)
+	, height(1.0f)
+	, forward(DEFAULT_FORWARD)
+	, up(DEFAULT_UP)
+	, right(DEFAULT_RIGTH)
+	, target(0.0f, 0.0f, 0.0f)
+	, type(CameraType::PERSPECTIVE)
 {
-	forward = target - position;
+	// 1) Compute yaw/pitch from desired initial look direction (target - position)
+	InitializeYawAndPitchFromPosition(); // sets rotation.x (pitch) and rotation.y (yaw)
+
+	// 2) Derive basis vectors from yaw/pitch so Rotate() and constructor agree
+	const auto rotPitch = DirectX::SimpleMath::Matrix::CreateRotationX(rotation.x);
+	const auto rotYaw = DirectX::SimpleMath::Matrix::CreateRotationY(rotation.y);
+
+	// Choose the same order you use in FreeCamera::Rotate (make them match)
+	const auto rot = rotYaw * rotPitch;
+
+	forward = DirectX::SimpleMath::Vector3::Transform(DEFAULT_FORWARD, rot);
 	forward.Normalize();
-	InitializeYawAndPitchFromPosition();
+
+	right = DirectX::SimpleMath::Vector3::Transform(DEFAULT_RIGTH, rot);
+	right.Normalize();
+
+	up = DirectX::SimpleMath::Vector3::Transform(DEFAULT_UP, rot);
+	up.Normalize();
+
+	// 3) For free-camera semantics, target is derived, not authoritative
+	target = position + forward;
 }
+
 
 DirectX::SimpleMath::Matrix* Camera::GetViewProjectionMatrixPtr()
 {

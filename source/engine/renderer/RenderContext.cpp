@@ -29,7 +29,7 @@ RenderContext::RenderContext()
 	OutputDebugString(L"RenderContext Constructor\n");
 
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f)));
+	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.6f, -0.1f, 0.0f)));
 }
 
 RenderContext::~RenderContext()

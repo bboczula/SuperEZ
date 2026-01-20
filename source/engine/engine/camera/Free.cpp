@@ -1,5 +1,6 @@
 #include "Free.h"
 #include "Camera.h"
+#include <algorithm>
 
 FreeCamera::FreeCamera(Camera* camera)
 {

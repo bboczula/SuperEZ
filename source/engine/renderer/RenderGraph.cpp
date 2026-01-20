@@ -33,8 +33,10 @@ RenderGraph::RenderGraph()
 	RenderPass* compositionPass = new CompositionPass();
 	renderPasses.push_back(compositionPass);
 
+#if IS_EDITOR
 	RenderPass* imguiPass = new ImGuiPass();
 	renderPasses.push_back(imguiPass);
+#endif
 
 	RenderPass* blitPass = new BlitPass();
 	renderPasses.push_back(blitPass);

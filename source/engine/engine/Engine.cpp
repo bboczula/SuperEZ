@@ -11,6 +11,7 @@
 #include "input/CursorInput.h"
 #include "../../externals/AssetSuite/inc/AssetSuite.h"
 #include "../../externals/TinyXML2/tinyxml2.h"
+#include "IGame.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -172,8 +173,10 @@ void Engine::Tick()
 	deviceContext.Flush();
 }
 
-void Engine::Run()
+void Engine::Run(IGame& game)
 {
+	startupSceneName = game.GetStartupSceneName();
+
 	while (1)
 	{
 		ProcessGlobalCommands();

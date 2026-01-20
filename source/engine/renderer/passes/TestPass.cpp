@@ -87,7 +87,7 @@ void TestPass::Update()
 	}
 
 	if (rawInput.IsRightButtonDown())
-	{
+	{		
 		float dx = rawInput.GetMouseXDelta();
 		float dy = rawInput.GetMouseYDelta();
 		float sensitivity = 0.1f;
