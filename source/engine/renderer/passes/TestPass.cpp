@@ -6,6 +6,7 @@
 #include "../../core/InputLayout.h"
 #include "../../engine/camera/Camera.h"
 #include "../../engine/camera/Orbit.h"
+#include "../../engine/camera/Free.h"
 #include "../../engine/input/RawInput.h"
 #include "../../bind/RootSignatureBuilder.h"
 
@@ -18,12 +19,12 @@ extern RawInput rawInput;
 
 TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Graphics)
 {
-	arcballCamera = new Orbit(renderContext.GetCamera(0));
+	freeCamera = new FreeCamera(renderContext.GetCamera(0));
 }
 
 void TestPass::SetOrthographicProperties(const float aspectRatio)
 {
-	float distanceToPlane = arcballCamera->GetRadius();
+	float distanceToPlane = 5.0f;
 	float fov = DirectX::XMConvertToRadians(36.0f);
 	float height = tan(fov * 0.5f) * distanceToPlane;
 	float width = height * aspectRatio;
@@ -67,35 +68,14 @@ void TestPass::Initialize()
 
 void TestPass::Update()
 {
-	const bool isXAxisRotation = rawInput.GetMouseXDelta() != 0 && rawInput.IsMiddleButtonDown();
-	const bool isYAxisRotation = rawInput.GetMouseYDelta() != 0 && rawInput.IsMiddleButtonDown();
-	if (isXAxisRotation || isYAxisRotation)
-	{
-		arcballCamera->Rotate(0.1f * rawInput.GetMouseYDelta(), -0.1f * rawInput.GetMouseXDelta(), 0.0f);
-	}
-
-	const bool hasMouseWheelMoved = rawInput.HasMouseWheelMoved();
-	if (hasMouseWheelMoved)
-	{
-		SHORT wheelDelta = rawInput.GetMouseWheelDelta();
-		if (wheelDelta != 0.0f)
-		{
-			float zoomStep = 0.1f * static_cast<float>(wheelDelta) / 120.0f;
-			arcballCamera->SetRadius(arcballCamera->GetRadius() + zoomStep);
-		}
-	}
-
 	if (rawInput.IsKeyDown(VK_NUMPAD1) || rawInput.IsKeyDown(VK_NUMPAD3) || rawInput.IsKeyDown(VK_NUMPAD7))
 	{
 		// There is a crash, somehow we keep entering this condition, even though we don't press any key
-		auto radius = arcballCamera->GetRadius();
 		renderContext.GetCamera(0)->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
 		renderContext.GetCamera(0)->SetPosition(DirectX::SimpleMath::Vector3(
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD1),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD7),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD3) + 0.0000001));
-		arcballCamera->SetRadius(radius);
-		arcballCamera->RecalculateBasisVectors();
 	}
 	else if (rawInput.WasKeyDown(VK_NUMPAD5))
 	{
@@ -104,6 +84,31 @@ void TestPass::Update()
 		{
 			SetOrthographicProperties(static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()));
 		}
+	}
+
+	if (rawInput.IsRightButtonDown())
+	{
+		float dx = rawInput.GetMouseXDelta();
+		float dy = rawInput.GetMouseYDelta();
+		float sensitivity = 0.1f;
+		freeCamera->Rotate(dy * sensitivity, -dx * sensitivity, 0.0f); // match your sign convention
+	}
+
+	if(rawInput.IsKeyDown('W'))
+	{
+		freeCamera->MoveForward(0.05f);
+	}
+	if(rawInput.IsKeyDown('S'))
+	{
+		freeCamera->MoveBackward(0.05f);
+	}
+	if(rawInput.IsKeyDown('D'))
+	{
+		freeCamera->MoveLeft(0.05f);
+	}
+	if(rawInput.IsKeyDown('A'))
+	{
+		freeCamera->MoveRight(0.05f);
 	}
 }
 

@@ -7,6 +7,7 @@
 // and then it will render a triangle to the screen.
 
 class Orbit;
+class FreeCamera;
 
 class TestPass : public RenderPass
 {
@@ -20,6 +21,6 @@ public:
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
-	Orbit* arcballCamera;
+	FreeCamera* freeCamera;
 	BOOL isPerspectiveCamera = TRUE;
 };
