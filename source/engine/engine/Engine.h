@@ -30,6 +30,7 @@ public:
 	void ProcessGlobalCommands();
 	std::string GetStartupSceneName() const { return startupSceneName; }
 private:
+	IGame* game = nullptr;
 	IEngineState* currentState = nullptr;
 	std::string startupSceneName;
 };

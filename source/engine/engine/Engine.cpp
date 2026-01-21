@@ -176,6 +176,7 @@ void Engine::Tick()
 void Engine::Run(IGame& game)
 {
 	startupSceneName = game.GetStartupSceneName();
+	this->game = &game;
 
 	while (1)
 	{
@@ -186,6 +187,8 @@ void Engine::Run(IGame& game)
 
 void Engine::ProcessSingleFrame()
 {
+	game->OnUpdate(1.0f / 60.0f);
+
 	MSG msg{ 0 };
 	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
