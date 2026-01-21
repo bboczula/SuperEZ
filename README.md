@@ -1,31 +1,17 @@
-# SuperEZ 1.4
+# SuperEZ 1.4.1
  A super-easy DirectX12 game engine.
 
 ## Demo
 
-https://github.com/user-attachments/assets/6b1c3178-f43c-400e-9fb6-bfdcc832ce30
+https://github.com/user-attachments/assets/06803da2-a7c1-4463-abc6-220b4cb3ee70
 
 ## Release Notes
-- Simple Texturing
-  - Each object is now rendered with a corresponding albedo texture
-  - Textures are being loaded from files on hard drive and uploaded to GPU
-  - Extended the resource binding mechanism
-- Scene Reloading
-  - You can switch scenes in the real-time
-  - Added the State Machine to the Engine to support this
-  - There is a new menu bar that allows you to select a scene file to load
-- ImGui Support
-  - Now the engine support the ImGui as GitHub submodule
-  - Added a separate Render Pass and Input Listener
-  - I've added a side panel that lists all of the game objects
-  - Once selected, it will display some details about the object
-- Basic Scene Graph
-  - Scenes are now loaded from XML scene description file
-  - Each entry has a name, geometry and a texture
-- Shader Wrapper Class
-  - Quality of life improvement
-  - Got rid of another raw DirectX class in favor of the abstraction
+- Editor Object Selection
+- Game Object Highlight
+- Editor Camera Flythrought
 - More info on the DevLog: TODO
+
+## Bug Fixes
 
 ## Build
 This repository uses the submodules, therefore you need to remember to clone them too.
