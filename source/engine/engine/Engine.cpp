@@ -12,6 +12,8 @@
 #include "../../externals/AssetSuite/inc/AssetSuite.h"
 #include "../../externals/TinyXML2/tinyxml2.h"
 #include "IGame.h"
+#include "RawInputService.h"
+#include "IInput.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -56,6 +58,19 @@ void Engine::Initialize()
 	renderContext.CreateDefaultSamplers();
 	renderContext.CreateRenderTargetFromBackBuffer(&deviceContext);
 	renderGraph.Initialize();
+
+	// Prepare GameServices
+	rawInputService = new RawInputService(rawInput);
+	EngineServices services
+	{
+		.scene = nullptr,
+		.input = rawInputService,
+		.camera = nullptr,
+		.picker = nullptr,
+		.render = &renderContext
+	};
+
+	game->OnInit(services);
 }
 
 void Engine::CreateRenderResources()

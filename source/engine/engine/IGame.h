@@ -2,7 +2,7 @@
 #include <string>
 
 class Scene;
-class RawInput;
+class IInput;
 class Picker;
 class RenderContext;
 class Camera;
@@ -15,7 +15,7 @@ struct EngineServices
       Scene* scene = nullptr;
 
       // Raw input access (mouse, keyboard)
-      RawInput* input = nullptr;
+      IInput* input = nullptr;
 
       // Main active camera (optional but extremely useful for games)
       Camera* camera = nullptr;
@@ -27,9 +27,6 @@ struct EngineServices
 
       // Rendering interface (only if game needs to spawn / modify renderables)
       RenderContext* render = nullptr;
-
-      // Root folder for this game’s content (assets, scene files, configs)
-      std::filesystem::path contentRoot;
 };
 
 class IGame
