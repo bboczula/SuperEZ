@@ -6,7 +6,7 @@ class ChessApp final : public IGame
 public:
 	std::string GetStartupSceneName() const override
 	{
-		return "sponza"; // corresponds to assets/chess/chess.xml in your scheme
+		return "chess"; // corresponds to assets/chess/chess.xml in your scheme
 	}
 };
 

@@ -54,9 +54,13 @@ void TestPass::ConfigurePipelineState()
 
 	// Menu height seems to be 20 pixels
 	// The actual viewport size is this ImVec2(1920 - 400, 1080 - menuHeight - 25);
+	int viewportWidth = 1920;
+	int viewportHeight = 1080;
+#if IS_EDITOR
 	const int menuHeight = 20;
-	const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
-	const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
+	viewportWidth -= 400; // Assuming the menu takes 400 pixels
+	viewportHeight -= menuHeight - 25; // Assuming the status bar takes 25 pixels
+#endif
 	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	deviceContext.Flush();
