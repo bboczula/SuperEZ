@@ -9,6 +9,7 @@
 #include "../../engine/camera/Free.h"
 #include "../../engine/input/RawInput.h"
 #include "../../bind/RootSignatureBuilder.h"
+#include "../../externals/SimpleMath/SimpleMath.cpp"
 
 #include <pix3.h>
 
@@ -48,6 +49,7 @@ void TestPass::ConfigurePipelineState()
 	// Now we can create the root signature
 	RootSignatureBuilder builder;
 	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 	rootSignature = renderContext.CreateRootSignature(builder);
@@ -131,8 +133,10 @@ void TestPass::Execute()
 	
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
+		DirectX::SimpleMath::Matrix identity = DirectX::SimpleMath::Matrix::Identity;
+		renderContext.SetInlineConstants(commandList, 16, &identity, 1);
 		renderContext.BindGeometry(commandList, HMesh(i));
-		renderContext.BindTexture(commandList, HTexture(i), 1);
+		renderContext.BindTexture(commandList, HTexture(i), 2);
 		renderContext.DrawMesh(commandList, HMesh(i));
 	}
 }
