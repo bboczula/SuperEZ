@@ -10,6 +10,8 @@ public:
 
       bool MouseClicked(InputMouseButton button) override;
 
+	bool IsKeyDown(int keyCode) override;
+
 private:
       RawInput& raw_;
 };

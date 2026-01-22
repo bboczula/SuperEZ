@@ -18,3 +18,8 @@ bool RawInputService::MouseClicked(InputMouseButton button)
 
 	return false;
 }
+
+bool RawInputService::IsKeyDown(int keyCode)
+{
+	return raw_.IsKeyDown(static_cast<WPARAM>(keyCode));
+}
