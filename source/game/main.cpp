@@ -28,7 +28,7 @@ public:
 
 	std::string GetStartupSceneName() const override
 	{
-		return "chess"; // corresponds to assets/chess/chess.xml in your scheme
+		return "sponza"; // corresponds to assets/chess/chess.xml in your scheme
 	}
 private:
 	EngineServices services;

@@ -6,8 +6,6 @@
 
 #include "states/IEngineState.h"
 
-#define IS_EDITOR 0
-
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
 class IGame;

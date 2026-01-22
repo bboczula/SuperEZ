@@ -98,21 +98,22 @@ void TestPass::Update()
 		freeCamera->Rotate(dy * sensitivity, -dx * sensitivity, 0.0f); // match your sign convention
 	}
 
+	const float cameraSpeed = 0.025f;
 	if(rawInput.IsKeyDown('W'))
 	{
-		freeCamera->MoveForward(0.05f);
+		freeCamera->MoveForward(cameraSpeed);
 	}
 	if(rawInput.IsKeyDown('S'))
 	{
-		freeCamera->MoveBackward(0.05f);
+		freeCamera->MoveBackward(cameraSpeed);
 	}
 	if(rawInput.IsKeyDown('D'))
 	{
-		freeCamera->MoveLeft(0.05f);
+		freeCamera->MoveLeft(cameraSpeed);
 	}
 	if(rawInput.IsKeyDown('A'))
 	{
-		freeCamera->MoveRight(0.05f);
+		freeCamera->MoveRight(cameraSpeed);
 	}
 }
 
