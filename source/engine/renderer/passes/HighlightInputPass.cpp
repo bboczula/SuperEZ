@@ -23,6 +23,7 @@ void HighlightInputPass::ConfigurePipelineState()
     // Now we can create the root signature
     RootSignatureBuilder builder;
     builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+    builder.AddConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b1
     rootSignature = renderContext.CreateRootSignature(builder);
 
     int viewportWidth = 1920;

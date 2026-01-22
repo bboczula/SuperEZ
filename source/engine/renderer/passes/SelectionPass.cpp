@@ -118,6 +118,7 @@ void SelectionPass::Execute()
 #endif
 
 	// Only request a readback if the user actually clicked this frame
+	// Or if something has changed that requires a new readback, like selected object moved
 	if (cursorInput.WasLeftButtonClicked() && mousePositionX > 0 && mousePositionY > 0)
 	{
 		// 1. Copy the specific pixel to the readback buffer
