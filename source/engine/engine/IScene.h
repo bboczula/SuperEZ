@@ -24,6 +24,9 @@
             virtual void SetPosition(EntityId id, Vec3 p) = 0;
 
             // Optional but cheap and useful (you can implement later)
-            // virtual Vec3 GetRotationEuler(EntityId id) const = 0;
-            // virtual void SetRotationEuler(EntityId id, Vec3 rads) = 0;
+            virtual Vec3 GetRotationEuler(EntityId id) const = 0;
+            virtual void SetRotationEuler(EntityId id, Vec3 rads) = 0;
+
+		virtual Vec3 GetScale(EntityId id) const = 0;
+		virtual void SetScale(EntityId id, Vec3 scale) = 0;
       };

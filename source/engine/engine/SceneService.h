@@ -18,7 +18,10 @@ public:
       EntityId FindEntityByName(const std::string& name) const override;
       Vec3 GetPosition(EntityId id) const override;
       void SetPosition(EntityId id, Vec3 p) override;
-
+      Vec3 GetRotationEuler(EntityId id) const override;
+	void SetRotationEuler(EntityId id, Vec3 rads) override;
+	Vec3 GetScale(EntityId id) const override;
+	void SetScale(EntityId id, Vec3 scale) override;
 private:
       RenderContext& renderContext;
 

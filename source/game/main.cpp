@@ -15,17 +15,21 @@ public:
 
 	virtual void OnUpdate(float dtSeconds) override
 	{
-		auto moon = services.scene->FindEntityByName("Earth_Mesh");
-		auto pos = services.scene->GetPosition(moon);
-		if(services.input->IsKeyDown('U'))
-		{
-			pos.y += 0.001f;
-		}
-		if(services.input->IsKeyDown('J'))
-		{
-			pos.y -= 0.001f;
-		}
-		services.scene->SetPosition(moon, pos);
+		auto earth = services.scene->FindEntityByName("Earth_Mesh");
+		auto rot_earth = services.scene->GetRotationEuler(earth);
+		rot_earth.y += 1.0f;
+		services.scene->SetRotationEuler(earth, rot_earth);
+
+		auto moon = services.scene->FindEntityByName("Moon_Mesh");
+		auto rot_moon = services.scene->GetRotationEuler(moon);
+		rot_moon.y += 0.25f;
+		services.scene->SetScale(moon, { 0.5f, 0.5f, 0.5f });
+		services.scene->SetRotationEuler(moon, rot_moon);
+
+		auto mars = services.scene->FindEntityByName("Mars_Mesh");
+		auto rot_mars = services.scene->GetRotationEuler(mars);
+		rot_mars.y += 0.25f;
+		services.scene->SetRotationEuler(mars, rot_mars);
 	}
 
 	virtual void OnShutdown() override
