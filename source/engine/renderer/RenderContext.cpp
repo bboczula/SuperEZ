@@ -106,6 +106,29 @@ void RenderContext::UnloadAssets()
 	dsvHeap.Reset();
 }
 
+std::vector<RenderItem>& RenderContext::GetRenderItems()
+{
+	// TODO: insert return statement here
+	return renderItems;
+}
+
+RenderItem* RenderContext::GetRenderItemById(uint32_t id)
+{
+	if (id == 0)
+		return nullptr;
+
+	const uint32_t index = id - 1;
+	if (index >= renderItems.size())
+		return nullptr;
+
+	return &renderItems[index];
+}
+
+void RenderContext::CreateRenderItem(const RenderItem& item)
+{
+	renderItems.push_back(item);
+}
+
 HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
 {
 	int width = windowContext.GetWidth();
@@ -536,7 +559,6 @@ std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t si
 
 	return data;
 }
-
 
 void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
 {

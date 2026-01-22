@@ -3,6 +3,7 @@
 #include <vector>
 #include "../bind/DescriptorHeap.h" // It includes d3d12.h
 #include "../asset/Handle.h"
+#include "RenderItem.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -51,6 +52,9 @@ public:
 	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	void UnloadAssets();
 	// High Level
+	std::vector<RenderItem>& GetRenderItems();
+	RenderItem* GetRenderItemById(uint32_t id);
+	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
@@ -134,6 +138,7 @@ private:
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
+	std::vector<RenderItem> renderItems;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;

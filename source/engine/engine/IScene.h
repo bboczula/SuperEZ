@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <string>
 
-namespace superEZ
-{
       using EntityId = uint32_t;
       static constexpr EntityId InvalidEntity = 0;
 
@@ -29,4 +27,3 @@ namespace superEZ
             // virtual Vec3 GetRotationEuler(EntityId id) const = 0;
             // virtual void SetRotationEuler(EntityId id, Vec3 rads) = 0;
       };
-}

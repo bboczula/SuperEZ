@@ -1,6 +1,7 @@
 #include "../engine/engine/Engine.h"
 #include "../engine/engine/IGame.h"
 #include "../engine/engine/IInput.h"
+#include "../engine/engine/IScene.h"
 #include <iostream>
 
 class ChessApp final : public IGame
@@ -14,11 +15,17 @@ public:
 
 	virtual void OnUpdate(float dtSeconds) override
 	{
-		// Update logic here
-		if(services.input->MouseClicked(InputMouseButton::Left))
+		auto moon = services.scene->FindEntityByName("Moon_Mesh");
+		auto pos = services.scene->GetPosition(moon);
+		if(services.input->IsKeyDown('U'))
 		{
-			std::cout << "Left mouse button clicked!" << std::endl;
+			pos.y += 0.001f;
 		}
+		if(services.input->IsKeyDown('J'))
+		{
+			pos.y -= 0.001f;
+		}
+		services.scene->SetPosition(moon, pos);
 	}
 
 	virtual void OnShutdown() override

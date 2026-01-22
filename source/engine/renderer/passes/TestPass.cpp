@@ -131,13 +131,15 @@ void TestPass::Execute()
 	renderContext.GetCamera(0)->SetType(type);
 	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
 	
-	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
+	const auto& items = renderContext.GetRenderItems();
+	for (const RenderItem& item : items)
 	{
-		DirectX::SimpleMath::Matrix identity = DirectX::SimpleMath::Matrix::Identity;
+		DirectX::SimpleMath::Matrix identity = DirectX::SimpleMath::Matrix::CreateTranslation(item.position);
+		//identity.Transpose();
 		renderContext.SetInlineConstants(commandList, 16, &identity, 1);
-		renderContext.BindGeometry(commandList, HMesh(i));
-		renderContext.BindTexture(commandList, HTexture(i), 2);
-		renderContext.DrawMesh(commandList, HMesh(i));
+		renderContext.BindGeometry(commandList, item.mesh);
+		renderContext.BindTexture(commandList, item.texture, 2);
+		renderContext.DrawMesh(commandList, item.mesh);
 	}
 }
 

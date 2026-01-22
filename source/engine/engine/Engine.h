@@ -10,6 +10,7 @@ using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
 class IGame;
 class RawInputService;
+class SceneService;
 
 class Engine
 {
@@ -33,4 +34,5 @@ private:
 	IEngineState* currentState = nullptr;
 	std::string startupSceneName;
 	RawInputService* rawInputService = nullptr;
+	SceneService* sceneService = nullptr;
 };

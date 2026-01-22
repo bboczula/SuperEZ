@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-class Scene;
+class IScene;
 class IInput;
 class Picker;
 class RenderContext;
@@ -12,7 +12,7 @@ struct EngineServices
       // --- Core runtime services (always present) ---
 
       // Scene graph / entity registry
-      Scene* scene = nullptr;
+      IScene* scene = nullptr;
 
       // Raw input access (mouse, keyboard)
       IInput* input = nullptr;

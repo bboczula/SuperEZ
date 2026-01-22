@@ -4,6 +4,7 @@
 #include "WindowContext.h"
 #include "../renderer/RenderContext.h"
 #include "../renderer/RenderGraph.h"
+#include "../renderer/RenderItem.h"
 #include "Settings.h"
 #include "Observer.h"
 #include "input/RawInput.h"
@@ -13,7 +14,9 @@
 #include "../../externals/TinyXML2/tinyxml2.h"
 #include "IGame.h"
 #include "RawInputService.h"
+#include "SceneService.h"
 #include "IInput.h"
+#include "IScene.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -61,9 +64,10 @@ void Engine::Initialize()
 
 	// Prepare GameServices
 	rawInputService = new RawInputService(rawInput);
+	sceneService = new SceneService(renderContext);
 	EngineServices services
 	{
-		.scene = nullptr,
+		.scene = sceneService,
 		.input = rawInputService,
 		.camera = nullptr,
 		.picker = nullptr,
@@ -138,6 +142,21 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
 
 		CreateTexture(imageDescriptor, imageOutput);
+
+		// After renderContext.CreateMesh(...)
+		const uint32_t meshIndex = renderContext.GetNumOfMeshes() - 1;
+		const uint32_t id = meshIndex + 1;
+
+		RenderItem item{};
+		item.id = id;
+		item.position = { 0.0f, 0.0f, 0.0f };
+		item.mesh = HMesh(id - 1);
+		item.texture = HTexture(id - 1);
+		strncpy_s(item.name, meshName.c_str(), _TRUNCATE);
+
+		renderContext.CreateRenderItem(item);
+
+
 	}
 }
 
