@@ -93,12 +93,12 @@ void SelectionPass::Execute()
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
-	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
+	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
 
 	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
 	{
 		UINT id = i + 1;
-		renderContext.SetInlineConstants(commandList, 1, &id, 1);
+		renderContext.SetInlineConstants(commandList, id, 1);
 		renderContext.BindGeometry(commandList, HMesh(i));
 		renderContext.BindTexture(commandList, HTexture(i), 2);
 		renderContext.DrawMesh(commandList, HMesh(i));

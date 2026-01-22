@@ -15,6 +15,7 @@ public:
 	};
 	Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position);
 	DirectX::SimpleMath::Matrix* GetViewProjectionMatrixPtr();
+	DirectX::SimpleMath::Matrix ViewProjecttion();
 	void SetPosition(DirectX::SimpleMath::Vector3 position);
 	DirectX::SimpleMath::Vector3 GetPosition();
 	void SetRotation(DirectX::SimpleMath::Vector3 rotation);

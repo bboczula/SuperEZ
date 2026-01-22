@@ -30,7 +30,7 @@ PSInput VSMain(VSInput input)
     PSInput o;
 
     float4 p = float4(input.position.xyz, 1.0f); // <-- guaranteed w=1
-    float4 worldPos = mul(world, p);
+    float4 worldPos = mul(p, world);
     o.position = mul(worldPos, viewProjection);
 
     o.color = input.color;

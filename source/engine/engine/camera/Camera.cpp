@@ -42,6 +42,12 @@ DirectX::SimpleMath::Matrix* Camera::GetViewProjectionMatrixPtr()
 	return &viewProjection;
 }
 
+DirectX::SimpleMath::Matrix Camera::ViewProjecttion()
+{
+	CalculateViewProjectionMatrix();
+	return viewProjection;
+}
+
 void Camera::SetPosition(DirectX::SimpleMath::Vector3 position)
 {
 	this->position = position;

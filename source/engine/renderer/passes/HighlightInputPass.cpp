@@ -52,7 +52,7 @@ void HighlightInputPass::Execute()
 	renderContext.TransitionTo(commandList, renderContext.GetTexture(renderTarget), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
-	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
+	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
 
 	static uint32_t selectedIndex = UINT32_MAX;
 	auto selectedObjectId = renderContext.GetSelectedObjectId();

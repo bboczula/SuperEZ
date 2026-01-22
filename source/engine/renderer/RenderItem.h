@@ -10,4 +10,8 @@ struct RenderItem
 	HMesh mesh;
 	HTexture texture;
 	char name[32];
+	DirectX::SimpleMath::Matrix World() const
+	{
+		return DirectX::SimpleMath::Matrix::CreateTranslation(position).Transpose();
+	}
 };

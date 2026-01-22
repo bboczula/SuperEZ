@@ -15,7 +15,7 @@ public:
 
 	virtual void OnUpdate(float dtSeconds) override
 	{
-		auto moon = services.scene->FindEntityByName("Moon_Mesh");
+		auto moon = services.scene->FindEntityByName("Earth_Mesh");
 		auto pos = services.scene->GetPosition(moon);
 		if(services.input->IsKeyDown('U'))
 		{

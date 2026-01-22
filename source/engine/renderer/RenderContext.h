@@ -4,6 +4,7 @@
 #include "../bind/DescriptorHeap.h" // It includes d3d12.h
 #include "../asset/Handle.h"
 #include "RenderItem.h"
+#include "../bind/CommandList.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -93,7 +94,18 @@ public:
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
-	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
+	// Non-template, implemented in .cpp (can include CommandList.h there)
+	void SetInlineConstantsRaw(HCommandList commandList,
+		UINT num32BitValues,
+		const void* data,
+		UINT slot) const;
+
+	template<typename T>
+	void SetInlineConstants(HCommandList commandList, const T& data, UINT slot) const
+	{
+		static_assert((sizeof(T) % 4) == 0, "Root constants must be 32-bit aligned.");
+		SetInlineConstantsRaw(commandList, (UINT)(sizeof(T) / 4), &data, slot);
+	}
 	void SetInlineConstantsUAV(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);

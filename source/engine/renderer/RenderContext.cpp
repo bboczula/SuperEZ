@@ -887,9 +887,13 @@ HTexture RenderContext::GetTexture(const char* name)
 	return HTexture();
 }
 
-void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)
+void RenderContext::SetInlineConstantsRaw(HCommandList commandList,
+	UINT num32BitValues,
+	const void* data,
+	UINT slot) const
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(slot, numOfConstants, data, 0);
+	commandLists[commandList.Index()]->GetCommandList()
+		->SetGraphicsRoot32BitConstants(slot, num32BitValues, data, 0);
 }
 
 void RenderContext::SetInlineConstantsUAV(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)

@@ -129,14 +129,12 @@ void TestPass::Execute()
 
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.GetCamera(0)->SetType(type);
-	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
-	
+	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
+
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)
 	{
-		DirectX::SimpleMath::Matrix identity = DirectX::SimpleMath::Matrix::CreateTranslation(item.position);
-		//identity.Transpose();
-		renderContext.SetInlineConstants(commandList, 16, &identity, 1);
+		renderContext.SetInlineConstants(commandList, item.World(), 1);
 		renderContext.BindGeometry(commandList, item.mesh);
 		renderContext.BindTexture(commandList, item.texture, 2);
 		renderContext.DrawMesh(commandList, item.mesh);
