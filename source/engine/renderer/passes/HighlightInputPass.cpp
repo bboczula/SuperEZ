@@ -56,11 +56,29 @@ void HighlightInputPass::Execute()
 
 	static uint32_t selectedIndex = UINT32_MAX;
 	auto selectedObjectId = renderContext.GetSelectedObjectId();
-	if (selectedObjectId < renderContext.GetNumOfMeshes())
+	if (selectedObjectId >= renderContext.GetNumOfMeshes())
 	{
-		renderContext.BindGeometry(commandList, HMesh(selectedObjectId));
-		renderContext.DrawMesh(commandList, HMesh(selectedObjectId));
+		return;
 	}
+	//{
+	//	renderContext.BindGeometry(commandList, HMesh(selectedObjectId));
+	//	renderContext.DrawMesh(commandList, HMesh(selectedObjectId));
+	//}
+
+	RenderItem item = renderContext.GetRenderItems()[selectedObjectId];
+	renderContext.SetInlineConstants(commandList, item.World(), 1);
+	renderContext.BindGeometry(commandList, item.mesh);
+	renderContext.DrawMesh(commandList, item.mesh);
+
+	//const auto& items = renderContext.GetRenderItems();
+	//for (const RenderItem& item : items)
+	//{
+	//	renderContext.SetInlineConstants(commandList, item.World(), 1);
+	//	renderContext.BindGeometry(commandList, item.mesh);
+	//	renderContext.BindTexture(commandList, item.texture, 2);
+	//	renderContext.DrawMesh(commandList, item.mesh);
+	//}
+
 	renderContext.TransitionBack(commandList, renderContext.GetTexture(renderTarget));
 }
 

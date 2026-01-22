@@ -32,7 +32,8 @@ void SelectionPass::ConfigurePipelineState()
 	// Now we can create the root signature
 	RootSignatureBuilder builder;
 	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
-	builder.AddConstants(1, 1, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Root Constants @ b1
+	builder.AddConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddConstants(1, 2, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Root Constants @ b1
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 	rootSignature = renderContext.CreateRootSignature(builder);
@@ -95,13 +96,17 @@ void SelectionPass::Execute()
 
 	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
 
-	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
+	UINT index = 0;
+	const auto& items = renderContext.GetRenderItems();
+	for (const RenderItem& item : items)
 	{
-		UINT id = i + 1;
-		renderContext.SetInlineConstants(commandList, id, 1);
-		renderContext.BindGeometry(commandList, HMesh(i));
-		renderContext.BindTexture(commandList, HTexture(i), 2);
-		renderContext.DrawMesh(commandList, HMesh(i));
+		UINT id = index + 1;
+		renderContext.SetInlineConstants(commandList, id, 2);
+		renderContext.SetInlineConstants(commandList, item.World(), 1);
+		renderContext.BindGeometry(commandList, item.mesh);
+		renderContext.BindTexture(commandList, item.texture, 3);
+		renderContext.DrawMesh(commandList, item.mesh);
+		index++;
 	}
 
 	// Here we can pass the mouse position to the shader
