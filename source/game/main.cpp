@@ -2,6 +2,8 @@
 #include "../engine/engine/IGame.h"
 #include "../engine/engine/IInput.h"
 #include "../engine/engine/IScene.h"
+#include "../engine/engine/SceneService.h"
+#include "../engine/engine/Components.h"
 #include <iostream>
 
 class ChessApp final : public IGame
@@ -15,26 +17,24 @@ public:
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
-		const float t = static_cast<float>(frameTime.time); // seconds (scaled)
-		// If you want it to keep oscillating even when paused/slowmo, use frameTime.unscaledTime.
+		const float t = static_cast<float>(frameTime.time);
 
-		auto earth = services.scene->FindEntityByName("Earth_Mesh");
+		// 1. Find the Entity ID
+		// Note: You need to implement FindEntityByName in SceneService, 
+		// OR just use ID 2 temporarily since we saw in the logs Earth is Entity 2.
+		Entity earth = 2;
 
-		// Parameters
-		const float amplitudeDeg = 180.0f;            // swing size: +/- 45°
-		const float cyclesPerSec = 0.10f;            // 0.10 Hz => 10 seconds per full cycle
+		// 2. Get the Data Component
+		Coordinator* coordinator = services.scene->GetCoordinator();
+		auto& transform = coordinator->GetComponent<TransformComponent>(earth);
+
+		// 3. Modify the Data directly
+		const float amplitudeDeg = 5.0f;
+		const float cyclesPerSec = 0.10f;
 		const float omega = 2.0f * 3.14159265f * cyclesPerSec;
 
-		// Baseline/origin yaw (choose one):
-		// 1) Fixed baseline:
-		const float baselineYaw = 0.0f;
-		// 2) Or capture initial yaw once and keep it (recommended). See note below.
-
-		Vec3 rot = services.scene->GetRotationEuler(earth);
-		rot.y = baselineYaw + amplitudeDeg * std::sin(omega * t);
-		services.scene->SetRotationEuler(earth, rot);
-
-		// ...moon/mars as before (dt-based constant spin), or also oscillate them
+		// We are writing straight to memory now!
+		transform.rotation[1] = amplitudeDeg * std::sin(omega * t); // Rotate Y
 	}
 
 

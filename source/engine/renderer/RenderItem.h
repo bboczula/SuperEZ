@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <SimpleMath.h>
+#include "../../externals/SimpleMath/SimpleMath.h"
 #include "../asset/Handle.h"
 
 struct RenderItem

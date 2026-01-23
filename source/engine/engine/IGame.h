@@ -2,7 +2,7 @@
 #include <string>
 #include "FrameTime.h"
 
-class IScene;
+class SceneService;
 class IInput;
 class Picker;
 class RenderContext;
@@ -13,7 +13,7 @@ struct EngineServices
       // --- Core runtime services (always present) ---
 
       // Scene graph / entity registry
-      IScene* scene = nullptr;
+      SceneService* scene = nullptr;
 
       // Raw input access (mouse, keyboard)
       IInput* input = nullptr;

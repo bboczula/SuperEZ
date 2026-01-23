@@ -18,6 +18,8 @@
 #include "IInput.h"
 #include "IScene.h"
 #include "TimeSystem.h"
+#include "Components.h"
+#include "ECSTypes.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -53,6 +55,36 @@ Engine::~Engine()
 void Engine::Initialize()
 {
 	OutputDebugString(L"Engine::Initialize()\n");
+
+	// --- 1. ECS INITIALIZATION START ---
+	mCoordinator.Init();
+
+	// Register the components we defined in Step 1
+	// (You MUST register them before using them)
+	mCoordinator.RegisterComponent<TransformComponent>();
+	mCoordinator.RegisterComponent<MeshComponent>();
+
+	// --- ECS TEST (The "Sanity Check") ---
+	{
+		// A. Create an entity (Should be ID 0)
+		Entity testEntity = mCoordinator.CreateEntity();
+
+		// B. Add Data to it
+		mCoordinator.AddComponent(testEntity, TransformComponent{
+		    {0.0f, 10.0f, 0.0f},  // Pos
+		    {0.0f, 0.0f, 0.0f},   // Rot
+		    {1.0f, 1.0f, 1.0f}    // Scale
+			});
+
+		// C. Verify data is actually there
+		TransformComponent& t = mCoordinator.GetComponent<TransformComponent>(testEntity);
+
+		char buffer[256];
+		sprintf_s(buffer, "ECS TEST: Created Entity %d with Pos Y: %.2f\n", testEntity, t.position[1]);
+		OutputDebugStringA(buffer); // Look for this in your Output Window!
+	}
+	// --- ECS INITIALIZATION END ---
+
 	rawInput.Initialize();
 	imGuiHandler.Initialize();
 	winMessageSubject.Subscribe(&imGuiHandler);
@@ -65,7 +97,7 @@ void Engine::Initialize()
 
 	// Prepare GameServices
 	rawInputService = new RawInputService(rawInput);
-	sceneService = new SceneService(renderContext);
+	sceneService = new SceneService(renderContext, &mCoordinator);
 	EngineServices services
 	{
 		.scene = sceneService,
@@ -161,7 +193,26 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 
 		renderContext.CreateRenderItem(item);
 
+		// --- NEW ECS CODE ---
+    // 1. Create the Entity representation of this object
+		Entity newEntity = mCoordinator.CreateEntity();
 
+		// 2. Add Transform (Default to 0,0,0 for now)
+		mCoordinator.AddComponent(newEntity, TransformComponent{
+		    {0.0f, 0.0f, 0.0f},
+		    {0.0f, 0.0f, 0.0f},
+		    {1.0f, 1.0f, 1.0f}
+			});
+
+		// 3. Add Mesh Component
+		mCoordinator.AddComponent(newEntity, MeshComponent{
+		    meshName
+			});
+
+		// Debug log
+		char buffer[256];
+		sprintf_s(buffer, "ECS: Created Entity %d for Mesh: %s\n", newEntity, meshName.c_str());
+		OutputDebugStringA(buffer);
 	}
 }
 
@@ -241,6 +292,41 @@ void Engine::ProcessSingleFrame()
 
 	const FrameTime& frameTime = timeSystem->Tick();
 	game->OnUpdate(frameTime);
+
+	// --- NEW: THE SYNC BRIDGE ---
+    // Iterate through all entities and copy ECS Transform -> RenderItem Position
+    // This is temporary until we write a real RenderSystem!
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+	{
+		// Check if entity has both components (simplest way for now)
+		// In a real system, we'd iterate the System's list, not 0 to MAX.
+		Signature sig = mCoordinator.GetEntityManager()->GetSignature(entity);
+
+		// Let's assume Bit 0 = Transform, Bit 1 = Mesh (Check your registration order!)
+		bool hasTransform = sig.test(mCoordinator.GetComponentType<TransformComponent>());
+
+		if (hasTransform)
+		{
+			auto& t = mCoordinator.GetComponent<TransformComponent>(entity);
+
+			// Hack: We assume Entity ID matches RenderItem ID for this test.
+			// (In LoadAssets we did: Entity 1 = RenderItem 1, Entity 2 = RenderItem 2)
+			if (entity < renderContext.GetNumOfMeshes() + 1) // Safety check
+			{
+				// RenderItems are 0-indexed, Entities started at 0 but we might have offset logic
+				// Just trying to map Entity ID -> RenderItem Index here
+				size_t renderItemIndex = entity - 1; // Entities were 1, 2, 3... RenderItems 0, 1, 2...
+
+				// Update the RenderItem directly
+				if (renderItemIndex < renderContext.renderItems.size()) {
+					renderContext.renderItems[renderItemIndex].position = { t.position[0], t.position[1], t.position[2] };
+					// You might need to add rotation support to your RenderItem struct if it lacks it!
+					renderContext.renderItems[renderItemIndex].rotation = { t.rotation[0], t.rotation[1], t.rotation[2] };
+				}
+			}
+		}
+	}
+	// -----------------------------
 
 	Tick();
 	winMessageSubject.RunPostFrame();
