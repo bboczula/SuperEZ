@@ -3,6 +3,8 @@
 #include <vector>
 #include "../bind/DescriptorHeap.h" // It includes d3d12.h
 #include "../asset/Handle.h"
+#include "RenderItem.h"
+#include "../bind/CommandList.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -51,6 +53,9 @@ public:
 	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	void UnloadAssets();
 	// High Level
+	std::vector<RenderItem>& GetRenderItems();
+	RenderItem* GetRenderItemById(uint32_t id);
+	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
@@ -89,7 +94,18 @@ public:
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants
-	void SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
+	// Non-template, implemented in .cpp (can include CommandList.h there)
+	void SetInlineConstantsRaw(HCommandList commandList,
+		UINT num32BitValues,
+		const void* data,
+		UINT slot) const;
+
+	template<typename T>
+	void SetInlineConstants(HCommandList commandList, const T& data, UINT slot) const
+	{
+		static_assert((sizeof(T) % 4) == 0, "Root constants must be 32-bit aligned.");
+		SetInlineConstantsRaw(commandList, (UINT)(sizeof(T) / 4), &data, slot);
+	}
 	void SetInlineConstantsUAV(HCommandList commandList, UINT numOfConstants, void* data, UINT slot);
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
@@ -134,6 +150,7 @@ private:
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
+	std::vector<RenderItem> renderItems;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;

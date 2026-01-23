@@ -17,7 +17,12 @@ cbuffer CameraData : register(b0)
 	float4x4 viewProjection;
 };
 
-uint objectID : register(b1); // One 32-bit constant
+cbuffer ObjectData : register(b1)
+{
+    float4x4 world;
+};
+
+uint objectID : register(b2); // One 32-bit constant
 
 struct PSInput
 {
@@ -28,7 +33,9 @@ PSInput VSMain(float4 position : POSITION)
 {
     PSInput result;
 
-    result.position = mul(position, viewProjection);
+    float4 p = float4(position.xyz, 1.0f); // <-- guaranteed w=1
+    float4 worldPos = mul(p, world);
+    result.position = mul(worldPos, viewProjection);
 
     return result;
 }

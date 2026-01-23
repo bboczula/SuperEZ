@@ -9,6 +9,7 @@
 #include "../../engine/camera/Free.h"
 #include "../../engine/input/RawInput.h"
 #include "../../bind/RootSignatureBuilder.h"
+#include "../../externals/SimpleMath/SimpleMath.cpp"
 
 #include <pix3.h>
 
@@ -48,15 +49,20 @@ void TestPass::ConfigurePipelineState()
 	// Now we can create the root signature
 	RootSignatureBuilder builder;
 	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 	rootSignature = renderContext.CreateRootSignature(builder);
 
 	// Menu height seems to be 20 pixels
 	// The actual viewport size is this ImVec2(1920 - 400, 1080 - menuHeight - 25);
+	int viewportWidth = 1920;
+	int viewportHeight = 1080;
+#if IS_EDITOR
 	const int menuHeight = 20;
-	const int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
-	const int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
+	viewportWidth -= 400; // Assuming the menu takes 400 pixels
+	viewportHeight -= menuHeight - 25; // Assuming the status bar takes 25 pixels
+#endif
 	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	deviceContext.Flush();
@@ -87,28 +93,29 @@ void TestPass::Update()
 	}
 
 	if (rawInput.IsRightButtonDown())
-	{
+	{		
 		float dx = rawInput.GetMouseXDelta();
 		float dy = rawInput.GetMouseYDelta();
 		float sensitivity = 0.1f;
 		freeCamera->Rotate(dy * sensitivity, -dx * sensitivity, 0.0f); // match your sign convention
 	}
 
+	const float cameraSpeed = 0.025f;
 	if(rawInput.IsKeyDown('W'))
 	{
-		freeCamera->MoveForward(0.05f);
+		freeCamera->MoveForward(cameraSpeed);
 	}
 	if(rawInput.IsKeyDown('S'))
 	{
-		freeCamera->MoveBackward(0.05f);
+		freeCamera->MoveBackward(cameraSpeed);
 	}
 	if(rawInput.IsKeyDown('D'))
 	{
-		freeCamera->MoveLeft(0.05f);
+		freeCamera->MoveLeft(cameraSpeed);
 	}
 	if(rawInput.IsKeyDown('A'))
 	{
-		freeCamera->MoveRight(0.05f);
+		freeCamera->MoveRight(cameraSpeed);
 	}
 }
 
@@ -122,13 +129,15 @@ void TestPass::Execute()
 
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.GetCamera(0)->SetType(type);
-	renderContext.SetInlineConstants(commandList, 16, renderContext.GetCamera(0)->GetViewProjectionMatrixPtr(), 0);
-	
-	for (int i = 0; i < renderContext.GetNumOfMeshes(); i++)
+	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
+
+	const auto& items = renderContext.GetRenderItems();
+	for (const RenderItem& item : items)
 	{
-		renderContext.BindGeometry(commandList, HMesh(i));
-		renderContext.BindTexture(commandList, HTexture(i), 1);
-		renderContext.DrawMesh(commandList, HMesh(i));
+		renderContext.SetInlineConstants(commandList, item.World(), 1);
+		renderContext.BindGeometry(commandList, item.mesh);
+		renderContext.BindTexture(commandList, item.texture, 2);
+		renderContext.DrawMesh(commandList, item.mesh);
 	}
 }
 

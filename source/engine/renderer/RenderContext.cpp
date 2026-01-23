@@ -29,7 +29,7 @@ RenderContext::RenderContext()
 	OutputDebugString(L"RenderContext Constructor\n");
 
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.0f, 1.0f, 2.0f)));
+	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.6f, -0.1f, 0.0f)));
 }
 
 RenderContext::~RenderContext()
@@ -104,6 +104,29 @@ void RenderContext::UnloadAssets()
 	cbvSrvUavHeap.Reset();
 	rtvHeap.Reset();
 	dsvHeap.Reset();
+}
+
+std::vector<RenderItem>& RenderContext::GetRenderItems()
+{
+	// TODO: insert return statement here
+	return renderItems;
+}
+
+RenderItem* RenderContext::GetRenderItemById(uint32_t id)
+{
+	if (id == 0)
+		return nullptr;
+
+	const uint32_t index = id - 1;
+	if (index >= renderItems.size())
+		return nullptr;
+
+	return &renderItems[index];
+}
+
+void RenderContext::CreateRenderItem(const RenderItem& item)
+{
+	renderItems.push_back(item);
 }
 
 HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
@@ -537,7 +560,6 @@ std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t si
 	return data;
 }
 
-
 void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
@@ -865,9 +887,13 @@ HTexture RenderContext::GetTexture(const char* name)
 	return HTexture();
 }
 
-void RenderContext::SetInlineConstants(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)
+void RenderContext::SetInlineConstantsRaw(HCommandList commandList,
+	UINT num32BitValues,
+	const void* data,
+	UINT slot) const
 {
-	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRoot32BitConstants(slot, numOfConstants, data, 0);
+	commandLists[commandList.Index()]->GetCommandList()
+		->SetGraphicsRoot32BitConstants(slot, num32BitValues, data, 0);
 }
 
 void RenderContext::SetInlineConstantsUAV(HCommandList commandList, UINT numOfConstants, void* data, UINT slot)

@@ -8,6 +8,10 @@
 
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
+class IGame;
+class RawInputService;
+class SceneService;
+
 class Engine
 {
 public:
@@ -18,12 +22,17 @@ public:
 	void LoadAssets(GameObjects gameObjects, std::filesystem::path currentPath);
 	void ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName);
 	void Tick();
-	void Run();
+	void Run(IGame& game);
 	void ProcessSingleFrame();
 	void LoadSceneAssets(std::string sceneName);
 	void UnloadSceneAssets();
 	void ChangeState(IEngineState* newState);
 	void ProcessGlobalCommands();
+	std::string GetStartupSceneName() const { return startupSceneName; }
 private:
+	IGame* game = nullptr;
 	IEngineState* currentState = nullptr;
+	std::string startupSceneName;
+	RawInputService* rawInputService = nullptr;
+	SceneService* sceneService = nullptr;
 };
