@@ -13,24 +13,31 @@ public:
 		this->services = services;
 	}
 
-	virtual void OnUpdate(float dtSeconds) override
+	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
+		const float t = static_cast<float>(frameTime.time); // seconds (scaled)
+		// If you want it to keep oscillating even when paused/slowmo, use frameTime.unscaledTime.
+
 		auto earth = services.scene->FindEntityByName("Earth_Mesh");
-		auto rot_earth = services.scene->GetRotationEuler(earth);
-		rot_earth.y += 1.0f;
-		services.scene->SetRotationEuler(earth, rot_earth);
 
-		auto moon = services.scene->FindEntityByName("Moon_Mesh");
-		auto rot_moon = services.scene->GetRotationEuler(moon);
-		rot_moon.y += 0.25f;
-		services.scene->SetScale(moon, { 0.5f, 0.5f, 0.5f });
-		services.scene->SetRotationEuler(moon, rot_moon);
+		// Parameters
+		const float amplitudeDeg = 180.0f;            // swing size: +/- 45°
+		const float cyclesPerSec = 0.10f;            // 0.10 Hz => 10 seconds per full cycle
+		const float omega = 2.0f * 3.14159265f * cyclesPerSec;
 
-		auto mars = services.scene->FindEntityByName("Mars_Mesh");
-		auto rot_mars = services.scene->GetRotationEuler(mars);
-		rot_mars.y += 0.25f;
-		services.scene->SetRotationEuler(mars, rot_mars);
+		// Baseline/origin yaw (choose one):
+		// 1) Fixed baseline:
+		const float baselineYaw = 0.0f;
+		// 2) Or capture initial yaw once and keep it (recommended). See note below.
+
+		Vec3 rot = services.scene->GetRotationEuler(earth);
+		rot.y = baselineYaw + amplitudeDeg * std::sin(omega * t);
+		services.scene->SetRotationEuler(earth, rot);
+
+		// ...moon/mars as before (dt-based constant spin), or also oscillate them
 	}
+
+
 
 	virtual void OnShutdown() override
 	{
