@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "FrameTime.h"
 
 class IScene;
 class IInput;
@@ -44,7 +45,7 @@ public:
 
       // Called every frame.
       // dtSeconds is the time since the previous frame.
-      virtual void OnUpdate(float dtSeconds) = 0;
+      virtual void OnUpdate(const FrameTime& frameTime) = 0;
 
       // Called once right before engine shutdown (or when exiting to another app/scene).
       virtual void OnShutdown() = 0;

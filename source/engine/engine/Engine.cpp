@@ -17,6 +17,7 @@
 #include "SceneService.h"
 #include "IInput.h"
 #include "IScene.h"
+#include "TimeSystem.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -75,6 +76,10 @@ void Engine::Initialize()
 	};
 
 	game->OnInit(services);
+
+	timeSystem = new TimeSystem();
+	timeSystem->SetMaxDeltaSeconds(0.1);
+	timeSystem->SetTimeScale(1.0);
 }
 
 void Engine::CreateRenderResources()
@@ -221,8 +226,6 @@ void Engine::Run(IGame& game)
 
 void Engine::ProcessSingleFrame()
 {
-	game->OnUpdate(1.0f / 60.0f);
-
 	MSG msg{ 0 };
 	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
@@ -235,6 +238,10 @@ void Engine::ProcessSingleFrame()
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	const FrameTime& frameTime = timeSystem->Tick();
+	game->OnUpdate(frameTime);
+
 	Tick();
 	winMessageSubject.RunPostFrame();
 }
