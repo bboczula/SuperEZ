@@ -2,6 +2,8 @@
 #include "../engine/engine/IGame.h"
 #include "../engine/engine/IInput.h"
 #include "../engine/engine/IScene.h"
+#include "../engine/engine/SceneService.h"
+#include "../engine/engine/Components.h"
 #include <iostream>
 
 class ChessApp final : public IGame
@@ -11,30 +13,43 @@ public:
 	{
 		// Initialization logic here
 		this->services = services;
+
+		Coordinator* coordinator = services.scene->GetCoordinator();
+		auto& transform = coordinator->GetComponent<TransformComponent>(7);
+
+		basePosition[0] = transform.position[0];
+		basePosition[1] = transform.position[1];
+		basePosition[2] = transform.position[2];
 	}
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
-		const float t = static_cast<float>(frameTime.time); // seconds (scaled)
-		// If you want it to keep oscillating even when paused/slowmo, use frameTime.unscaledTime.
+		const float t = static_cast<float>(frameTime.time);
 
-		auto earth = services.scene->FindEntityByName("Earth_Mesh");
+		// 1. Find the Entity ID
+		// Note: You need to implement FindEntityByName in SceneService, 
+		// OR just use ID 2 temporarily since we saw in the logs Earth is Entity 2.
+		Entity moon = 6;
+		Entity earth = 7;
 
-		// Parameters
-		const float amplitudeDeg = 180.0f;            // swing size: +/- 45°
-		const float cyclesPerSec = 0.10f;            // 0.10 Hz => 10 seconds per full cycle
+		// 2. Get the Data Component
+		Coordinator* coordinator = services.scene->GetCoordinator();
+		auto& transform = coordinator->GetComponent<TransformComponent>(earth);
+
+		// 3. Modify the Data directly
+		const float amplitudeDeg = 1.0f;
+		const float cyclesPerSec = 0.5f;
 		const float omega = 2.0f * 3.14159265f * cyclesPerSec;
 
-		// Baseline/origin yaw (choose one):
-		// 1) Fixed baseline:
-		const float baselineYaw = 0.0f;
-		// 2) Or capture initial yaw once and keep it (recommended). See note below.
+		static float phase = 0.0f;
 
-		Vec3 rot = services.scene->GetRotationEuler(earth);
-		rot.y = baselineYaw + amplitudeDeg * std::sin(omega * t);
-		services.scene->SetRotationEuler(earth, rot);
+		phase += omega * t;
+		float yOffset = amplitudeDeg * std::sin(phase);
 
-		// ...moon/mars as before (dt-based constant spin), or also oscillate them
+		transform.position[1] = basePosition[1] + 0.3f * std::sin(omega * t * 2.0f);
+
+		// Handle the moon
+		auto& tr = coordinator->GetComponent<TransformComponent>(moon);
 	}
 
 
@@ -46,10 +61,11 @@ public:
 
 	std::string GetStartupSceneName() const override
 	{
-		return "milkyway"; // corresponds to assets/chess/chess.xml in your scheme
+		return "platform"; // corresponds to assets/chess/chess.xml in your scheme
 	}
 private:
 	EngineServices services;
+	float basePosition[3];
 };
 
 int main(int argc, char *argv[])

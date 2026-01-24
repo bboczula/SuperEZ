@@ -15,9 +15,12 @@
 #include "IGame.h"
 #include "RawInputService.h"
 #include "SceneService.h"
+#include "RenderService.h"
 #include "IInput.h"
 #include "IScene.h"
 #include "TimeSystem.h"
+#include "Components.h"
+#include "ECSTypes.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -53,6 +56,37 @@ Engine::~Engine()
 void Engine::Initialize()
 {
 	OutputDebugString(L"Engine::Initialize()\n");
+
+	// --- 1. ECS INITIALIZATION START ---
+	mCoordinator.Init();
+
+	// Register the components we defined in Step 1
+	// (You MUST register them before using them)
+	mCoordinator.RegisterComponent<TransformComponent>();
+	mCoordinator.RegisterComponent<GeometryComponent>();
+	mCoordinator.RegisterComponent<MaterialComponent>();
+
+	// --- ECS TEST (The "Sanity Check") ---
+	{
+		// A. Create an entity (Should be ID 0)
+		Entity testEntity = mCoordinator.CreateEntity();
+
+		// B. Add Data to it
+		mCoordinator.AddComponent(testEntity, TransformComponent{
+		    {0.0f, 10.0f, 0.0f},  // Pos
+		    {0.0f, 0.0f, 0.0f},   // Rot
+		    {1.0f, 1.0f, 1.0f}    // Scale
+			});
+
+		// C. Verify data is actually there
+		TransformComponent& t = mCoordinator.GetComponent<TransformComponent>(testEntity);
+
+		char buffer[256];
+		sprintf_s(buffer, "ECS TEST: Created Entity %d with Pos Y: %.2f\n", testEntity, t.position[1]);
+		OutputDebugStringA(buffer); // Look for this in your Output Window!
+	}
+	// --- ECS INITIALIZATION END ---
+
 	rawInput.Initialize();
 	imGuiHandler.Initialize();
 	winMessageSubject.Subscribe(&imGuiHandler);
@@ -65,17 +99,8 @@ void Engine::Initialize()
 
 	// Prepare GameServices
 	rawInputService = new RawInputService(rawInput);
-	sceneService = new SceneService(renderContext);
-	EngineServices services
-	{
-		.scene = sceneService,
-		.input = rawInputService,
-		.camera = nullptr,
-		.picker = nullptr,
-		.render = &renderContext
-	};
-
-	game->OnInit(services);
+	sceneService = new SceneService(renderContext, &mCoordinator);
+	renderService = new RenderService();
 
 	timeSystem = new TimeSystem();
 	timeSystem->SetMaxDeltaSeconds(0.1);
@@ -161,8 +186,19 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 
 		renderContext.CreateRenderItem(item);
 
-
+		// Create the entity in the ECS
+		renderService->CreateEntity(mCoordinator, id);
 	}
+
+	EngineServices services
+	{
+		.scene = sceneService,
+		.input = rawInputService,
+		.camera = nullptr,
+		.picker = nullptr,
+		.render = renderService
+	};
+	game->OnInit(services);
 }
 
 void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName)
@@ -241,6 +277,8 @@ void Engine::ProcessSingleFrame()
 
 	const FrameTime& frameTime = timeSystem->Tick();
 	game->OnUpdate(frameTime);
+
+	renderService->Update(mCoordinator);
 
 	Tick();
 	winMessageSubject.RunPostFrame();

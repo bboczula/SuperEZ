@@ -5,6 +5,7 @@
 #include <string>
 
 #include "states/IEngineState.h"
+#include "Coordinator.h"
 
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
@@ -12,6 +13,7 @@ class IGame;
 class RawInputService;
 class SceneService;
 class TimeSystem;
+class RenderService;
 
 class Engine
 {
@@ -37,4 +39,6 @@ private:
 	RawInputService* rawInputService = nullptr;
 	SceneService* sceneService = nullptr;
 	TimeSystem* timeSystem = nullptr;
+	Coordinator mCoordinator;
+	RenderService* renderService = nullptr;
 };

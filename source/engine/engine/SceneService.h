@@ -2,6 +2,7 @@
 
 #include "IScene.h"
 #include "../renderer/RenderContext.h"
+#include "Coordinator.h"
 
 #include <cstring>   // strcmp
 #include <string>
@@ -9,11 +10,11 @@
 class SceneService final : public IScene
 {
 public:
-      explicit SceneService(RenderContext& rc)
-            : renderContext(rc)
+      explicit SceneService(RenderContext& rc, Coordinator* coordinator)
+            : renderContext(rc), coordinator(coordinator)
       {
       }
-
+      Coordinator* GetCoordinator() { return coordinator; }
       // IScene
       EntityId FindEntityByName(const std::string& name) const override;
       Vec3 GetPosition(EntityId id) const override;
@@ -24,6 +25,7 @@ public:
 	void SetScale(EntityId id, Vec3 scale) override;
 private:
       RenderContext& renderContext;
+      Coordinator* coordinator;
 
       // Helper: read translation from row-major matrix (SimpleMath convention)
       static Vec3 ExtractTranslation(const DirectX::SimpleMath::Matrix& m)

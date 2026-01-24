@@ -131,6 +131,8 @@ public:
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 	void Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ);
+	// A huuuuge hack...
+	std::vector<RenderItem> renderItems;
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
@@ -150,7 +152,6 @@ private:
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
-	std::vector<RenderItem> renderItems;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;
