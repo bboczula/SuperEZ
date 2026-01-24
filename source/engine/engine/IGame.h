@@ -5,7 +5,7 @@
 class SceneService;
 class IInput;
 class Picker;
-class RenderContext;
+class RenderService;
 class Camera;
 
 struct EngineServices
@@ -27,7 +27,7 @@ struct EngineServices
       Picker* picker = nullptr;
 
       // Rendering interface (only if game needs to spawn / modify renderables)
-      RenderContext* render = nullptr;
+      RenderService* render = nullptr;
 };
 
 class IGame

@@ -15,6 +15,7 @@
 #include "IGame.h"
 #include "RawInputService.h"
 #include "SceneService.h"
+#include "RenderService.h"
 #include "IInput.h"
 #include "IScene.h"
 #include "TimeSystem.h"
@@ -62,7 +63,8 @@ void Engine::Initialize()
 	// Register the components we defined in Step 1
 	// (You MUST register them before using them)
 	mCoordinator.RegisterComponent<TransformComponent>();
-	mCoordinator.RegisterComponent<MeshComponent>();
+	mCoordinator.RegisterComponent<GeometryComponent>();
+	mCoordinator.RegisterComponent<MaterialComponent>();
 
 	// --- ECS TEST (The "Sanity Check") ---
 	{
@@ -98,13 +100,14 @@ void Engine::Initialize()
 	// Prepare GameServices
 	rawInputService = new RawInputService(rawInput);
 	sceneService = new SceneService(renderContext, &mCoordinator);
+	renderService = new RenderService();
 	EngineServices services
 	{
 		.scene = sceneService,
 		.input = rawInputService,
 		.camera = nullptr,
 		.picker = nullptr,
-		.render = &renderContext
+		.render = renderService
 	};
 
 	game->OnInit(services);
@@ -193,26 +196,8 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 
 		renderContext.CreateRenderItem(item);
 
-		// --- NEW ECS CODE ---
-    // 1. Create the Entity representation of this object
-		Entity newEntity = mCoordinator.CreateEntity();
-
-		// 2. Add Transform (Default to 0,0,0 for now)
-		mCoordinator.AddComponent(newEntity, TransformComponent{
-		    {0.0f, 0.0f, 0.0f},
-		    {0.0f, 0.0f, 0.0f},
-		    {1.0f, 1.0f, 1.0f}
-			});
-
-		// 3. Add Mesh Component
-		mCoordinator.AddComponent(newEntity, MeshComponent{
-		    meshName
-			});
-
-		// Debug log
-		char buffer[256];
-		sprintf_s(buffer, "ECS: Created Entity %d for Mesh: %s\n", newEntity, meshName.c_str());
-		OutputDebugStringA(buffer);
+		// Create the entity in the ECS
+		renderService->CreateEntity(mCoordinator, id);
 	}
 }
 
@@ -293,40 +278,7 @@ void Engine::ProcessSingleFrame()
 	const FrameTime& frameTime = timeSystem->Tick();
 	game->OnUpdate(frameTime);
 
-	// --- NEW: THE SYNC BRIDGE ---
-    // Iterate through all entities and copy ECS Transform -> RenderItem Position
-    // This is temporary until we write a real RenderSystem!
-	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
-	{
-		// Check if entity has both components (simplest way for now)
-		// In a real system, we'd iterate the System's list, not 0 to MAX.
-		Signature sig = mCoordinator.GetEntityManager()->GetSignature(entity);
-
-		// Let's assume Bit 0 = Transform, Bit 1 = Mesh (Check your registration order!)
-		bool hasTransform = sig.test(mCoordinator.GetComponentType<TransformComponent>());
-
-		if (hasTransform)
-		{
-			auto& t = mCoordinator.GetComponent<TransformComponent>(entity);
-
-			// Hack: We assume Entity ID matches RenderItem ID for this test.
-			// (In LoadAssets we did: Entity 1 = RenderItem 1, Entity 2 = RenderItem 2)
-			if (entity < renderContext.GetNumOfMeshes() + 1) // Safety check
-			{
-				// RenderItems are 0-indexed, Entities started at 0 but we might have offset logic
-				// Just trying to map Entity ID -> RenderItem Index here
-				size_t renderItemIndex = entity - 1; // Entities were 1, 2, 3... RenderItems 0, 1, 2...
-
-				// Update the RenderItem directly
-				if (renderItemIndex < renderContext.renderItems.size()) {
-					renderContext.renderItems[renderItemIndex].position = { t.position[0], t.position[1], t.position[2] };
-					// You might need to add rotation support to your RenderItem struct if it lacks it!
-					renderContext.renderItems[renderItemIndex].rotation = { t.rotation[0], t.rotation[1], t.rotation[2] };
-				}
-			}
-		}
-	}
-	// -----------------------------
+	renderService->Update(mCoordinator);
 
 	Tick();
 	winMessageSubject.RunPostFrame();

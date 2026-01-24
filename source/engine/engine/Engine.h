@@ -13,6 +13,7 @@ class IGame;
 class RawInputService;
 class SceneService;
 class TimeSystem;
+class RenderService;
 
 class Engine
 {
@@ -39,4 +40,5 @@ private:
 	SceneService* sceneService = nullptr;
 	TimeSystem* timeSystem = nullptr;
 	Coordinator mCoordinator;
+	RenderService* renderService = nullptr;
 };

@@ -22,6 +22,7 @@ public:
 		// 1. Find the Entity ID
 		// Note: You need to implement FindEntityByName in SceneService, 
 		// OR just use ID 2 temporarily since we saw in the logs Earth is Entity 2.
+		Entity moon = 1;
 		Entity earth = 2;
 
 		// 2. Get the Data Component
@@ -35,6 +36,10 @@ public:
 
 		// We are writing straight to memory now!
 		transform.rotation[1] = amplitudeDeg * std::sin(omega * t); // Rotate Y
+
+		// Handle the moon
+		auto& moonTransform = coordinator->GetComponent<TransformComponent>(moon);
+		moonTransform.position[2] = moonTransform.position[2] + 0.1f * std::sin(omega * t * 2.0f); // Scale X
 	}
 
 
