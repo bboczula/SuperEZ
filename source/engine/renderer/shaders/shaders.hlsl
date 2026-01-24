@@ -3,12 +3,12 @@ Texture2D myTexture : register(t0);
 
 cbuffer CameraData : register(b0)
 {
-    float4x4 viewProjection;
+    row_major float4x4 viewProjection;
 };
 
 cbuffer ObjectData : register(b1)
 {
-    float4x4 world;
+    row_major float4x4 world;
 };
 
 struct VSInput
@@ -29,7 +29,7 @@ PSInput VSMain(VSInput input)
 {
     PSInput o;
 
-    float4 p = float4(input.position.xyz, 1.0f); // <-- guaranteed w=1
+    float4 p = float4(input.position.xyz, 1.0f);
     float4 worldPos = mul(p, world);
     o.position = mul(worldPos, viewProjection);
 

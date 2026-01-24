@@ -103,5 +103,5 @@ void Camera::CalculateViewProjectionMatrix()
 	}
 	view = DirectX::SimpleMath::Matrix::CreateLookAt(position, position + forward, up);
 	viewProjection = view * projection;
-	viewProjection = viewProjection.Transpose();
+	//viewProjection = viewProjection.Transpose();
 }

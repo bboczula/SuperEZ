@@ -101,16 +101,6 @@ void Engine::Initialize()
 	rawInputService = new RawInputService(rawInput);
 	sceneService = new SceneService(renderContext, &mCoordinator);
 	renderService = new RenderService();
-	EngineServices services
-	{
-		.scene = sceneService,
-		.input = rawInputService,
-		.camera = nullptr,
-		.picker = nullptr,
-		.render = renderService
-	};
-
-	game->OnInit(services);
 
 	timeSystem = new TimeSystem();
 	timeSystem->SetMaxDeltaSeconds(0.1);
@@ -199,6 +189,16 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 		// Create the entity in the ECS
 		renderService->CreateEntity(mCoordinator, id);
 	}
+
+	EngineServices services
+	{
+		.scene = sceneService,
+		.input = rawInputService,
+		.camera = nullptr,
+		.picker = nullptr,
+		.render = renderService
+	};
+	game->OnInit(services);
 }
 
 void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName)
