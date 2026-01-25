@@ -765,9 +765,9 @@ UINT RenderContext::CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FOR
 	return offset;
 }
 
-void RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
+void RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation)
 {
-	cameras.push_back(new Camera(aspectRatio, position));
+	cameras.push_back(new Camera(aspectRatio, position, rotation));
 }
 
 void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)

@@ -13,7 +13,7 @@ public:
 		PERSPECTIVE,
 		ORTHOGRAPHIC
 	};
-	Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position);
+	Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	DirectX::SimpleMath::Matrix* GetViewProjectionMatrixPtr();
 	DirectX::SimpleMath::Matrix ViewProjecttion();
 	void SetPosition(DirectX::SimpleMath::Vector3 position);

@@ -1,8 +1,8 @@
 #include "Camera.h"
 
-Camera::Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
+Camera::Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation)
 	: position(position)
-	, rotation(0.0f, 0.0f, 0.0f)
+	, rotation(rotation)
 	, aspectRatio(aspectRatio)
 	, width(1.0f)
 	, height(1.0f)

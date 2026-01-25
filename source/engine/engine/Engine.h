@@ -12,6 +12,7 @@ using GameObjects = std::vector<std::pair<std::string, std::string>>;
 struct CameraData
 {
 	float position[3];
+	float rotation[3];
 };
 
 class IGame;

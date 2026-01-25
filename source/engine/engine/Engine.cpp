@@ -131,7 +131,8 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 
 	renderContext.CreateCamera(
 		static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()),
-		DirectX::SimpleMath::Vector3(cameraData.position[0], cameraData.position[1], cameraData.position[2]));
+		DirectX::SimpleMath::Vector3(cameraData.position[0], cameraData.position[1], cameraData.position[2]),
+		DirectX::SimpleMath::Vector3(cameraData.rotation[0], cameraData.rotation[1], cameraData.rotation[2]));
 
 	for (const auto& [meshName, textureName] : gameObjects)
 	{
@@ -240,10 +241,11 @@ void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, std:
 
 	tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
 	assert(cameraElem != nullptr, "Camera element not found in scene XML file!");
+	const char* name = cameraElem->Attribute("name");
+
 	tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
 	if (cameraPosition)
 	{
-		const char* name = cameraElem->Attribute("name");
 		float x = cameraPosition->FloatAttribute("x", 0.0f);
 		float y = cameraPosition->FloatAttribute("y", 0.0f);
 		float z = cameraPosition->FloatAttribute("z", 0.0f);
@@ -251,6 +253,18 @@ void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, std:
 		cameraData.position[0] = x;
 		cameraData.position[1] = y;
 		cameraData.position[2] = z;
+	}
+
+	tinyxml2::XMLElement* cameraRotation = cameraElem->FirstChildElement("Rotation");
+	if (cameraRotation)
+	{
+		float pitch = cameraRotation->FloatAttribute("pitch", 0.0f);
+		float yaw = cameraRotation->FloatAttribute("yaw", 0.0f);
+		float roll = cameraRotation->FloatAttribute("roll", 0.0f);
+		std::cout << "[Camera] name: " << name << ", rotation: " << pitch << ", " << yaw << ", " << roll << ")\n";
+		cameraData.rotation[0] = pitch;
+		cameraData.rotation[1] = yaw;
+		cameraData.rotation[2] = roll;
 	}
 }
 
