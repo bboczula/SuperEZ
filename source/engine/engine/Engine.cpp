@@ -233,6 +233,17 @@ void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& curre
 
 		gameObjects.emplace_back(std::make_pair(mesh ? mesh : "default_mesh", texture ? texture : "default_texture"));
 	}
+
+	tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
+	tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
+	if (cameraPosition)
+	{
+		const char* name = cameraElem->Attribute("name");
+		float x = cameraPosition->FloatAttribute("x", 0.0f);
+		float y = cameraPosition->FloatAttribute("y", 0.0f);
+		float z = cameraPosition->FloatAttribute("z", 0.0f);
+		std::cout << "[Camera] name: " << name << ", position: " << x << ", " << y << ", " << z << ")\n";
+	}
 }
 
 void Engine::Tick()
