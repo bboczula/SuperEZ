@@ -20,7 +20,7 @@ Camera::Camera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX
 	const auto rotYaw = DirectX::SimpleMath::Matrix::CreateRotationY(rotation.y);
 
 	// Choose the same order you use in FreeCamera::Rotate (make them match)
-	const auto rot = rotYaw * rotPitch;
+	const auto rot = rotPitch * rotYaw;
 
 	forward = DirectX::SimpleMath::Vector3::Transform(DEFAULT_FORWARD, rot);
 	forward.Normalize();
