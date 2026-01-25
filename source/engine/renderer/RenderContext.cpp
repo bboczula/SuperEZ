@@ -27,9 +27,6 @@ extern DeviceContext deviceContext;
 RenderContext::RenderContext()
 {
 	OutputDebugString(L"RenderContext Constructor\n");
-
-	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	cameras.push_back(new Camera(aspectRatio, DirectX::SimpleMath::Vector3(0.1f, 5.0f, 4.0f)));
 }
 
 RenderContext::~RenderContext()
@@ -766,6 +763,11 @@ UINT RenderContext::CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FOR
 		descriptorHandle);
 
 	return offset;
+}
+
+void RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position)
+{
+	cameras.push_back(new Camera(aspectRatio, position));
 }
 
 void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)

@@ -31,6 +31,7 @@ public:
 	void UnloadSceneAssets();
 	void ChangeState(IEngineState* newState);
 	void ProcessGlobalCommands();
+	void PostLoadAssets();
 	std::string GetStartupSceneName() const { return startupSceneName; }
 private:
 	IGame* game = nullptr;

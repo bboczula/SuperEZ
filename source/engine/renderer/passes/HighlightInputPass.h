@@ -15,6 +15,7 @@ public:
     ~HighlightInputPass();
 
     void ConfigurePipelineState() override;
+    void PostAssetLoad() override;
     void Initialize() override;
     void Update() override;
     void Execute() override;

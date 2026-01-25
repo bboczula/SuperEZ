@@ -10,6 +10,7 @@ public:
 	BlitPass();
 	~BlitPass();
 	void ConfigurePipelineState() override;
+	void PostAssetLoad() override;
 	void Initialize() override;
 	void Execute() override;
 	void Allocate(DeviceContext* deviceContext) override;

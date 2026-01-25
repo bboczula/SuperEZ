@@ -26,6 +26,10 @@ void ImGuiPass::ConfigurePipelineState()
 {
 }
 
+void ImGuiPass::PostAssetLoad()
+{
+}
+
 void ImGuiPass::Initialize()
 {
 	// Create the custom Render Target for ImGui

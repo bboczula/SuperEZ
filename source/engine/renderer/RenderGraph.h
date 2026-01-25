@@ -8,6 +8,7 @@ public:
 	RenderGraph();
 	void Execute();
 	void Initialize();
+	void PostAssetLoad();
 private:
 	std::vector<RenderPass*> renderPasses;
 };

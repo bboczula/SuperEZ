@@ -129,6 +129,10 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 			OutputDebugStringW(L"\n");
 		};
 
+	renderContext.CreateCamera(
+		static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()),
+		DirectX::SimpleMath::Vector3(0.0f, 0.0f, -5.0f));
+
 	for (const auto& [meshName, textureName] : gameObjects)
 	{
 		auto TryGetMesh = [&](AssetSuite::MeshOutputFormat format) -> bool
@@ -235,6 +239,7 @@ void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& curre
 	}
 
 	tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
+	assert(cameraElem != nullptr, "Camera element not found in scene XML file!");
 	tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
 	if (cameraPosition)
 	{
@@ -363,4 +368,9 @@ void Engine::ProcessGlobalCommands()
 
 		commands.pop();
 	}
+}
+
+void Engine::PostLoadAssets()
+{
+	renderGraph.PostAssetLoad();
 }
