@@ -52,6 +52,12 @@ inline std::ostream& operator<<(std::ostream& os, const CameraData& c)
 	return os << "CameraData { " << "position: " << c.position << ", " << "rotation: " << c.rotation << " }";
 }
 
+inline std::ostream& operator<<(std::ostream& os, const GameObjectData& c)
+{
+	return os << "GameObjectData { " << "name: " << c.name << ", " << "mesh: "
+		<< c.meshName << ", " << "texture: " << c.textureName << ", " << "position: "
+		<< c.position << ", " << "rotation: " << c.rotation << ", " << "scale: " << c.scale << " }";
+}
 
 Engine::Engine()
 {
@@ -144,8 +150,11 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 	renderContext.CreateCamera(aspectRatio, cameraData.position, cameraData.rotation);
 
-	for (const auto& [meshName, textureName] : gameObjects)
+	for (const auto& gameObject : gameObjects)
 	{
+		const auto& meshName = gameObject.meshName;
+		const auto& textureName = gameObject.textureName;
+
 		auto TryGetMesh = [&](AssetSuite::MeshOutputFormat format) -> bool
 		{
 			auto errorCode = assetManager.MeshGet(meshName.c_str(), format, meshOutput, meshDescriptor);
@@ -194,15 +203,17 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 
 		RenderItem item{};
 		item.id = id;
-		item.position = { 0.0f, 0.0f, 0.0f };
+		item.position = gameObject.position;
+		item.rotation = gameObject.rotation;
+		item.scale = gameObject.scale;
 		item.mesh = HMesh(id - 1);
 		item.texture = HTexture(id - 1);
-		strncpy_s(item.name, meshName.c_str(), _TRUNCATE);
+		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
 
 		renderContext.CreateRenderItem(item);
 
 		// Create the entity in the ECS
-		renderService->CreateEntity(mCoordinator, id, item.name);
+		renderService->CreateEntity(mCoordinator, item);
 	}
 
 	EngineServices services
@@ -268,11 +279,31 @@ void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameOb
 		const char* mesh = go->Attribute("mesh");
 		const char* texture = go->Attribute("texture");
 
-		gameObjects.emplace_back(std::make_pair(mesh ? mesh : "default_mesh", texture ? texture : "default_texture"));
+		GameObjectData gameObject;
+		gameObject.name = name ? name : "default_name";
+		gameObject.meshName = mesh ? mesh : "default_mesh";
+		gameObject.textureName = texture ? texture : "default_texture";
 
-		std::cout << "[GameObject] name: " << (name ? name : "none")
-			<< ", mesh: " << (mesh ? mesh : "none")
-			<< ", texture: " << (texture ? texture : "none") << "\n";
+		tinyxml2::XMLElement* position = go->FirstChildElement("Position");
+		assert(position != nullptr, "GameObject position element not found in scene XML file!");
+		gameObject.position.x = position->FloatAttribute("x", 0.0f);
+		gameObject.position.y = position->FloatAttribute("y", 0.0f);
+		gameObject.position.z = position->FloatAttribute("z", 0.0f);
+
+		tinyxml2::XMLElement* rotation = go->FirstChildElement("Rotation");
+		assert(rotation != nullptr, "GameObject rotation element not found in scene XML file!");
+		gameObject.rotation.x = rotation->FloatAttribute("pitch", 0.0f);
+		gameObject.rotation.y = rotation->FloatAttribute("yaw", 0.0f);
+		gameObject.rotation.z = rotation->FloatAttribute("roll", 0.0f);
+
+		tinyxml2::XMLElement* scale = go->FirstChildElement("Scale");
+		assert(scale != nullptr, "GameObject scale element not found in scene XML file!");
+		gameObject.scale.x = scale->FloatAttribute("x", 1.0f);
+		gameObject.scale.y = scale->FloatAttribute("y", 1.0f);
+		gameObject.scale.z = scale->FloatAttribute("z", 1.0f);
+
+		gameObjects.emplace_back(gameObject);
+		std::cout << "[GameObject] " << gameObject << "\n";
 	}
 }
 

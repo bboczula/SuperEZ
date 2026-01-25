@@ -4,7 +4,7 @@
 
 extern RenderContext renderContext;
 
-void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id, std::string name)
+void RenderService::CreateEntity(Coordinator& coordinator, RenderItem& renderItem)
 {
 	// --- NEW ECS CODE ---
 		// 1. Create the Entity representation of this object
@@ -12,15 +12,15 @@ void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id, std:
 
 	// 2. Add Transform (Default to 0,0,0 for now)
 	coordinator.AddComponent(newEntity, TransformComponent{
-	    {0.0f, 0.0f, 0.0f},
-	    {0.0f, 0.0f, 0.0f},
-	    {1.0f, 1.0f, 1.0f}
+	    {renderItem.position.x, renderItem.position.y, renderItem.position.z},
+	    {renderItem.rotation.x, renderItem.rotation.x, renderItem.rotation.x},
+	    {renderItem.scale.x, renderItem.scale.x, renderItem.scale.x}
 		});
 
 	// 3. Add Geometry Component
-	coordinator.AddComponent(newEntity, GeometryComponent{ HMesh(id - 1) });
-	coordinator.AddComponent(newEntity, MaterialComponent{ HTexture(id - 1) });
-	coordinator.AddComponent(newEntity, InfoComponent{ name });
+	coordinator.AddComponent(newEntity, GeometryComponent{ renderItem.mesh });
+	coordinator.AddComponent(newEntity, MaterialComponent{ renderItem.texture });
+	coordinator.AddComponent(newEntity, InfoComponent{ renderItem.name });
 }
 
 void RenderService::Update(Coordinator& coordinator)

@@ -13,13 +13,23 @@ public:
 	{
 		// Initialization logic here
 		this->services = services;
+
+		for (int i = 0; i < 15; i++)
+		{
+			EntityId pieceId = services.scene->FindEntityByName("Piece" + std::to_string(i + 1));
+			initialPositions[i] = services.scene->GetPosition(pieceId);
+		}
+		initialPositions[15] = Vec3{ initialPositions[11].x, 0.0f, initialPositions[14].z };
 	}
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
-		EntityId piece1Id = services.scene->FindEntityByName("Piece1_Mesh");
-		EntityId piece2Id = services.scene->FindEntityByName("Piece2_Mesh");
-		std::cout << "1: " << piece1Id << ", 2: " << piece2Id << "\n";
+		EntityId pieceId = services.scene->FindEntityByName("Piece15");
+		Coordinator* coordinator = services.scene->GetCoordinator();
+		auto& transform = coordinator->GetComponent<TransformComponent>(pieceId);
+		transform.position[0] = initialPositions[15].x;
+		transform.position[1] = initialPositions[15].y;
+		transform.position[2] = initialPositions[15].z;
 	}
 
 
@@ -35,6 +45,7 @@ public:
 	}
 private:
 	EngineServices services;
+	std::array<Vec3, 16> initialPositions;
 };
 
 int main(int argc, char *argv[])
