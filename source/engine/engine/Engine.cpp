@@ -11,7 +11,6 @@
 #include "input/ImGuiHandler.h"
 #include "input/CursorInput.h"
 #include "../../externals/AssetSuite/inc/AssetSuite.h"
-#include "../../externals/TinyXML2/tinyxml2.h"
 #include "IGame.h"
 #include "RawInputService.h"
 #include "SceneService.h"
@@ -41,6 +40,18 @@ Subject<WinMessageEvent> winMessageSubject;
 RawInput rawInput;
 CursorInput cursorInput;
 ImGuiHandler imGuiHandler;
+
+// Utility functions for logging
+inline std::ostream& operator<<(std::ostream& os, const DirectX::SimpleMath::Vector3& v)
+{
+	return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+}
+
+inline std::ostream& operator<<(std::ostream& os, const CameraData& c)
+{
+	return os << "CameraData { " << "position: " << c.position << ", " << "rotation: " << c.rotation << " }";
+}
+
 
 Engine::Engine()
 {
@@ -129,10 +140,8 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 			OutputDebugStringW(L"\n");
 		};
 
-	renderContext.CreateCamera(
-		static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()),
-		DirectX::SimpleMath::Vector3(cameraData.position[0], cameraData.position[1], cameraData.position[2]),
-		DirectX::SimpleMath::Vector3(cameraData.rotation[0], cameraData.rotation[1], cameraData.rotation[2]));
+	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
+	renderContext.CreateCamera(aspectRatio, cameraData.position, cameraData.rotation);
 
 	for (const auto& [meshName, textureName] : gameObjects)
 	{
@@ -206,65 +215,63 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 	game->OnInit(services);
 }
 
-void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, std::filesystem::path& currentPath, const char* sceneName)
+void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, SceneData& sceneData)
 {
-	currentPath.append(sceneName);
-	std::filesystem::path scenePath = currentPath / (std::string(sceneName) + ".xml");
+	sceneData.currentPath.append(sceneData.sceneName);
+	std::filesystem::path scenePath = sceneData.currentPath / (std::string(sceneData.sceneName) + ".xml");
 
-	tinyxml2::XMLDocument doc;
-	tinyxml2::XMLError xmlError = doc.LoadFile(scenePath.string().c_str());
-	assert(xmlError == tinyxml2::XML_SUCCESS, "Failed to load sponza.xml");
+	tinyxml2::XMLDocument document;
+	tinyxml2::XMLError xmlError = document.LoadFile(scenePath.string().c_str());
+	assert(xmlError == tinyxml2::XML_SUCCESS, "Failed to load the scene XML file!");
 
-	tinyxml2::XMLElement* scene = doc.FirstChildElement("Scene");
-	assert(scene != nullptr, "Scene element not found in sponza.xml");
+	tinyxml2::XMLElement* scene = document.FirstChildElement("Scene");
+	assert(scene != nullptr, "Scene element not found in the scene XML file!");
 
-	tinyxml2::XMLElement* meshLib = scene->FirstChildElement("MeshLibrary");
-	if (meshLib)
-	{
-		const char* meshFile = meshLib->Attribute("file");
-		std::cout << "Mesh file: " << (meshFile ? meshFile : "none") << "\n";
-		currentPath.append(meshFile);
-	}
+	tinyxml2::XMLElement* geometryLibrary = scene->FirstChildElement("MeshLibrary");
+	assert(geometryLibrary != nullptr, "MeshLibrary element not found in the scene XML file!");
 
+	const char* geometryLibraryFile = geometryLibrary->Attribute("file");
+	assert(geometryLibraryFile != nullptr, "GeometryLibrary 'file' attribute not found in the scene XML file!");
+	sceneData.currentPath.append(geometryLibraryFile);
+
+	ProcessGameObjects(scene, gameObjects);
+	ProcessCamera(scene, cameraData);
+}
+
+void Engine::ProcessCamera(tinyxml2::XMLElement* scene, CameraData& cameraData)
+{
+	tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
+	assert(cameraElem != nullptr, "Camera element not found in scene XML file!");
+	const char* name = cameraElem->Attribute("name");
+
+	tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
+	assert(cameraPosition != nullptr, "Camera position element not found in scene XML file!");
+	cameraData.position.x = cameraPosition->FloatAttribute("x", 0.0f);
+	cameraData.position.y = cameraPosition->FloatAttribute("y", 0.0f);
+	cameraData.position.z = cameraPosition->FloatAttribute("z", 0.0f);
+
+	tinyxml2::XMLElement* cameraRotation = cameraElem->FirstChildElement("Rotation");
+	assert(cameraRotation != nullptr, "Camera rotation element not found in scene XML file!");
+	cameraData.rotation.x = cameraRotation->FloatAttribute("pitch", 0.0f);
+	cameraData.rotation.y = cameraRotation->FloatAttribute("yaw", 0.0f);
+	cameraData.rotation.z = cameraRotation->FloatAttribute("roll", 0.0f);
+	
+	std::cout << "[Camera] " << cameraData << "\n";
+}
+
+void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameObjects)
+{
 	for (tinyxml2::XMLElement* go = scene->FirstChildElement("GameObject"); go != nullptr; go = go->NextSiblingElement("GameObject"))
 	{
 		const char* name = go->Attribute("name");
 		const char* mesh = go->Attribute("mesh");
 		const char* texture = go->Attribute("texture");
 
+		gameObjects.emplace_back(std::make_pair(mesh ? mesh : "default_mesh", texture ? texture : "default_texture"));
+
 		std::cout << "[GameObject] name: " << (name ? name : "none")
 			<< ", mesh: " << (mesh ? mesh : "none")
 			<< ", texture: " << (texture ? texture : "none") << "\n";
-
-		gameObjects.emplace_back(std::make_pair(mesh ? mesh : "default_mesh", texture ? texture : "default_texture"));
-	}
-
-	tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
-	assert(cameraElem != nullptr, "Camera element not found in scene XML file!");
-	const char* name = cameraElem->Attribute("name");
-
-	tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
-	if (cameraPosition)
-	{
-		float x = cameraPosition->FloatAttribute("x", 0.0f);
-		float y = cameraPosition->FloatAttribute("y", 0.0f);
-		float z = cameraPosition->FloatAttribute("z", 0.0f);
-		std::cout << "[Camera] name: " << name << ", position: " << x << ", " << y << ", " << z << ")\n";
-		cameraData.position[0] = x;
-		cameraData.position[1] = y;
-		cameraData.position[2] = z;
-	}
-
-	tinyxml2::XMLElement* cameraRotation = cameraElem->FirstChildElement("Rotation");
-	if (cameraRotation)
-	{
-		float pitch = cameraRotation->FloatAttribute("pitch", 0.0f);
-		float yaw = cameraRotation->FloatAttribute("yaw", 0.0f);
-		float roll = cameraRotation->FloatAttribute("roll", 0.0f);
-		std::cout << "[Camera] name: " << name << ", rotation: " << pitch << ", " << yaw << ", " << roll << ")\n";
-		cameraData.rotation[0] = pitch;
-		cameraData.rotation[1] = yaw;
-		cameraData.rotation[2] = roll;
 	}
 }
 
@@ -321,10 +328,13 @@ void Engine::LoadSceneAssets(std::string sceneName)
 {
 	GameObjects gameObjects;
 	CameraData cameraData;
-	std::filesystem::path currentPath = std::filesystem::current_path();
-	currentPath.append("assets");
-	ProcessScene(gameObjects, cameraData, currentPath, sceneName.c_str());
-	LoadAssets(gameObjects, cameraData, currentPath);
+	SceneData sceneData =
+	{
+		std::filesystem::current_path() / "assets",
+		sceneName.c_str()
+	};
+	ProcessScene(gameObjects, cameraData, sceneData);
+	LoadAssets(gameObjects, cameraData, sceneData.currentPath);
 }
 
 void Engine::UnloadSceneAssets()
