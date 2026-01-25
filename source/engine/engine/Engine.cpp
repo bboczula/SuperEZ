@@ -112,7 +112,7 @@ void Engine::CreateRenderResources()
 	// Here we can make engine speciffic allocations
 }
 
-void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPath)
+void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::filesystem::path currentPath)
 {
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
@@ -131,7 +131,7 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 
 	renderContext.CreateCamera(
 		static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()),
-		DirectX::SimpleMath::Vector3(0.0f, 0.0f, -5.0f));
+		DirectX::SimpleMath::Vector3(cameraData.position[0], cameraData.position[1], cameraData.position[2]));
 
 	for (const auto& [meshName, textureName] : gameObjects)
 	{
@@ -205,7 +205,7 @@ void Engine::LoadAssets(GameObjects gameObjects, std::filesystem::path currentPa
 	game->OnInit(services);
 }
 
-void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName)
+void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, std::filesystem::path& currentPath, const char* sceneName)
 {
 	currentPath.append(sceneName);
 	std::filesystem::path scenePath = currentPath / (std::string(sceneName) + ".xml");
@@ -248,6 +248,9 @@ void Engine::ProcessScene(GameObjects& gameObjects, std::filesystem::path& curre
 		float y = cameraPosition->FloatAttribute("y", 0.0f);
 		float z = cameraPosition->FloatAttribute("z", 0.0f);
 		std::cout << "[Camera] name: " << name << ", position: " << x << ", " << y << ", " << z << ")\n";
+		cameraData.position[0] = x;
+		cameraData.position[1] = y;
+		cameraData.position[2] = z;
 	}
 }
 
@@ -303,10 +306,11 @@ void Engine::ProcessSingleFrame()
 void Engine::LoadSceneAssets(std::string sceneName)
 {
 	GameObjects gameObjects;
+	CameraData cameraData;
 	std::filesystem::path currentPath = std::filesystem::current_path();
 	currentPath.append("assets");
-	ProcessScene(gameObjects, currentPath, sceneName.c_str());
-	LoadAssets(gameObjects, currentPath);
+	ProcessScene(gameObjects, cameraData, currentPath, sceneName.c_str());
+	LoadAssets(gameObjects, cameraData, currentPath);
 }
 
 void Engine::UnloadSceneAssets()

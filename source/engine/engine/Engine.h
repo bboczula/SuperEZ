@@ -9,6 +9,11 @@
 
 using GameObjects = std::vector<std::pair<std::string, std::string>>;
 
+struct CameraData
+{
+	float position[3];
+};
+
 class IGame;
 class RawInputService;
 class SceneService;
@@ -22,8 +27,8 @@ public:
 	~Engine();
 	void Initialize();
 	void CreateRenderResources();
-	void LoadAssets(GameObjects gameObjects, std::filesystem::path currentPath);
-	void ProcessScene(GameObjects& gameObjects, std::filesystem::path& currentPath, const char* sceneName);
+	void LoadAssets(GameObjects gameObjects, CameraData cameraData, std::filesystem::path currentPath);
+	void ProcessScene(GameObjects& gameObjects, CameraData& cameraData, std::filesystem::path& currentPath, const char* sceneName);
 	void Tick();
 	void Run(IGame& game);
 	void ProcessSingleFrame();
