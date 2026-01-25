@@ -19,6 +19,7 @@ void LoadAssetsState::Enter(Engine& engine)
 void LoadAssetsState::Exit(Engine& engine)
 {
 	OutputDebugString(L"LoadAssetsState::Exit\n");
+	engine.PostLoadAssets();
 }
 
 void LoadAssetsState::Update(Engine& engine)

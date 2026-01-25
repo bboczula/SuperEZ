@@ -63,6 +63,7 @@ public:
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
+	void CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
 	HTexture GetTexture(HRenderTarget renderTarget);
 	HTexture GetTexture(const char* name);

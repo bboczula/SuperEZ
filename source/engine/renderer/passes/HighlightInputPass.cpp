@@ -38,6 +38,10 @@ void HighlightInputPass::ConfigurePipelineState()
     depthBuffer = renderContext.CreateDepthBuffer();
 }
 
+void HighlightInputPass::PostAssetLoad()
+{
+}
+
 void HighlightInputPass::Initialize()
 {
 }

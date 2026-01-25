@@ -14,6 +14,7 @@ class TestPass : public RenderPass
 public:
 	TestPass();
 	void SetOrthographicProperties(const float aspectRatio);
+	void PostAssetLoad() override;
 	~TestPass();
 	void ConfigurePipelineState() override;
 	void Initialize() override;

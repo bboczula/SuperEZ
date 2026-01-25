@@ -20,7 +20,6 @@ extern RawInput rawInput;
 
 TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Graphics)
 {
-	freeCamera = new FreeCamera(renderContext.GetCamera(0));
 }
 
 void TestPass::SetOrthographicProperties(const float aspectRatio)
@@ -34,6 +33,12 @@ void TestPass::SetOrthographicProperties(const float aspectRatio)
 
 	renderContext.GetCamera(0)->SetWidth(width);
 	renderContext.GetCamera(0)->SetHeight(height);
+}
+
+void TestPass::PostAssetLoad()
+{
+	// Create camera (can't be done in constructor because renderContext is not ready)
+	freeCamera = new FreeCamera(renderContext.GetCamera(0));
 }
 
 TestPass::~TestPass()

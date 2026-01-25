@@ -19,6 +19,10 @@ void BlitPass::ConfigurePipelineState()
 {
 }
 
+void BlitPass::PostAssetLoad()
+{
+}
+
 void BlitPass::Initialize()
 {
 }

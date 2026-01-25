@@ -66,3 +66,11 @@ void RenderGraph::Initialize()
 		renderPass->Initialize();
 	}
 }
+
+void RenderGraph::PostAssetLoad()
+{
+	for (RenderPass* renderPass : renderPasses)
+	{
+		renderPass->PostAssetLoad();
+	}
+}

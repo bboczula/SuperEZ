@@ -31,6 +31,10 @@ void HighlightClearPass::ConfigurePipelineState()
     outputTexture = renderContext.CreateEmptyTexture(viewportWidth, viewportHeight, DXGI_FORMAT_R32_UINT, "HighlightClearTexture", true);
 }
 
+void HighlightClearPass::PostAssetLoad()
+{
+}
+
 void HighlightClearPass::Initialize()
 {
 }

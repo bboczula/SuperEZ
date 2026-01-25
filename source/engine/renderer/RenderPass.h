@@ -19,6 +19,7 @@ public:
 	RenderPass(PCWSTR name, LPCWSTR shaderName, RenderPass::Type type);
 	~RenderPass();
 	virtual void ConfigurePipelineState() = 0;
+	virtual void PostAssetLoad() = 0;
 	void AutomaticInitialize();
 	virtual void Initialize();
 	virtual void Update();

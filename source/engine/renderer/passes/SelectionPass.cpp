@@ -53,6 +53,10 @@ void SelectionPass::ConfigurePipelineState()
 	deviceContext.Flush();
 }
 
+void SelectionPass::PostAssetLoad()
+{
+}
+
 void SelectionPass::Initialize()
 {
 }

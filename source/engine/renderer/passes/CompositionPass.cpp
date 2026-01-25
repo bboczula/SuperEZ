@@ -32,6 +32,10 @@ void CompositionPass::ConfigurePipelineState()
 	outputTexture = renderContext.CreateEmptyTexture(viewportWidth, viewportHeight, DXGI_FORMAT_R8G8B8A8_UNORM, "CompositionTexture", true);
 }
 
+void CompositionPass::PostAssetLoad()
+{
+}
+
 void CompositionPass::Initialize()
 {
 }
