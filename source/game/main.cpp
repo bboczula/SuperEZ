@@ -17,6 +17,9 @@ public:
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
+		EntityId piece1Id = services.scene->FindEntityByName("Piece1_Mesh");
+		EntityId piece2Id = services.scene->FindEntityByName("Piece2_Mesh");
+		std::cout << "1: " << piece1Id << ", 2: " << piece2Id << "\n";
 	}
 
 

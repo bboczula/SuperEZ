@@ -76,6 +76,7 @@ void Engine::Initialize()
 	mCoordinator.RegisterComponent<TransformComponent>();
 	mCoordinator.RegisterComponent<GeometryComponent>();
 	mCoordinator.RegisterComponent<MaterialComponent>();
+	mCoordinator.RegisterComponent<InfoComponent>();
 
 	// --- ECS TEST (The "Sanity Check") ---
 	{
@@ -201,7 +202,7 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 		renderContext.CreateRenderItem(item);
 
 		// Create the entity in the ECS
-		renderService->CreateEntity(mCoordinator, id);
+		renderService->CreateEntity(mCoordinator, id, item.name);
 	}
 
 	EngineServices services

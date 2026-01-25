@@ -22,3 +22,9 @@ struct MaterialComponent
 	HTexture textureHandle;
 	// later we can add color, reflectivity, etc.
 };
+
+// Material to store generic info about entity, like name
+struct InfoComponent
+{
+    std::string name;
+};

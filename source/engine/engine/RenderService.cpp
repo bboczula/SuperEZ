@@ -4,7 +4,7 @@
 
 extern RenderContext renderContext;
 
-void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id)
+void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id, std::string name)
 {
 	// --- NEW ECS CODE ---
 		// 1. Create the Entity representation of this object
@@ -20,6 +20,7 @@ void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id)
 	// 3. Add Geometry Component
 	coordinator.AddComponent(newEntity, GeometryComponent{ HMesh(id - 1) });
 	coordinator.AddComponent(newEntity, MaterialComponent{ HTexture(id - 1) });
+	coordinator.AddComponent(newEntity, InfoComponent{ name });
 }
 
 void RenderService::Update(Coordinator& coordinator)
@@ -30,8 +31,9 @@ void RenderService::Update(Coordinator& coordinator)
 		bool hasTransform = sig.test(coordinator.GetComponentType<TransformComponent>());
 		bool hasGeometry = sig.test(coordinator.GetComponentType<GeometryComponent>());
 		bool hasMaterial = sig.test(coordinator.GetComponentType<MaterialComponent>());
+		bool hasInfo = sig.test(coordinator.GetComponentType<InfoComponent>());
 
-		if (!hasTransform || !hasGeometry || !hasMaterial)
+		if (!hasTransform || !hasGeometry || !hasMaterial || !hasInfo)
 			continue;
 
 		assert(entity != 0 && "Entity 0 is usually reserved/not used.");
@@ -40,6 +42,7 @@ void RenderService::Update(Coordinator& coordinator)
             auto& transform = coordinator.GetComponent<TransformComponent>(entity);
             auto& geo = coordinator.GetComponent<GeometryComponent>(entity);
             auto& mat = coordinator.GetComponent<MaterialComponent>(entity);
+		auto& info = coordinator.GetComponent<InfoComponent>(entity);
 
             // Create the item
             RenderItem item;
@@ -49,6 +52,7 @@ void RenderService::Update(Coordinator& coordinator)
             item.scale = DirectX::SimpleMath::Vector3(transform.scale);
             item.mesh = geo.meshHandle;
             item.texture = mat.textureHandle;
+		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
 
 		// Update the RenderItem in the RenderContext (not create)
 		size_t renderItemIndex = entity - 1;
