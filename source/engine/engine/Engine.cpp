@@ -84,27 +84,6 @@ void Engine::Initialize()
 	mCoordinator.RegisterComponent<MaterialComponent>();
 	mCoordinator.RegisterComponent<InfoComponent>();
 
-	// --- ECS TEST (The "Sanity Check") ---
-	{
-		// A. Create an entity (Should be ID 0)
-		Entity testEntity = mCoordinator.CreateEntity();
-
-		// B. Add Data to it
-		mCoordinator.AddComponent(testEntity, TransformComponent{
-		    {0.0f, 10.0f, 0.0f},  // Pos
-		    {0.0f, 0.0f, 0.0f},   // Rot
-		    {1.0f, 1.0f, 1.0f}    // Scale
-			});
-
-		// C. Verify data is actually there
-		TransformComponent& t = mCoordinator.GetComponent<TransformComponent>(testEntity);
-
-		char buffer[256];
-		sprintf_s(buffer, "ECS TEST: Created Entity %d with Pos Y: %.2f\n", testEntity, t.position[1]);
-		OutputDebugStringA(buffer); // Look for this in your Output Window!
-	}
-	// --- ECS INITIALIZATION END ---
-
 	rawInput.Initialize();
 	imGuiHandler.Initialize();
 	winMessageSubject.Subscribe(&imGuiHandler);
@@ -199,15 +178,15 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 
 		// After renderContext.CreateMesh(...)
 		const uint32_t meshIndex = renderContext.GetNumOfMeshes() - 1;
-		const uint32_t id = meshIndex + 1;
+		const uint32_t id = meshIndex;
 
 		RenderItem item{};
 		item.id = id;
 		item.position = gameObject.position;
 		item.rotation = gameObject.rotation;
 		item.scale = gameObject.scale;
-		item.mesh = HMesh(id - 1);
-		item.texture = HTexture(id - 1);
+		item.mesh = HMesh(id);
+		item.texture = HTexture(id);
 		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
 
 		renderContext.CreateRenderItem(item);

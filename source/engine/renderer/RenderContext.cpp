@@ -111,10 +111,7 @@ std::vector<RenderItem>& RenderContext::GetRenderItems()
 
 RenderItem* RenderContext::GetRenderItemById(uint32_t id)
 {
-	if (id == 0)
-		return nullptr;
-
-	const uint32_t index = id - 1;
+	const uint32_t index = id;
 	if (index >= renderItems.size())
 		return nullptr;
 

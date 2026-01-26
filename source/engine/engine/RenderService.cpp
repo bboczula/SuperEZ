@@ -36,7 +36,7 @@ void RenderService::Update(Coordinator& coordinator)
 		if (!hasTransform || !hasGeometry || !hasMaterial || !hasInfo)
 			continue;
 
-		assert(entity != 0 && "Entity 0 is usually reserved/not used.");
+		//assert(entity != 0 && "Entity 0 is usually reserved/not used.");
 		assert(entity < renderContext.GetNumOfMeshes() + 1 && "Entity ID exceeds RenderItem count.");
 
             auto& transform = coordinator.GetComponent<TransformComponent>(entity);
@@ -55,7 +55,7 @@ void RenderService::Update(Coordinator& coordinator)
 		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
 
 		// Update the RenderItem in the RenderContext (not create)
-		size_t renderItemIndex = entity - 1;
+		size_t renderItemIndex = entity;
 		assert(renderItemIndex < renderContext.renderItems.size() && "RenderItem index out of bounds");
 		renderContext.renderItems[renderItemIndex] = item;
 
