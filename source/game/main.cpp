@@ -27,11 +27,23 @@ public:
 		boardState[15] = Empty;
 
 		ShuffleBoard(200);
+
+		goodJobId = services.scene->FindEntityByName("GoodJob");
+		goodJobInitialPosition = services.scene->GetPosition(goodJobId);
 	}
 
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
+		Coordinator* coordinator = services.scene->GetCoordinator();
+		if(IsBoardSolved())
+		{
+			std::cout << "Board solved!" << std::endl;
+			auto& goodJobTransform = coordinator->GetComponent<TransformComponent>(goodJobId); // just to avoid unused variable warning
+			goodJobTransform.position[1] = goodJobInitialPosition.y + 0.5f; // simple animation to show "Good Job" message
+			return;
+		}
+		
 		if(services.input->MouseClicked(InputMouseButton::Left))
 		{
 			pendingSelectionAction = true;  // request started
@@ -71,7 +83,6 @@ public:
 			boardState[boardPosition] = 0xffffffff;
 
 			// Update piece position in scene
-			Coordinator* coordinator = services.scene->GetCoordinator();
 			auto& transform = coordinator->GetComponent<TransformComponent>(pieceId);
 			transform.position[0] = initialPositions[emptyPosition].x;
 			transform.position[1] = initialPositions[emptyPosition].y;
@@ -129,7 +140,9 @@ public:
 	}
 private:
 	EngineServices services;
+	EntityId goodJobId = 0xffffffff;
 	std::array<Vec3, 16> initialPositions;
+	Vec3 goodJobInitialPosition;
 	std::array<EntityId, 16> boardState;
 	std::mt19937 rng{ static_cast<uint32_t>(
 	  std::chrono::high_resolution_clock::now().time_since_epoch().count()) };
@@ -208,6 +221,16 @@ private:
 		ApplyBoardStateToScene();
 	}
 
+	bool IsBoardSolved() const
+	{
+		for (unsigned i = 0; i < 15; ++i)
+		{
+			if (boardState[i] != services.scene->FindEntityByName("Piece" + std::to_string(i + 1)))
+				return false;
+		}
+
+		return boardState[15] == Empty;
+	}
 };
 
 int main(int argc, char *argv[])
