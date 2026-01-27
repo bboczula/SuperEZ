@@ -26,6 +26,7 @@ public:
 	void PreExecute();
 	virtual void Execute() = 0;
 	void PostExecute();
+	virtual void PostSubmit() = 0;
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
 	RenderPass::Type GetType() const { return type; }
 protected:

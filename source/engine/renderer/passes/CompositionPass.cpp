@@ -66,6 +66,10 @@ void CompositionPass::Execute()
 	renderContext.TransitionBack(commandList, HTexture(8)); // Input Texture
 }
 
+void CompositionPass::PostSubmit()
+{
+}
+
 void CompositionPass::Allocate(DeviceContext* deviceContext)
 {
 }

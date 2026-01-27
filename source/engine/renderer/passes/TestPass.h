@@ -20,6 +20,7 @@ public:
 	void Initialize() override;
 	void Update() override;
 	void Execute() override;
+	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
 	FreeCamera* freeCamera;

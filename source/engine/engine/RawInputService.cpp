@@ -9,7 +9,7 @@ bool RawInputService::MouseClicked(InputMouseButton button)
 	switch (button)
 	{
 	case InputMouseButton::Left:
-		return raw_.IsLeftButtonDown();
+		return raw_.WasMouseButtonClicked(MouseButton::Left);
 	case InputMouseButton::Middle:
 		return raw_.IsMiddleButtonDown();
 	case InputMouseButton::Right:

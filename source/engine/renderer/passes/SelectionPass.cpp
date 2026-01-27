@@ -17,10 +17,22 @@ SelectionPass::SelectionPass() : RenderPass(L"Selection", L"selection.hlsl", Typ
 	deviceContext.GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&readbackFence));
 	readbackFence->SetName(L"Selection Pass Fence");
 
-	// We don't strictly need an Event for polling, but if you keep it, ensure you don't use it to block the main thread.
+	readbackEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr); // auto-reset
+	if (!readbackEvent)
+		OutputDebugString(L"ERROR: CreateEvent failed for SelectionPass readbackEvent\n");
+
 	fenceValue = 0;
 	lastRequestedFenceValue = 0;
 	waitingForReadback = false;
+}
+
+SelectionPass::~SelectionPass()
+{
+	if (readbackEvent)
+	{
+		CloseHandle(readbackEvent);
+		readbackEvent = nullptr;
+	}
 }
 
 void SelectionPass::ConfigurePipelineState()
@@ -63,31 +75,6 @@ void SelectionPass::Initialize()
 
 void SelectionPass::Update()
 {
-	// 1. Check if we are waiting for data from the GPU
-	if (waitingForReadback)
-	{
-		// NON-BLOCKING CHECK: Is the GPU done with the frame where we clicked?
-		if (readbackFence->GetCompletedValue() >= lastRequestedFenceValue)
-		{
-			// GPU is done! Read the data.
-			auto data = renderContext.ReadbackBufferData(readbackBuffer, sizeof(UINT32));
-			if (!data.empty())
-			{
-				UINT32 rawID = *reinterpret_cast<const UINT32*>(data.data());
-
-				if (rawID != 0) // Assuming 0 is background
-					renderContext.SetSelectedObjectId(rawID - 1);
-				else
-					renderContext.SetSelectedObjectId(UINT32_MAX);
-			}
-
-			// Reset state
-			waitingForReadback = false;
-		}
-		// If fence is not ready, we simply RETURN and try again next frame. 
-		// DO NOT WaitForSingleObject here.
-	}
-
 }
 
 void SelectionPass::Execute()
@@ -123,35 +110,74 @@ void SelectionPass::Execute()
 
 	// Only request a readback if the user actually clicked this frame
 	// Or if something has changed that requires a new readback, like selected object moved
-	if (cursorInput.WasLeftButtonClicked() && mousePositionX > 0 && mousePositionY > 0)
+	if (cursorInput.WasLeftButtonClicked() && mousePositionX >= 0 && mousePositionY >= 0)
 	{
-		// 1. Copy the specific pixel to the readback buffer
 		auto texture = renderContext.GetTexture(renderTarget);
 		renderContext.TransitionTo(commandList, texture, D3D12_RESOURCE_STATE_COPY_SOURCE);
 		renderContext.CopyTextureToBuffer(commandList, texture, readbackBuffer, mousePositionX, mousePositionY);
 		renderContext.TransitionBack(commandList, texture);
 
-		// 2. Increment fence value for this new request
-		fenceValue++;
+		pendingFenceValue = ++fenceValue;
+		pendingReadbackSignal = true;
 
-		// 3. Insert Signal into Command List
-		deviceContext.GetCommandQueue()->Signal(readbackFence, fenceValue);
-
-		// 4. Update Internal State
-		lastRequestedFenceValue = fenceValue;
-		waitingForReadback = true;
-
-		// Update the context immediately so UI feels responsive (optimistic update),
-		// or wait for the readback (conservative).
 		renderContext.SetWasObjectSelected(true);
 	}
 	else if (cursorInput.WasLeftButtonClicked())
 	{
-		// Clicked outside viewport -> Deselect immediately
 		renderContext.SetSelectedObjectId(UINT32_MAX);
 		renderContext.SetWasObjectSelected(false);
 	}
+
 }
+
+void SelectionPass::PostSubmit()
+{
+	if (!pendingReadbackSignal)
+		return;
+
+	// 1) Signal fence AFTER the command list containing the copy is submitted
+	deviceContext.GetCommandQueue()->Signal(readbackFence, pendingFenceValue);
+
+	lastRequestedFenceValue = pendingFenceValue;
+	pendingReadbackSignal = false;
+
+	// 2) FIX #2: hard stall until GPU finishes the copy
+	if (readbackFence->GetCompletedValue() < lastRequestedFenceValue)
+	{
+		if (readbackEvent)
+		{
+			readbackFence->SetEventOnCompletion(lastRequestedFenceValue, readbackEvent);
+			WaitForSingleObject(readbackEvent, INFINITE);
+		}
+		else
+		{
+			// Fallback (worse): spin
+			while (readbackFence->GetCompletedValue() < lastRequestedFenceValue) {}
+		}
+	}
+
+	// 3) Now readback buffer is guaranteed ready THIS FRAME
+	ApplyReadbackSelection();
+
+	// 4) We handled it immediately; don't also poll in Update()
+	waitingForReadback = false;
+}
+
+
+void SelectionPass::ApplyReadbackSelection()
+{
+	auto data = renderContext.ReadbackBufferData(readbackBuffer, sizeof(UINT32));
+	if (data.size() < sizeof(UINT32))
+		return;
+
+	const UINT32 rawID = *reinterpret_cast<const UINT32*>(data.data());
+
+	if (rawID != 0) // 0 = background
+		renderContext.SetSelectedObjectId(rawID - 1);
+	else
+		renderContext.SetSelectedObjectId(UINT32_MAX);
+}
+
 
 void SelectionPass::Allocate(DeviceContext* deviceContext)
 {

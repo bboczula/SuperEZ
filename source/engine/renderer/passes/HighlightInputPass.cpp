@@ -87,6 +87,10 @@ void HighlightInputPass::Execute()
 	renderContext.TransitionBack(commandList, renderContext.GetTexture(renderTarget));
 }
 
+void HighlightInputPass::PostSubmit()
+{
+}
+
 void HighlightInputPass::Allocate(DeviceContext* deviceContext)
 {
 }

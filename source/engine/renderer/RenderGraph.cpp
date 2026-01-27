@@ -54,6 +54,7 @@ void RenderGraph::Execute()
 		renderPass->PreExecute();
 		renderPass->Execute();
  		renderPass->PostExecute();
+		renderPass->PostSubmit();
 	}
 }
 

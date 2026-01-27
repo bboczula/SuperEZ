@@ -46,6 +46,10 @@ void BlitPass::Execute()
 	renderContext.TransitionTo(commandList, frameTexture, D3D12_RESOURCE_STATE_PRESENT);
 }
 
+void BlitPass::PostSubmit()
+{
+}
+
 void BlitPass::Allocate(DeviceContext* deviceContext)
 {
 }
