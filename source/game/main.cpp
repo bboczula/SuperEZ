@@ -5,6 +5,8 @@
 #include "../engine/engine/SceneService.h"
 #include "../engine/engine/Components.h"
 #include <iostream>
+#include <random>
+#include <chrono>
 
 static bool pendingSelectionAction = false;
 
@@ -13,7 +15,6 @@ class ChessApp final : public IGame
 public:
 	virtual void OnInit(EngineServices& services) override
 	{
-		// Initialization logic here
 		this->services = services;
 
 		for (int i = 0; i < 15; i++)
@@ -23,8 +24,11 @@ public:
 			boardState[i] = pieceId;
 		}
 		initialPositions[15] = Vec3{ initialPositions[11].x, 0.0f, initialPositions[14].z };
-		boardState[15] = 0xffffffff; // empty
+		boardState[15] = Empty;
+
+		ShuffleBoard(200);
 	}
+
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
@@ -97,22 +101,17 @@ public:
 
 	bool IsMoveValid(EntityId pieceId) const
 	{
-		auto boardPosition = GetPieceIndexOnBoard(pieceId);
-		auto top = boardPosition - 4;
-		auto bottom = boardPosition + 4;
-		auto left = boardPosition - 1;
-		auto right = boardPosition + 1;
+		const unsigned p = GetPieceIndexOnBoard(pieceId);
+		const unsigned e = GetPieceIndexOnBoard(Empty);
+		if (p == 0xffffffff || e == 0xffffffff) return false;
 
-		if (top < 16 && boardState[top] == 0xffffffff)
-			return true;
-		if (bottom < 16 && boardState[bottom] == 0xffffffff)
-			return true;
-		if (left < 16 && boardState[left] == 0xffffffff)
-			return true;
-		if (right < 16 && boardState[right] == 0xffffffff)
-			return true;
-		return false;
+		const int pr = int(p / 4), pc = int(p % 4);
+		const int er = int(e / 4), ec = int(e % 4);
+
+		const int manhattan = std::abs(pr - er) + std::abs(pc - ec);
+		return manhattan == 1;
 	}
+
 
 	unsigned int GetPieceIndexOnBoard(EntityId pieceId) const
 	{
@@ -132,6 +131,83 @@ private:
 	EngineServices services;
 	std::array<Vec3, 16> initialPositions;
 	std::array<EntityId, 16> boardState;
+	std::mt19937 rng{ static_cast<uint32_t>(
+	  std::chrono::high_resolution_clock::now().time_since_epoch().count()) };
+
+	static constexpr EntityId Empty = 0xffffffff;
+
+	unsigned CountNeighbors(unsigned emptyIdx) const
+	{
+		unsigned count = 0;
+		const unsigned r = emptyIdx / 4;
+		const unsigned c = emptyIdx % 4;
+		if (r > 0) ++count;
+		if (r < 3) ++count;
+		if (c > 0) ++count;
+		if (c < 3) ++count;
+		return count;
+	}
+
+	void ApplyBoardStateToScene()
+	{
+		Coordinator* coordinator = services.scene->GetCoordinator();
+
+		for (unsigned i = 0; i < 16; ++i)
+		{
+			const EntityId id = boardState[i];
+			if (id == Empty) continue;
+
+			auto& transform = coordinator->GetComponent<TransformComponent>(id);
+			transform.position[0] = initialPositions[i].x;
+			transform.position[1] = initialPositions[i].y;
+			transform.position[2] = initialPositions[i].z;
+		}
+	}
+
+	void ShuffleBoard(unsigned moves)
+	{
+		unsigned emptyIdx = GetPieceIndexOnBoard(Empty);
+		unsigned prevEmptyIdx = 0xffffffff;
+
+		for (unsigned k = 0; k < moves; ++k)
+		{
+			std::array<unsigned, 4> candidates{};
+			unsigned count = 0;
+
+			const unsigned r = emptyIdx / 4;
+			const unsigned c = emptyIdx % 4;
+
+			auto push = [&](unsigned idx)
+				{
+					if (idx != prevEmptyIdx)
+						candidates[count++] = idx;
+				};
+
+			if (r > 0) push(emptyIdx - 4);
+			if (r < 3) push(emptyIdx + 4);
+			if (c > 0) push(emptyIdx - 1);
+			if (c < 3) push(emptyIdx + 1);
+
+			if (count == 0)
+			{
+				if (r > 0) candidates[count++] = emptyIdx - 4;
+				if (r < 3) candidates[count++] = emptyIdx + 4;
+				if (c > 0) candidates[count++] = emptyIdx - 1;
+				if (c < 3) candidates[count++] = emptyIdx + 1;
+			}
+
+			std::uniform_int_distribution<unsigned> dist(0, count - 1);
+			const unsigned pick = candidates[dist(rng)];
+
+			std::swap(boardState[pick], boardState[emptyIdx]);
+
+			prevEmptyIdx = emptyIdx;
+			emptyIdx = pick;
+		}
+
+		ApplyBoardStateToScene();
+	}
+
 };
 
 int main(int argc, char *argv[])
