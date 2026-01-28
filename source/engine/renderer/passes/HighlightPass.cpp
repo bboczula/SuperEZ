@@ -117,6 +117,10 @@ void HighlightPass::Execute()
 	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
 }
 
+void HighlightPass::PostSubmit()
+{
+}
+
 void HighlightPass::Allocate(DeviceContext* deviceContext)
 {
 }

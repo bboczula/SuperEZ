@@ -17,6 +17,7 @@ public:
       Coordinator* GetCoordinator() { return coordinator; }
       // IScene
       EntityId FindEntityByName(const std::string& name) const override;
+	EntityId GetSelectedEntity() const override;
       Vec3 GetPosition(EntityId id) const override;
       void SetPosition(EntityId id, Vec3 p) override;
       Vec3 GetRotationEuler(EntityId id) const override;

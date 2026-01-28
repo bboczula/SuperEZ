@@ -58,6 +58,10 @@ void HighlightClearPass::Execute()
 	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
 }
 
+void HighlightClearPass::PostSubmit()
+{
+}
+
 void HighlightClearPass::Allocate(DeviceContext* deviceContext)
 {
 }

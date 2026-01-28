@@ -29,7 +29,7 @@ void BlitPass::Initialize()
 
 void BlitPass::Execute()
 {
-	unsigned int textureIndex = 10; // ImGui Render Target
+	unsigned int textureIndex = 4; // ImGui Render Target
 #if IS_EDITOR
 	textureIndex++; // Skip the extra texture used for selection buffer in editor
 #endif
@@ -44,6 +44,10 @@ void BlitPass::Execute()
 
 	renderContext.TransitionBack(commandList, renderTarget);
 	renderContext.TransitionTo(commandList, frameTexture, D3D12_RESOURCE_STATE_PRESENT);
+}
+
+void BlitPass::PostSubmit()
+{
 }
 
 void BlitPass::Allocate(DeviceContext* deviceContext)

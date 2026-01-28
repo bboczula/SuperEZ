@@ -4,13 +4,16 @@ class SelectionPass : public RenderPass
 {
 public:
 	SelectionPass();
+	~SelectionPass();
 	void ConfigurePipelineState() override;
 	void PostAssetLoad() override;
 	void Initialize() override;
 	void Update() override;
 	void Execute() override;
+	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
+	void ApplyReadbackSelection();
 	HBuffer readbackBuffer;
 	HANDLE readbackEvent = nullptr;
 	UINT64 fenceValue = 0;
@@ -18,4 +21,6 @@ private:
 	bool waitingForReadback = false;
 	ID3D12Fence* readbackFence = nullptr;
 	bool skipFrame = true; // Skip frame if no selection is made
+	bool pendingReadbackSignal = false;
+	UINT64 pendingFenceValue = 0;
 };

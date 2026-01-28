@@ -18,6 +18,7 @@ RenderGraph::RenderGraph()
 	RenderPass* testPass = new TestPass();
 	renderPasses.push_back(testPass);
 
+#if IS_EDITOR
 	RenderPass* highlightClearPass = new HighlightClearPass();
 	renderPasses.push_back(highlightClearPass);
 
@@ -33,7 +34,6 @@ RenderGraph::RenderGraph()
 	RenderPass* compositionPass = new CompositionPass();
 	renderPasses.push_back(compositionPass);
 
-#if IS_EDITOR
 	RenderPass* imguiPass = new ImGuiPass();
 	renderPasses.push_back(imguiPass);
 #endif
@@ -54,6 +54,7 @@ void RenderGraph::Execute()
 		renderPass->PreExecute();
 		renderPass->Execute();
  		renderPass->PostExecute();
+		renderPass->PostSubmit();
 	}
 }
 

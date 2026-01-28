@@ -146,6 +146,10 @@ void TestPass::Execute()
 	}
 }
 
+void TestPass::PostSubmit()
+{
+}
+
 void TestPass::Allocate(DeviceContext* deviceContext)
 {
 	// We want our Render Pass

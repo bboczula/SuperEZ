@@ -13,6 +13,7 @@ public:
 	void PostAssetLoad() override;
 	void Initialize() override;
 	void Execute() override;
+	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
 };

@@ -9,7 +9,18 @@
 #include "../../externals/TinyXML2/tinyxml2.h"
 #include "../../externals/SimpleMath/SimpleMath.h"
 
-using GameObjects = std::vector<std::pair<std::string, std::string>>;
+struct GameObjectData
+{
+	std::string name;
+	std::string meshName;
+	std::string textureName;
+	DirectX::SimpleMath::Vector3 position;
+	DirectX::SimpleMath::Vector3 rotation;
+	DirectX::SimpleMath::Vector3 scale;
+};
+
+using GameObjects = std::vector<GameObjectData>;
+
 
 struct CameraData
 {

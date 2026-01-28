@@ -4,7 +4,7 @@
 
 extern RenderContext renderContext;
 
-void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id)
+void RenderService::CreateEntity(Coordinator& coordinator, RenderItem& renderItem)
 {
 	// --- NEW ECS CODE ---
 		// 1. Create the Entity representation of this object
@@ -12,14 +12,15 @@ void RenderService::CreateEntity(Coordinator& coordinator, unsigned int id)
 
 	// 2. Add Transform (Default to 0,0,0 for now)
 	coordinator.AddComponent(newEntity, TransformComponent{
-	    {0.0f, 0.0f, 0.0f},
-	    {0.0f, 0.0f, 0.0f},
-	    {1.0f, 1.0f, 1.0f}
+	    {renderItem.position.x, renderItem.position.y, renderItem.position.z},
+	    {renderItem.rotation.x, renderItem.rotation.x, renderItem.rotation.x},
+	    {renderItem.scale.x, renderItem.scale.x, renderItem.scale.x}
 		});
 
 	// 3. Add Geometry Component
-	coordinator.AddComponent(newEntity, GeometryComponent{ HMesh(id - 1) });
-	coordinator.AddComponent(newEntity, MaterialComponent{ HTexture(id - 1) });
+	coordinator.AddComponent(newEntity, GeometryComponent{ renderItem.mesh });
+	coordinator.AddComponent(newEntity, MaterialComponent{ renderItem.texture });
+	coordinator.AddComponent(newEntity, InfoComponent{ renderItem.name });
 }
 
 void RenderService::Update(Coordinator& coordinator)
@@ -30,16 +31,18 @@ void RenderService::Update(Coordinator& coordinator)
 		bool hasTransform = sig.test(coordinator.GetComponentType<TransformComponent>());
 		bool hasGeometry = sig.test(coordinator.GetComponentType<GeometryComponent>());
 		bool hasMaterial = sig.test(coordinator.GetComponentType<MaterialComponent>());
+		bool hasInfo = sig.test(coordinator.GetComponentType<InfoComponent>());
 
-		if (!hasTransform || !hasGeometry || !hasMaterial)
+		if (!hasTransform || !hasGeometry || !hasMaterial || !hasInfo)
 			continue;
 
-		assert(entity != 0 && "Entity 0 is usually reserved/not used.");
+		//assert(entity != 0 && "Entity 0 is usually reserved/not used.");
 		assert(entity < renderContext.GetNumOfMeshes() + 1 && "Entity ID exceeds RenderItem count.");
 
             auto& transform = coordinator.GetComponent<TransformComponent>(entity);
             auto& geo = coordinator.GetComponent<GeometryComponent>(entity);
             auto& mat = coordinator.GetComponent<MaterialComponent>(entity);
+		auto& info = coordinator.GetComponent<InfoComponent>(entity);
 
             // Create the item
             RenderItem item;
@@ -49,9 +52,10 @@ void RenderService::Update(Coordinator& coordinator)
             item.scale = DirectX::SimpleMath::Vector3(transform.scale);
             item.mesh = geo.meshHandle;
             item.texture = mat.textureHandle;
+		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
 
 		// Update the RenderItem in the RenderContext (not create)
-		size_t renderItemIndex = entity - 1;
+		size_t renderItemIndex = entity;
 		assert(renderItemIndex < renderContext.renderItems.size() && "RenderItem index out of bounds");
 		renderContext.renderItems[renderItemIndex] = item;
 

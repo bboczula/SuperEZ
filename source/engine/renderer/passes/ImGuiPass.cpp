@@ -256,6 +256,10 @@ void ImGuiPass::Execute()
 	renderContext.TransitionBack(commandList, finalTexture);
 }
 
+void ImGuiPass::PostSubmit()
+{
+}
+
 void ImGuiPass::Allocate(DeviceContext* deviceContext)
 {
 }

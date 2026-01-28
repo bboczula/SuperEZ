@@ -13,6 +13,11 @@ EntityId SceneService::FindEntityByName(const std::string& name) const
       return InvalidEntity;
 }
 
+EntityId SceneService::GetSelectedEntity() const
+{
+	return renderContext.GetSelectedObjectId();
+}
+
 void SceneService::SetPosition(EntityId id, Vec3 p)
 {
       RenderItem* item = renderContext.GetRenderItemById(id);

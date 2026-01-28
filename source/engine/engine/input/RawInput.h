@@ -35,6 +35,9 @@ public:
 	bool HasMouseWheelMoved() { return mouseButtonState[3]; }
 	bool IsKeyDown(WPARAM virtualKeyCode);
 	bool WasKeyDown(WPARAM virtualKeyCode);
+	bool IsMouseButtonDown(MouseButton btn) const;
+	bool WasMouseButtonClicked(MouseButton btn) const;   // Up -> Down
+	bool WasMouseButtonReleased(MouseButton btn) const;  // Down -> Up
 private:
 	void HandleKeyboardInput(const RAWINPUT& rawInput);
 	void HandleMouseInput(const RAWINPUT& rawInput);
@@ -47,6 +50,8 @@ private:
 	std::pair<LONG, LONG> mousePosition;
 	std::vector<BYTE> rawBuffer;
 	std::pair<BOOL, USHORT> clearNextFrame;
-	BOOL mouseButtonState[MAX_NUM_OF_MOUSE_BUTTONS];
+	BOOL mouseButtonState[MAX_NUM_OF_MOUSE_BUTTONS] = {};
+	BOOL mouseButtonClicked[MAX_NUM_OF_MOUSE_BUTTONS] = {}; // one-frame pulse
+	BOOL mouseButtonArmed[MAX_NUM_OF_MOUSE_BUTTONS] = {};   // saw Down, waiting for Up
 	SHORT wheelDelta;
 };

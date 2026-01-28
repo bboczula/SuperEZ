@@ -69,6 +69,26 @@ void RawInput::HandleMousePosition(const RAWMOUSE& mouseData)
 	mouseDelta.second += mouseData.lLastY;
 }
 
+bool RawInput::IsMouseButtonDown(MouseButton btn) const
+{
+	return mouseButtonState[static_cast<size_t>(btn)] != FALSE;
+}
+
+// IMPORTANT: this means "a full click happened (press happened earlier, and release happened now)"
+bool RawInput::WasMouseButtonClicked(MouseButton btn) const
+{
+	return mouseButtonClicked[static_cast<size_t>(btn)] != FALSE;
+}
+
+bool RawInput::WasMouseButtonReleased(MouseButton btn) const
+{
+	// If you need it separately from "Clicked", make it a pulse too.
+	// For now, treat release as "clicked OR released-without-arming" doesn't exist in this model.
+	// Implement as: release pulse set in HandleMouseButtonStates similar to clicked pulse.
+	// (Optional; see section 3.)
+	return false;
+}
+
 void RawInput::HandleMouseButtonStates(const USHORT flags)
 {
 	struct ButtonMap
@@ -80,20 +100,30 @@ void RawInput::HandleMouseButtonStates(const USHORT flags)
 
 	const ButtonMap buttonMap[] =
 	{
-		{ RI_MOUSE_LEFT_BUTTON_DOWN,   RI_MOUSE_LEFT_BUTTON_UP,   MouseButton::Left },
-		{ RI_MOUSE_MIDDLE_BUTTON_DOWN, RI_MOUSE_MIDDLE_BUTTON_UP, MouseButton::Middle },
-		{ RI_MOUSE_RIGHT_BUTTON_DOWN,  RI_MOUSE_RIGHT_BUTTON_UP,  MouseButton::Right }
+	    { RI_MOUSE_LEFT_BUTTON_DOWN,   RI_MOUSE_LEFT_BUTTON_UP,   MouseButton::Left },
+	    { RI_MOUSE_MIDDLE_BUTTON_DOWN, RI_MOUSE_MIDDLE_BUTTON_UP, MouseButton::Middle },
+	    { RI_MOUSE_RIGHT_BUTTON_DOWN,  RI_MOUSE_RIGHT_BUTTON_UP,  MouseButton::Right },
 	};
 
 	for (const auto& btn : buttonMap)
 	{
+		const int i = static_cast<int>(btn.index);
+
 		if (flags & btn.downFlag)
 		{
-			mouseButtonState[static_cast<size_t>(btn.index)] = true;
+			mouseButtonState[i] = TRUE;
+			mouseButtonArmed[i] = TRUE;   // arm click (can be held many frames)
 		}
+
 		if (flags & btn.upFlag)
 		{
-			mouseButtonState[static_cast<size_t>(btn.index)] = false;
+			mouseButtonState[i] = FALSE;
+
+			// CLICK = release after a prior press (hold duration irrelevant)
+			if (mouseButtonArmed[i])
+				mouseButtonClicked[i] = TRUE; // pulse becomes visible THIS FRAME
+
+			mouseButtonArmed[i] = FALSE;
 		}
 	}
 }
@@ -126,9 +156,14 @@ void RawInput::PostFrame()
 {
 	mouseDelta.first = 0;
 	mouseDelta.second = 0;
-	mouseButtonState[static_cast<size_t>(MouseButton::Wheel)] = false;
+
+	// Clear one-frame click pulses AFTER gameplay has read them.
+	for (int i = 0; i < MAX_NUM_OF_MOUSE_BUTTONS; ++i)
+		mouseButtonClicked[i] = FALSE;
+
+	mouseButtonState[static_cast<int>(MouseButton::Wheel)] = FALSE;
 	wheelDelta = 0;
-	
+
 	if (clearNextFrame.first)
 	{
 		prevVirtualKeyState[clearNextFrame.second] = false;

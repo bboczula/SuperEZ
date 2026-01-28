@@ -52,6 +52,10 @@ void GrayscalePass::Execute()
 	renderContext.TransitionBack(commandList, HTexture(4)); // Input Texture
 }
 
+void GrayscalePass::PostSubmit()
+{
+}
+
 void GrayscalePass::Allocate(DeviceContext* deviceContext)
 {
 }
