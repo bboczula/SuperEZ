@@ -35,12 +35,10 @@ public:
 
 	virtual void OnUpdate(const FrameTime& frameTime) override
 	{
-		Coordinator* coordinator = services.scene->GetCoordinator();
 		if(IsBoardSolved())
 		{
 			std::cout << "Board solved!" << std::endl;
-			auto& goodJobTransform = coordinator->GetComponent<TransformComponent>(goodJobId); // just to avoid unused variable warning
-			goodJobTransform.position[1] = goodJobInitialPosition.y + 0.5f; // simple animation to show "Good Job" message
+			services.scene->SetPosition(goodJobId, Vec3(goodJobInitialPosition.x, goodJobInitialPosition.y + 0.5f, goodJobInitialPosition.z));
 			return;
 		}
 		
@@ -83,10 +81,7 @@ public:
 			boardState[boardPosition] = 0xffffffff;
 
 			// Update piece position in scene
-			auto& transform = coordinator->GetComponent<TransformComponent>(pieceId);
-			transform.position[0] = initialPositions[emptyPosition].x;
-			transform.position[1] = initialPositions[emptyPosition].y;
-			transform.position[2] = initialPositions[emptyPosition].z;
+			services.scene->SetPosition(pieceId, initialPositions[emptyPosition]);
 		}
 		else
 		{
@@ -163,17 +158,14 @@ private:
 
 	void ApplyBoardStateToScene()
 	{
-		Coordinator* coordinator = services.scene->GetCoordinator();
-
 		for (unsigned i = 0; i < 16; ++i)
 		{
 			const EntityId id = boardState[i];
-			if (id == Empty) continue;
-
-			auto& transform = coordinator->GetComponent<TransformComponent>(id);
-			transform.position[0] = initialPositions[i].x;
-			transform.position[1] = initialPositions[i].y;
-			transform.position[2] = initialPositions[i].z;
+			if (id == Empty)
+			{
+				continue;
+			}
+			services.scene->SetPosition(id, initialPositions[i]);
 		}
 	}
 

@@ -1,4 +1,5 @@
 #include "SceneService.h"
+#include "Components.h"
 
 EntityId SceneService::FindEntityByName(const std::string& name) const
 {
@@ -20,62 +21,42 @@ EntityId SceneService::GetSelectedEntity() const
 
 void SceneService::SetPosition(EntityId id, Vec3 p)
 {
-      RenderItem* item = renderContext.GetRenderItemById(id);
-      if (!item) return;
-
-      item->position = DirectX::SimpleMath::Vector3(p.x, p.y, p.z);
+      auto& transform = coordinator->GetComponent<TransformComponent>(id);
+	transform.position[0] = p.x;
+	transform.position[1] = p.y;
+	transform.position[2] = p.z;
 }
 
 Vec3 SceneService::GetPosition(EntityId id) const
 {
-      const RenderItem* item = renderContext.GetRenderItemById(id);
-      if (!item) return { 0,0,0 };
-
-      // For a pure translation matrix, this is valid in SimpleMath.
-      return { item->position.x, item->position.y, item->position.z };
+      const auto& transform = coordinator->GetComponent<TransformComponent>(id);
+      return { transform.position[0], transform.position[1], transform.position[2] };
 }
 
 Vec3 SceneService::GetRotationEuler(EntityId id) const
 {
-      const RenderItem* item = renderContext.GetRenderItemById(id);
-      if (!item)
-            return { 0, 0, 0 };
-
-      constexpr float RadToDeg = 180.0f / DirectX::XM_PI;
-
-      return {
-          item->rotation.x * RadToDeg,
-          item->rotation.y * RadToDeg,
-          item->rotation.z * RadToDeg
-      };
+      const auto& transform = coordinator->GetComponent<TransformComponent>(id);
+	return { transform.rotation[0], transform.rotation[1], transform.rotation[2] };
 }
 
 void SceneService::SetRotationEuler(EntityId id, Vec3 degrees)
 {
-      RenderItem* item = renderContext.GetRenderItemById(id);
-      if (!item) return;
-
-      constexpr float DegToRad = DirectX::XM_PI / 180.0f;
-
-      item->rotation = DirectX::SimpleMath::Vector3(
-            degrees.x * DegToRad,
-            degrees.y * DegToRad,
-            degrees.z * DegToRad
-      );
+      auto& transform = coordinator->GetComponent<TransformComponent>(id);
+	transform.rotation[0] = degrees.x;
+	transform.rotation[1] = degrees.y;
+	transform.rotation[2] = degrees.z;
 }
 
 Vec3 SceneService::GetScale(EntityId id) const
 {
-      const RenderItem* item = renderContext.GetRenderItemById(id);
-      if (!item) return { 0,0,0 };
-
-      return { item->scale.x, item->scale.y, item->scale.z };
+      const auto& transform = coordinator->GetComponent<TransformComponent>(id);
+      return { transform.scale[0], transform.scale[1], transform.scale[2] };
 }
 
 void SceneService::SetScale(EntityId id, Vec3 scale)
 {
-      RenderItem* item = renderContext.GetRenderItemById(id);
-      if (!item) return;
-
-      item->scale = DirectX::SimpleMath::Vector3(scale.x, scale.y, scale.z);
+      auto& transform = coordinator->GetComponent<TransformComponent>(id);
+      transform.scale[0] = scale.x;
+      transform.scale[1] = scale.y;
+      transform.scale[2] = scale.z;
 }
