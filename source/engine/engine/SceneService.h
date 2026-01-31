@@ -10,6 +10,23 @@
 class SceneService final : public IScene
 {
 public:
+      using TweenCallback = std::function<void(EntityId)>;
+      enum class Ease : uint8_t
+      {
+            Linear,
+            EaseOutQuad,
+      };
+
+      struct PositionTween
+      {
+            EntityId entity = 0;
+            Vec3 start{};
+            Vec3 target{};
+            float elapsed = 0.0f;
+            float duration = 0.0f;
+            Ease ease = Ease::Linear;
+            SceneService::TweenCallback onComplete = nullptr;
+      };
       explicit SceneService(RenderContext& rc, Coordinator* coordinator)
             : renderContext(rc), coordinator(coordinator)
       {
@@ -22,9 +39,15 @@ public:
 	void SetRotationEuler(EntityId id, Vec3 rads) override;
 	Vec3 GetScale(EntityId id) const override;
 	void SetScale(EntityId id, Vec3 scale) override;
+      void TweenPositionTo(EntityId id, const Vec3& target, float durationSeconds, Ease ease = Ease::Linear, TweenCallback onComplete = nullptr);
+      bool IsTweeningPosition(EntityId id) const;
+      void CancelPositionTween(EntityId id);
+      void Update(float dtSeconds);
 private:
       RenderContext& renderContext;
       Coordinator* coordinator;
+      std::vector<PositionTween> m_positionTweens;
+      std::vector<std::pair<SceneService::TweenCallback, EntityId>> m_pendingTweenCallbacks;
 
       // Helper: read translation from row-major matrix (SimpleMath convention)
       static Vec3 ExtractTranslation(const DirectX::SimpleMath::Matrix& m)

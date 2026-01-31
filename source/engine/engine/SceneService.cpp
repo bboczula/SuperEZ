@@ -60,3 +60,22 @@ void SceneService::SetScale(EntityId id, Vec3 scale)
       transform.scale[1] = scale.y;
       transform.scale[2] = scale.z;
 }
+
+void SceneService::TweenPositionTo(EntityId id, const Vec3& target, float durationSeconds, Ease ease, TweenCallback onComplete)
+{
+	// Snap to position immediately for now
+	SetPosition(id, target);
+}
+
+bool SceneService::IsTweeningPosition(EntityId id) const
+{
+      return false;
+}
+
+void SceneService::CancelPositionTween(EntityId id)
+{
+}
+
+void SceneService::Update(float dtSeconds)
+{
+}
