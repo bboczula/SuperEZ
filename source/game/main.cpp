@@ -81,7 +81,7 @@ public:
 			boardState[boardPosition] = 0xffffffff;
 
 			// Update piece position in scene
-			services.scene->TweenPositionTo(pieceId, initialPositions[emptyPosition], 0.2f, SceneService::Ease::EaseOutQuad);
+			services.scene->TweenPositionTo(pieceId, initialPositions[emptyPosition], 0.1f, SceneService::Ease::EaseOutQuad);
 		}
 		else
 		{

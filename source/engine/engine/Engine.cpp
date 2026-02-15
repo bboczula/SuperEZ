@@ -328,10 +328,11 @@ void Engine::ProcessSingleFrame()
 
 	const FrameTime& frameTime = timeSystem->Tick();
 	game->OnUpdate(frameTime);
-
+	sceneService->Update(frameTime.dt);
 	renderService->Update(mCoordinator);
 
 	Tick();
+
 	winMessageSubject.RunPostFrame();
 }
 

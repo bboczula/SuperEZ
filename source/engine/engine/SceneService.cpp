@@ -63,12 +63,42 @@ void SceneService::SetScale(EntityId id, Vec3 scale)
 
 void SceneService::TweenPositionTo(EntityId id, const Vec3& target, float durationSeconds, Ease ease, TweenCallback onComplete)
 {
-	// Snap to position immediately for now
+	// For now, let's clear immediatey
+	m_positionTweens.clear();
+
+      // ... and add a new one
+	PositionTween tween =
+      {
+            .entity = id,
+            .start = GetPosition(id),
+            .target = target,
+            .elapsed = 0.0f,
+            .duration = durationSeconds,
+            .ease = ease,
+		.onComplete = onComplete
+      };
+
+	// First check if there's an existing tween for this entity
+	// If so, immediately return (no overlapping tweens for now)
+      if (IsTweeningPosition(id))
+      {
+            return;
+      }
+
+	// Add new tween
+	m_positionTweens.push_back(tween);
+
+	// And immediately snap to target for now
 	SetPosition(id, target);
 }
 
 bool SceneService::IsTweeningPosition(EntityId id) const
 {
+      for (const auto& tween : m_positionTweens)
+      {
+            if (tween.entity == id)
+                  return true;
+      }
       return false;
 }
 
@@ -78,4 +108,33 @@ void SceneService::CancelPositionTween(EntityId id)
 
 void SceneService::Update(float dtSeconds)
 {
+      for(auto& tween : m_positionTweens)
+      {
+            tween.elapsed += dtSeconds;
+            float t = tween.elapsed / tween.duration;
+            if (t > 1.0f)
+            {
+                  t = 1.0f;
+            }
+            // Simple linear easing for now
+            Vec3 newPos;
+            newPos.x = tween.start.x + (tween.target.x - tween.start.x) * t;
+            newPos.y = tween.start.y + (tween.target.y - tween.start.y) * t;
+            newPos.z = tween.start.z + (tween.target.z - tween.start.z) * t;
+            SetPosition(tween.entity, newPos);
+            // Check for completion
+            if(t >= 1.0f && tween.onComplete)
+            {
+			// remove tween
+                  for(auto it = m_positionTweens.begin(); it != m_positionTweens.end(); ++it)
+                  {
+                        if(it->entity == tween.entity)
+                        {
+                              m_positionTweens.erase(it);
+                              break;
+                        }
+			}
+                  m_pendingTweenCallbacks.emplace_back(tween.onComplete, tween.entity);
+            }
+	}
 }
