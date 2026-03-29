@@ -5,7 +5,7 @@ LOCATION_DIRECTORY_NAME = "build"
 
 -- Workspace
 workspace "SuperEZ"
-    configurations { "Debug", "Release", "Final" }
+    configurations { "Debug", "Editor", "Release", "Final" }
 	architecture "x86_64"
 	system "Windows"
 	location(LOCATION_DIRECTORY_NAME)
@@ -34,6 +34,10 @@ project "ImGui"
         runtime "Debug"
         symbols "on"
 
+	filter "configurations:Editor"
+		runtime "Debug"
+		symbols "on"
+
     filter "configurations:Release"
         runtime "Release"
         optimize "on"
@@ -55,6 +59,10 @@ project "GoogleTest"
 	}
 	filter "configurations:Debug"
 		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:Editor"
+		defines { "DEBUG", "IS_EDITOR" }
 		runtime "Debug"
 		symbols "on"
 	filter "configurations:PreRelease"
@@ -90,6 +98,10 @@ project "UnitTest"
 	links { "GoogleTest", "Engine" }
 	filter "configurations:Debug"
 		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:Editor"
+		defines { "DEBUG", "IS_EDITOR" }
 		runtime "Debug"
 		symbols "on"
 	filter "configurations:PreRelease"
@@ -170,6 +182,27 @@ project "Engine"
 			"WinPixEventRuntime.lib",
 			"assetsuite_d.lib"
 		}
+	filter "configurations:Editor"
+		defines { "DEBUG", "IS_EDITOR" }
+		runtime "Debug"
+		symbols "on"
+		buildcommands
+		{
+			"{COPYFILE} %[%{!wks.location}../source/engine/renderer/shaders/**.hlsl] %[%{!cfg.targetdir}]",
+			"{COPYFILE} %[%{!wks.location}../source/externals/PixEvents/bin/**.dll] %[%{!cfg.targetdir}]",
+			"{COPYFILE} %[%{!wks.location}../source/externals/AssetSuite/bin/assetsuite_d.dll] %[%{!cfg.targetdir}]",
+			"{COPYDIR} %[%{!wks.location}../bin/Debug/assets] %[%{!cfg.targetdir}/assets]"
+		}
+		buildoutputs
+		{
+			"%{!cfg.targetdir}/WinPixEventRuntime.dll"
+		}
+		buildmessage("Copying the PIX Event runtime...")
+		links
+		{
+			"WinPixEventRuntime.lib",
+			"assetsuite_d.lib"
+		}
 	filter "configurations:PreRelease"
 		defines "NDEBUG"
 		runtime "Release"
@@ -207,6 +240,10 @@ project "Game"
 	}
 	filter "configurations:Debug"
 		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:Editor"
+		defines { "DEBUG", "IS_EDITOR" }
 		runtime "Debug"
 		symbols "on"
 	filter "configurations:PreRelease"
