@@ -4,23 +4,25 @@
 
 extern RenderContext renderContext;
 
-void RenderService::CreateEntity(Coordinator& coordinator, RenderItem& renderItem)
+Entity RenderService::CreateEntity(Coordinator& coordinator, RenderItem& renderItem)
 {
 	// --- NEW ECS CODE ---
 		// 1. Create the Entity representation of this object
 	Entity newEntity = coordinator.CreateEntity();
+	renderItem.id = newEntity;
 
 	// 2. Add Transform (Default to 0,0,0 for now)
 	coordinator.AddComponent(newEntity, TransformComponent{
 	    {renderItem.position.x, renderItem.position.y, renderItem.position.z},
-	    {renderItem.rotation.x, renderItem.rotation.x, renderItem.rotation.x},
-	    {renderItem.scale.x, renderItem.scale.x, renderItem.scale.x}
+	    {renderItem.rotation.x, renderItem.rotation.y, renderItem.rotation.z},
+	    {renderItem.scale.x, renderItem.scale.y, renderItem.scale.z}
 		});
 
 	// 3. Add Geometry Component
 	coordinator.AddComponent(newEntity, GeometryComponent{ renderItem.mesh });
 	coordinator.AddComponent(newEntity, MaterialComponent{ renderItem.texture });
 	coordinator.AddComponent(newEntity, InfoComponent{ renderItem.name });
+	return newEntity;
 }
 
 void RenderService::Update(Coordinator& coordinator)
@@ -37,8 +39,6 @@ void RenderService::Update(Coordinator& coordinator)
 			continue;
 
 		//assert(entity != 0 && "Entity 0 is usually reserved/not used.");
-		assert(entity < renderContext.GetNumOfMeshes() + 1 && "Entity ID exceeds RenderItem count.");
-
             auto& transform = coordinator.GetComponent<TransformComponent>(entity);
             auto& geo = coordinator.GetComponent<GeometryComponent>(entity);
             auto& mat = coordinator.GetComponent<MaterialComponent>(entity);
@@ -55,7 +55,7 @@ void RenderService::Update(Coordinator& coordinator)
 		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
 
 		// Update the RenderItem in the RenderContext (not create)
-		size_t renderItemIndex = entity;
+		size_t renderItemIndex = geo.meshHandle.Index();
 		assert(renderItemIndex < renderContext.renderItems.size() && "RenderItem index out of bounds");
 		renderContext.renderItems[renderItemIndex] = item;
 

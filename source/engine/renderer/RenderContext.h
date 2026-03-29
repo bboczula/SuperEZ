@@ -28,6 +28,22 @@ enum RenderTargetFormat
 	R32_UINT
 };
 
+enum class SceneEntityKind : unsigned char
+{
+	Renderable,
+	Camera
+};
+
+struct SceneEntityRecord
+{
+	uint32_t id = UINT32_MAX;
+	SceneEntityKind kind = SceneEntityKind::Renderable;
+	char name[32] = {};
+	HMesh mesh;
+	HTexture texture;
+	UINT cameraIndex = UINT32_MAX;
+};
+
 class RenderContext
 {
 public:
@@ -55,6 +71,10 @@ public:
 	// High Level
 	std::vector<RenderItem>& GetRenderItems();
 	RenderItem* GetRenderItemById(uint32_t id);
+	const std::vector<SceneEntityRecord>& GetSceneEntities() const { return sceneEntities; }
+	SceneEntityRecord* GetSceneEntityById(uint32_t id);
+	void RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture);
+	void RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex);
 	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
@@ -63,8 +83,11 @@ public:
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
-	void CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
+	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
+	Camera* GetActiveCamera() { return cameras[activeCameraIndex]; }
+	UINT GetActiveCameraIndex() const { return activeCameraIndex; }
+	void SetActiveCamera(UINT index) { activeCameraIndex = index; }
 	HTexture GetTexture(HRenderTarget renderTarget);
 	HTexture GetTexture(const char* name);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
@@ -153,7 +176,9 @@ private:
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
+	std::vector<SceneEntityRecord> sceneEntities;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;
+	UINT activeCameraIndex = 0;
 };

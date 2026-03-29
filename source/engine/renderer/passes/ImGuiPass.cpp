@@ -4,6 +4,7 @@
 #include "../RenderContext.h"
 #include "../../bind/DescriptorHeap.h"
 #include "../../asset/Mesh.h"
+#include "../../engine/camera/Camera.h"
 #include "../../engine/states/EngineCommandQueue.h"
 #include "../../bind/CommandList.h"
 #include "../RenderTarget.h"
@@ -17,6 +18,61 @@
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
+
+namespace
+{
+	ImU32 GetHierarchyIconColor(SceneEntityKind kind)
+	{
+		switch (kind)
+		{
+		case SceneEntityKind::Camera:
+			return IM_COL32(110, 190, 255, 255);
+		case SceneEntityKind::Renderable:
+		default:
+			return IM_COL32(255, 180, 90, 255);
+		}
+	}
+
+	void DrawCameraIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
+	{
+		const ImVec2 bodyMin(topLeft.x + 1.5f, topLeft.y + 4.0f);
+		const ImVec2 bodyMax(topLeft.x + 11.5f, topLeft.y + 11.5f);
+		const ImVec2 lensCenter(topLeft.x + 6.5f, topLeft.y + 7.8f);
+		const ImVec2 viewfinderMin(topLeft.x + 4.0f, topLeft.y + 1.8f);
+		const ImVec2 viewfinderMax(topLeft.x + 7.5f, topLeft.y + 4.3f);
+
+		drawList->AddRect(bodyMin, bodyMax, color, 2.5f, 0, 1.8f);
+		drawList->AddRectFilled(viewfinderMin, viewfinderMax, color, 1.0f);
+		drawList->AddCircle(lensCenter, 2.2f, color, 18, 1.7f);
+		drawList->AddCircleFilled(lensCenter, 0.8f, color);
+
+		const ImVec2 barrelA(topLeft.x + 11.5f, topLeft.y + 5.0f);
+		const ImVec2 barrelB(topLeft.x + 15.2f, topLeft.y + 3.6f);
+		const ImVec2 barrelC(topLeft.x + 15.2f, topLeft.y + 11.9f);
+		const ImVec2 barrelD(topLeft.x + 11.5f, topLeft.y + 10.3f);
+		drawList->AddQuad(barrelA, barrelB, barrelC, barrelD, color, 1.6f);
+	}
+
+	void DrawCubeIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
+	{
+		const ImVec2 frontTL(topLeft.x + 3.0f, topLeft.y + 5.0f);
+		const ImVec2 frontTR(topLeft.x + 9.0f, topLeft.y + 5.0f);
+		const ImVec2 frontBR(topLeft.x + 9.0f, topLeft.y + 11.0f);
+		const ImVec2 frontBL(topLeft.x + 3.0f, topLeft.y + 11.0f);
+
+		const ImVec2 backTL(topLeft.x + 6.0f, topLeft.y + 2.0f);
+		const ImVec2 backTR(topLeft.x + 12.0f, topLeft.y + 2.0f);
+		const ImVec2 backBR(topLeft.x + 12.0f, topLeft.y + 8.0f);
+		const ImVec2 backBL(topLeft.x + 6.0f, topLeft.y + 8.0f);
+
+		drawList->AddQuad(backTL, backTR, backBR, backBL, color, 1.4f);
+		drawList->AddQuad(frontTL, frontTR, frontBR, frontBL, color, 1.6f);
+		drawList->AddLine(backTL, frontTL, color, 1.4f);
+		drawList->AddLine(backTR, frontTR, color, 1.4f);
+		drawList->AddLine(backBR, frontBR, color, 1.4f);
+		drawList->AddLine(backBL, frontBL, color, 1.4f);
+	}
+}
 
 ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", L"", Type::Drawless)
 {
@@ -154,22 +210,35 @@ void ImGuiPass::Execute()
 
 	if (ImGui::BeginChild("GameObjectList", ImVec2(0, panelHeight), true))
 	{
-		for (int i = 0; i < renderContext.GetNumOfMeshes(); ++i)
+		for (const SceneEntityRecord& entity : renderContext.GetSceneEntities())
 		{
-			auto mesh = renderContext.GetMesh(HMesh(i));
+			bool isSelected = (currentSelection == entity.id);
 
-			// Check equality against the Context directly
-			bool isSelected = (currentSelection == (uint32_t)i);
-
-			if (ImGui::Selectable(mesh->GetName(), isSelected))
+			ImGui::PushID(static_cast<int>(entity.id));
+			if (ImGui::Selectable("##entity_row", isSelected, ImGuiSelectableFlags_SpanAvailWidth))
 			{
-				// 2. WRITE DIRECTLY TO THE SOURCE
-				// If the user clicks the UI, we update the engine state immediately.
-				renderContext.SetSelectedObjectId(i);
-
-				// This ensures that next frame, the HighlightMaskPass 
-				// will see this new ID and draw the outline.
+				renderContext.SetSelectedObjectId(entity.id);
 			}
+
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			const ImVec2 itemMin = ImGui::GetItemRectMin();
+			const ImVec2 itemMax = ImGui::GetItemRectMax();
+			const float iconSize = 16.0f;
+			const ImVec2 iconTopLeft(itemMin.x + 6.0f, itemMin.y + ((itemMax.y - itemMin.y) - iconSize) * 0.5f);
+			const ImU32 iconColor = GetHierarchyIconColor(entity.kind);
+
+			if (entity.kind == SceneEntityKind::Camera)
+			{
+				DrawCameraIcon(drawList, iconTopLeft, iconColor);
+			}
+			else
+			{
+				DrawCubeIcon(drawList, iconTopLeft, iconColor);
+			}
+
+			const ImVec2 textPos(itemMin.x + 28.0f, itemMin.y + ImGui::GetStyle().FramePadding.y);
+			drawList->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), entity.name);
+			ImGui::PopID();
 		}
 	}
 	ImGui::EndChild();
@@ -186,11 +255,48 @@ void ImGuiPass::Execute()
 		// but usually, waiting 1 frame for details to update is imperceptible.
 		currentSelection = renderContext.GetSelectedObjectId();
 
-		if (currentSelection != UINT32_MAX && currentSelection < renderContext.GetNumOfMeshes())
+		if (currentSelection != UINT32_MAX)
 		{
-			const auto mesh = renderContext.GetMesh(HMesh(currentSelection));
-			ImGui::Text("Name: %s", mesh->GetName());
-			ImGui::Text("Vertices: %d", mesh->GetVertexCount());
+			SceneEntityRecord* entity = renderContext.GetSceneEntityById(currentSelection);
+			if (entity != nullptr)
+			{
+				ImGui::Text("Name: %s", entity->name);
+				ImGui::Text("Entity: %u", entity->id);
+				if (entity->kind == SceneEntityKind::Camera)
+				{
+					Camera* camera = renderContext.GetCamera(entity->cameraIndex);
+					const auto position = camera->GetPosition();
+					const auto rotation = camera->GetRotation();
+					ImGui::Text("Kind: Camera");
+					ImGui::Text("Camera Index: %u", entity->cameraIndex);
+					ImGui::Text("Projection: %s",
+						camera->GetType() == Camera::CameraType::ORTHOGRAPHIC ? "Orthographic" : "Perspective");
+					const bool isActiveCamera = renderContext.GetActiveCameraIndex() == entity->cameraIndex;
+					ImGui::Text("Active: %s", isActiveCamera ? "Yes" : "No");
+					ImGui::Text("Position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
+					ImGui::Text("Rotation: %.2f, %.2f, %.2f", rotation.x, rotation.y, rotation.z);
+					if (!isActiveCamera && ImGui::Button("Make Active Camera"))
+					{
+						renderContext.SetActiveCamera(entity->cameraIndex);
+					}
+				}
+				else
+				{
+					RenderItem* item = renderContext.GetRenderItemById(currentSelection);
+					if (item != nullptr)
+					{
+						const auto mesh = renderContext.GetMesh(item->mesh);
+						ImGui::Text("Kind: Renderable");
+						ImGui::Text("Vertices: %d", mesh->GetVertexCount());
+						ImGui::Text("Mesh Handle: %zu", item->mesh.Index());
+						ImGui::Text("Texture Handle: %zu", item->texture.Index());
+					}
+				}
+			}
+			else
+			{
+				ImGui::Text("No GameObject selected.");
+			}
 		}
 		else
 		{
@@ -208,13 +314,10 @@ void ImGuiPass::Execute()
 	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
 	ImGui::Begin("Viewport");
 
-	auto texture = renderContext.GetTexture(colorCopyTexture);
-	HRenderTarget colorRenderTarget = HRenderTarget(3);
-	auto finalTexture = renderContext.GetTexture(colorRenderTarget);
-
-	auto finalFinalTexture = renderContext.GetTexture(HTexture(10));
-	renderContext.TransitionTo(commandList, HTexture(10), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalFinalTexture->GetSrvDescriptorIndex());
+	HTexture finalSceneTexture = renderContext.GetTexture("CompositionTexture");
+	auto finalScene = renderContext.GetTexture(finalSceneTexture);
+	renderContext.TransitionTo(commandList, finalSceneTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalScene->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
 	ImGui::Image(textureID, size);
@@ -253,7 +356,7 @@ void ImGuiPass::Execute()
 	// (Your code clears your framebuffer, renders your other stuff etc.)
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderContext.GetCommandList(commandList)->GetCommandList());
-	renderContext.TransitionBack(commandList, finalTexture);
+	renderContext.TransitionBack(commandList, finalSceneTexture);
 }
 
 void ImGuiPass::PostSubmit()

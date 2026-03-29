@@ -31,14 +31,14 @@ void TestPass::SetOrthographicProperties(const float aspectRatio)
 	width *= 2.0f;
 	height *= 2.0f;
 
-	renderContext.GetCamera(0)->SetWidth(width);
-	renderContext.GetCamera(0)->SetHeight(height);
+	renderContext.GetActiveCamera()->SetWidth(width);
+	renderContext.GetActiveCamera()->SetHeight(height);
 }
 
 void TestPass::PostAssetLoad()
 {
 	// Create camera (can't be done in constructor because renderContext is not ready)
-	freeCamera = new FreeCamera(renderContext.GetCamera(0));
+	freeCamera = new FreeCamera(renderContext.GetActiveCamera());
 }
 
 TestPass::~TestPass()
@@ -82,8 +82,8 @@ void TestPass::Update()
 	if (rawInput.IsKeyDown(VK_NUMPAD1) || rawInput.IsKeyDown(VK_NUMPAD3) || rawInput.IsKeyDown(VK_NUMPAD7))
 	{
 		// There is a crash, somehow we keep entering this condition, even though we don't press any key
-		renderContext.GetCamera(0)->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
-		renderContext.GetCamera(0)->SetPosition(DirectX::SimpleMath::Vector3(
+		renderContext.GetActiveCamera()->SetRotation(DirectX::SimpleMath::Vector3(.0f, 0.0f, 0.0f));
+		renderContext.GetActiveCamera()->SetPosition(DirectX::SimpleMath::Vector3(
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD1),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD7),
 			2.0f * rawInput.IsKeyDown(VK_NUMPAD3) + 0.0000001));
@@ -96,6 +96,8 @@ void TestPass::Update()
 			SetOrthographicProperties(static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight()));
 		}
 	}
+
+	freeCamera->SetCamera(renderContext.GetActiveCamera());
 
 	if (rawInput.IsRightButtonDown())
 	{		
@@ -133,8 +135,8 @@ void TestPass::Execute()
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
-	renderContext.GetCamera(0)->SetType(type);
-	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
+	renderContext.GetActiveCamera()->SetType(type);
+	renderContext.SetInlineConstants(commandList, renderContext.GetActiveCamera()->ViewProjecttion(), 0);
 
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)

@@ -29,14 +29,16 @@ void BlitPass::Initialize()
 
 void BlitPass::Execute()
 {
-	unsigned int textureIndex = 4; // ImGui Render Target
+	HTexture sourceTexture =
 #if IS_EDITOR
-	textureIndex++; // Skip the extra texture used for selection buffer in editor
+		renderContext.GetTexture("RT_ImGui");
+#else
+		renderContext.GetTexture("RT_TestPass");
 #endif
-	renderContext.TransitionTo(commandList, HTexture(textureIndex), D3D12_RESOURCE_STATE_COPY_SOURCE);
+	renderContext.TransitionTo(commandList, sourceTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	
 	auto frameIndex = deviceContext.GetCurrentBackBufferIndex();
-	HTexture renderTarget = HTexture(textureIndex); // ImGui Render Target
+	HTexture renderTarget = sourceTexture;
 	HTexture backBuffer = HTexture(frameIndex);
 	HTexture frameTexture = HTexture(frameIndex);
 	renderContext.TransitionTo(commandList, frameTexture, D3D12_RESOURCE_STATE_COPY_DEST);

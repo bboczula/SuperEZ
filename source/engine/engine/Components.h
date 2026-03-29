@@ -1,4 +1,7 @@
 #pragma once
+#include "../asset/Handle.h"
+
+#include <cstddef>
 #include <string>
 
 // A simple component to track position, rotation, scale
@@ -27,4 +30,19 @@ struct MaterialComponent
 struct InfoComponent
 {
     std::string name;
+};
+
+enum class CameraProjectionType : unsigned char
+{
+    Perspective,
+    Orthographic,
+};
+
+struct CameraComponent
+{
+    std::size_t cameraIndex = static_cast<std::size_t>(-1);
+    CameraProjectionType projectionType = CameraProjectionType::Perspective;
+    float width = 1.0f;
+    float height = 1.0f;
+    bool active = false;
 };

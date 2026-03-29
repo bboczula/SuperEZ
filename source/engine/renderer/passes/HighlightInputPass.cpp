@@ -33,8 +33,7 @@ void HighlightInputPass::ConfigurePipelineState()
     viewportWidth -= 400; // Assuming the menu takes 400 pixels
     viewportHeight -= menuHeight - 25; // Assuming the status bar takes 25 pixels
 #endif
-    //renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", RenderTargetFormat::R32G32_UINT, viewportWidth, viewportHeight);
-    renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", HTexture(6));
+    renderTarget = renderContext.CreateRenderTarget("RT_HighlightInputPass", renderContext.GetTexture("HighlightClearTexture"));
     depthBuffer = renderContext.CreateDepthBuffer();
 }
 
@@ -57,11 +56,11 @@ void HighlightInputPass::Execute()
 	renderContext.TransitionTo(commandList, renderContext.GetTexture(renderTarget), D3D12_RESOURCE_STATE_RENDER_TARGET);
 	renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
-	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
+	renderContext.SetInlineConstants(commandList, renderContext.GetActiveCamera()->ViewProjecttion(), 0);
 
-	static uint32_t selectedIndex = UINT32_MAX;
 	auto selectedObjectId = renderContext.GetSelectedObjectId();
-	if (selectedObjectId >= renderContext.GetNumOfMeshes())
+	RenderItem* selectedItem = renderContext.GetRenderItemById(selectedObjectId);
+	if (selectedItem == nullptr)
 	{
 		return;
 	}
@@ -70,7 +69,7 @@ void HighlightInputPass::Execute()
 	//	renderContext.DrawMesh(commandList, HMesh(selectedObjectId));
 	//}
 
-	RenderItem item = renderContext.GetRenderItems()[selectedObjectId];
+	RenderItem item = *selectedItem;
 	renderContext.SetInlineConstants(commandList, item.World(), 1);
 	renderContext.BindGeometry(commandList, item.mesh);
 	renderContext.DrawMesh(commandList, item.mesh);

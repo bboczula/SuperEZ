@@ -40,16 +40,17 @@ void GrayscalePass::Update()
 
 void GrayscalePass::Execute()
 {
+	HTexture sceneColorTexture = renderContext.GetTexture("RT_TestPass");
 	// The input texture needs to be 4, previous ones don't have valid SRV offset
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeapCompute(commandList);
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, HTexture(4), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, sceneColorTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 0); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, HTexture(4), 1); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlySRV(commandList, sceneColorTexture, 1);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
-	renderContext.TransitionBack(commandList, HTexture(4)); // Input Texture
+	renderContext.TransitionBack(commandList, sceneColorTexture);
 }
 
 void GrayscalePass::PostSubmit()

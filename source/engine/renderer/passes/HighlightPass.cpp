@@ -42,6 +42,7 @@ void HighlightPass::Update()
 
 void HighlightPass::Execute()
 {
+	HTexture highlightSeedTexture = renderContext.GetTexture("HighlightClearTexture");
 	const int menuHeight = 20;
 	int viewportWidth = 1920 - 400; // Assuming the menu takes 400 pixels
 	int viewportHeight = 1080 - menuHeight - 25; // Assuming the status bar takes 25 pixels
@@ -53,68 +54,68 @@ void HighlightPass::Execute()
 	renderContext.SetInlineConstantsUAV(commandList, 1, &viewportHeight, 1); // INVALID value
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, HTexture(6), 3); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlySRV(commandList, highlightSeedTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
-	renderContext.TransitionBack(commandList, HTexture(6)); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
 
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
-	renderContext.BindTextureOnlyUAV(commandList, HTexture(6), 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	renderContext.BindTextureOnlyUAV(commandList, highlightSeedTexture, 2);
+	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
-	renderContext.TransitionBack(commandList, HTexture(6));
-	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
+	renderContext.TransitionBack(commandList, outputTexture);
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, HTexture(6), 3); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlySRV(commandList, highlightSeedTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
-	renderContext.TransitionBack(commandList, HTexture(6)); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
 
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
-	renderContext.BindTextureOnlyUAV(commandList, HTexture(6), 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	renderContext.BindTextureOnlyUAV(commandList, highlightSeedTexture, 2);
+	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
-	renderContext.TransitionBack(commandList, HTexture(6));
-	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
+	renderContext.TransitionBack(commandList, outputTexture);
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, HTexture(6), 3); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlySRV(commandList, highlightSeedTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
-	renderContext.TransitionBack(commandList, HTexture(6)); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
 
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
-	renderContext.BindTextureOnlyUAV(commandList, HTexture(6), 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	renderContext.BindTextureOnlyUAV(commandList, highlightSeedTexture, 2);
+	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
-	renderContext.TransitionBack(commandList, HTexture(6));
-	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
+	renderContext.TransitionBack(commandList, outputTexture);
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, HTexture(6), 3); // Input Texture (assumed to be at index 0)
+	renderContext.BindTextureOnlySRV(commandList, highlightSeedTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
-	renderContext.TransitionBack(commandList, HTexture(6)); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
 
-	renderContext.TransitionTo(commandList, HTexture(6), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE); // Input Texture (assumed to be at index 0)
-	renderContext.BindTextureOnlyUAV(commandList, HTexture(6), 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3); // Input Texture (assumed to be at index 0)
+	renderContext.TransitionTo(commandList, highlightSeedTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	renderContext.BindTextureOnlyUAV(commandList, highlightSeedTexture, 2);
+	renderContext.BindTextureOnlySRV(commandList, outputTexture, 3);
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
-	renderContext.TransitionBack(commandList, HTexture(6));
-	renderContext.TransitionBack(commandList, outputTexture); // Input Texture
+	renderContext.TransitionBack(commandList, highlightSeedTexture);
+	renderContext.TransitionBack(commandList, outputTexture);
 }
 
 void HighlightPass::PostSubmit()

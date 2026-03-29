@@ -4,7 +4,7 @@
 #include <string>
 
       using EntityId = uint32_t;
-      static constexpr EntityId InvalidEntity = 0;
+      static constexpr EntityId InvalidEntity = UINT32_MAX;
 
       struct Vec3
       {
@@ -19,6 +19,9 @@
             // Lookup (use in OnInit only; do NOT spam this every frame)
             virtual EntityId FindEntityByName(const std::string& name) const = 0;
 		virtual EntityId GetSelectedEntity() const = 0;
+            virtual bool IsCameraEntity(EntityId id) const = 0;
+            virtual EntityId GetActiveCameraEntity() const = 0;
+            virtual void SetActiveCamera(EntityId id) = 0;
 
             // Transform - minimal for now
             virtual Vec3 GetPosition(EntityId id) const = 0;

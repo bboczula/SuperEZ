@@ -18,7 +18,7 @@ struct EngineServices
       // Raw input access (mouse, keyboard)
       IInput* input = nullptr;
 
-      // Main active camera (optional but extremely useful for games)
+      // Main active runtime camera. For entity-level camera work, prefer scene APIs.
       Camera* camera = nullptr;
 
       // --- Optional / incremental services ---
