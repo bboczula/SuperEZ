@@ -5,6 +5,6 @@
 class RenderService
 {
 public:
-	void CreateEntity(Coordinator& coordinator, RenderItem& renderItem);
+	Entity CreateEntity(Coordinator& coordinator, RenderItem& renderItem);
 	void Update(Coordinator& coordinator);
 };

@@ -83,6 +83,7 @@ void Engine::Initialize()
 	mCoordinator.RegisterComponent<GeometryComponent>();
 	mCoordinator.RegisterComponent<MaterialComponent>();
 	mCoordinator.RegisterComponent<InfoComponent>();
+	mCoordinator.RegisterComponent<CameraComponent>();
 
 	rawInput.Initialize();
 	imGuiHandler.Initialize();
@@ -109,7 +110,7 @@ void Engine::CreateRenderResources()
 	// Here we can make engine speciffic allocations
 }
 
-void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::filesystem::path currentPath)
+void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesystem::path currentPath)
 {
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
@@ -127,7 +128,51 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 		};
 
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
-	renderContext.CreateCamera(aspectRatio, cameraData.position, cameraData.rotation);
+
+	if (cameras.empty())
+	{
+		cameras.push_back(CameraData{
+			.name = "DefaultCamera",
+			.position = { 0.0f, 0.0f, -3.0f },
+			.rotation = { 0.0f, 0.0f, 0.0f },
+			.type = Camera::CameraType::PERSPECTIVE,
+			.width = 1.0f,
+			.height = 1.0f,
+			.active = true
+			});
+	}
+
+	bool hasActiveCamera = false;
+	for (const auto& cameraData : cameras)
+	{
+		const UINT cameraIndex = renderContext.CreateCamera(aspectRatio, cameraData.position, cameraData.rotation);
+		Camera* runtimeCamera = renderContext.GetCamera(cameraIndex);
+		runtimeCamera->SetType(cameraData.type);
+		runtimeCamera->SetWidth(cameraData.width);
+		runtimeCamera->SetHeight(cameraData.height);
+
+		Entity cameraEntity = mCoordinator.CreateEntity();
+		mCoordinator.AddComponent(cameraEntity, TransformComponent{
+			{ cameraData.position.x, cameraData.position.y, cameraData.position.z },
+			{ cameraData.rotation.x, cameraData.rotation.y, cameraData.rotation.z },
+			{ 1.0f, 1.0f, 1.0f }
+			});
+		mCoordinator.AddComponent(cameraEntity, InfoComponent{ cameraData.name });
+		mCoordinator.AddComponent(cameraEntity, CameraComponent{
+			.cameraIndex = cameraIndex,
+			.projectionType = cameraData.type == Camera::CameraType::ORTHOGRAPHIC ? CameraProjectionType::Orthographic : CameraProjectionType::Perspective,
+			.width = cameraData.width,
+			.height = cameraData.height,
+			.active = cameraData.active
+			});
+		renderContext.RegisterCameraEntity(cameraEntity, cameraData.name.c_str(), cameraIndex);
+
+		if (cameraData.active || !hasActiveCamera)
+		{
+			renderContext.SetActiveCamera(cameraIndex);
+			hasActiveCamera = true;
+		}
+	}
 
 	for (const auto& gameObject : gameObjects)
 	{
@@ -176,37 +221,32 @@ void Engine::LoadAssets(GameObjects gameObjects, CameraData cameraData, std::fil
 
 		CreateTexture(imageDescriptor, imageOutput);
 
-		// After renderContext.CreateMesh(...)
-		const uint32_t meshIndex = renderContext.GetNumOfMeshes() - 1;
-		const uint32_t id = meshIndex;
-
 		RenderItem item{};
-		item.id = id;
 		item.position = gameObject.position;
 		item.rotation = gameObject.rotation;
 		item.scale = gameObject.scale;
-		item.mesh = HMesh(id);
-		item.texture = HTexture(id);
+		item.mesh = HMesh(renderContext.GetNumOfMeshes() - 1);
+		item.texture = HTexture(renderContext.GetNumOfMeshes() - 1);
 		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
 
+		const Entity entity = renderService->CreateEntity(mCoordinator, item);
+		item.id = entity;
 		renderContext.CreateRenderItem(item);
-
-		// Create the entity in the ECS
-		renderService->CreateEntity(mCoordinator, item);
+		renderContext.RegisterRenderableEntity(entity, item.name, item.mesh, item.texture);
 	}
 
 	EngineServices services
 	{
 		.scene = sceneService,
 		.input = rawInputService,
-		.camera = nullptr,
+		.camera = renderContext.GetActiveCamera(),
 		.picker = nullptr,
 		.render = renderService
 	};
 	game->OnInit(services);
 }
 
-void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, SceneData& sceneData)
+void Engine::ProcessScene(GameObjects& gameObjects, Cameras& cameras, SceneData& sceneData)
 {
 	sceneData.currentPath.append(sceneData.sceneName);
 	std::filesystem::path scenePath = sceneData.currentPath / (std::string(sceneData.sceneName) + ".xml");
@@ -226,28 +266,50 @@ void Engine::ProcessScene(GameObjects& gameObjects, CameraData& cameraData, Scen
 	sceneData.currentPath.append(geometryLibraryFile);
 
 	ProcessGameObjects(scene, gameObjects);
-	ProcessCamera(scene, cameraData);
+	ProcessCameras(scene, cameras);
 }
 
-void Engine::ProcessCamera(tinyxml2::XMLElement* scene, CameraData& cameraData)
+void Engine::ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras)
 {
-	tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
-	assert(cameraElem != nullptr, "Camera element not found in scene XML file!");
-	const char* name = cameraElem->Attribute("name");
+	bool firstCamera = true;
+	for (tinyxml2::XMLElement* cameraElem = scene->FirstChildElement("Camera");
+		cameraElem != nullptr;
+		cameraElem = cameraElem->NextSiblingElement("Camera"))
+	{
+		CameraData cameraData;
+		const char* name = cameraElem->Attribute("name");
+		cameraData.name = name ? name : "Camera";
+		cameraData.active = cameraElem->BoolAttribute("active", firstCamera);
 
-	tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
-	assert(cameraPosition != nullptr, "Camera position element not found in scene XML file!");
-	cameraData.position.x = cameraPosition->FloatAttribute("x", 0.0f);
-	cameraData.position.y = cameraPosition->FloatAttribute("y", 0.0f);
-	cameraData.position.z = cameraPosition->FloatAttribute("z", 0.0f);
+		const char* type = cameraElem->Attribute("type");
+		if (type != nullptr && _stricmp(type, "orthographic") == 0)
+		{
+			cameraData.type = Camera::CameraType::ORTHOGRAPHIC;
+		}
 
-	tinyxml2::XMLElement* cameraRotation = cameraElem->FirstChildElement("Rotation");
-	assert(cameraRotation != nullptr, "Camera rotation element not found in scene XML file!");
-	cameraData.rotation.x = cameraRotation->FloatAttribute("pitch", 0.0f);
-	cameraData.rotation.y = cameraRotation->FloatAttribute("yaw", 0.0f);
-	cameraData.rotation.z = cameraRotation->FloatAttribute("roll", 0.0f);
-	
-	std::cout << "[Camera] " << cameraData << "\n";
+		tinyxml2::XMLElement* cameraPosition = cameraElem->FirstChildElement("Position");
+		assert(cameraPosition != nullptr, "Camera position element not found in scene XML file!");
+		cameraData.position.x = cameraPosition->FloatAttribute("x", 0.0f);
+		cameraData.position.y = cameraPosition->FloatAttribute("y", 0.0f);
+		cameraData.position.z = cameraPosition->FloatAttribute("z", 0.0f);
+
+		tinyxml2::XMLElement* cameraRotation = cameraElem->FirstChildElement("Rotation");
+		assert(cameraRotation != nullptr, "Camera rotation element not found in scene XML file!");
+		cameraData.rotation.x = cameraRotation->FloatAttribute("pitch", cameraRotation->FloatAttribute("x", 0.0f));
+		cameraData.rotation.y = cameraRotation->FloatAttribute("yaw", cameraRotation->FloatAttribute("y", 0.0f));
+		cameraData.rotation.z = cameraRotation->FloatAttribute("roll", cameraRotation->FloatAttribute("z", 0.0f));
+
+		tinyxml2::XMLElement* cameraProjection = cameraElem->FirstChildElement("Projection");
+		if (cameraProjection != nullptr)
+		{
+			cameraData.width = cameraProjection->FloatAttribute("width", 1.0f);
+			cameraData.height = cameraProjection->FloatAttribute("height", 1.0f);
+		}
+
+		cameras.emplace_back(cameraData);
+		std::cout << "[Camera] " << cameraData << "\n";
+		firstCamera = false;
+	}
 }
 
 void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameObjects)
@@ -339,14 +401,14 @@ void Engine::ProcessSingleFrame()
 void Engine::LoadSceneAssets(std::string sceneName)
 {
 	GameObjects gameObjects;
-	CameraData cameraData;
+	Cameras cameras;
 	SceneData sceneData =
 	{
 		std::filesystem::current_path() / "assets",
 		sceneName.c_str()
 	};
-	ProcessScene(gameObjects, cameraData, sceneData);
-	LoadAssets(gameObjects, cameraData, sceneData.currentPath);
+	ProcessScene(gameObjects, cameras, sceneData);
+	LoadAssets(gameObjects, cameras, sceneData.currentPath);
 }
 
 void Engine::UnloadSceneAssets()

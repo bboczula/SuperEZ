@@ -1,11 +1,14 @@
 #pragma once
 
 #include "IScene.h"
+#include "Components.h"
 #include "../renderer/RenderContext.h"
 #include "Coordinator.h"
 
+#include <functional>
 #include <cstring>   // strcmp
 #include <string>
+#include <vector>
 
 class SceneService final : public IScene
 {
@@ -33,6 +36,9 @@ public:
       }
       EntityId FindEntityByName(const std::string& name) const override;
 	EntityId GetSelectedEntity() const override;
+      bool IsCameraEntity(EntityId id) const override;
+      EntityId GetActiveCameraEntity() const override;
+      void SetActiveCamera(EntityId id) override;
       Vec3 GetPosition(EntityId id) const override;
       void SetPosition(EntityId id, Vec3 p) override;
       Vec3 GetRotationEuler(EntityId id) const override;
@@ -44,6 +50,13 @@ public:
       void CancelPositionTween(EntityId id);
       void Update(float dtSeconds);
 private:
+      bool HasInfoComponent(EntityId id) const;
+      bool HasTransformComponent(EntityId id) const;
+      bool HasCameraComponent(EntityId id) const;
+      CameraComponent* TryGetCameraComponent(EntityId id);
+      const CameraComponent* TryGetCameraComponent(EntityId id) const;
+      TransformComponent* TryGetTransformComponent(EntityId id);
+      const TransformComponent* TryGetTransformComponent(EntityId id) const;
       RenderContext& renderContext;
       Coordinator* coordinator;
       std::vector<PositionTween> m_positionTweens;

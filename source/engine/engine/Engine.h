@@ -6,6 +6,7 @@
 
 #include "states/IEngineState.h"
 #include "Coordinator.h"
+#include "camera/Camera.h"
 #include "../../externals/TinyXML2/tinyxml2.h"
 #include "../../externals/SimpleMath/SimpleMath.h"
 
@@ -24,9 +25,16 @@ using GameObjects = std::vector<GameObjectData>;
 
 struct CameraData
 {
+	std::string name;
 	DirectX::SimpleMath::Vector3 position;
 	DirectX::SimpleMath::Vector3 rotation;
+	Camera::CameraType type = Camera::CameraType::PERSPECTIVE;
+	float width = 1.0f;
+	float height = 1.0f;
+	bool active = false;
 };
+
+using Cameras = std::vector<CameraData>;
 
 struct SceneData
 {
@@ -48,7 +56,7 @@ public:
 	~Engine();
 	void Initialize();
 	void CreateRenderResources();
-	void LoadAssets(GameObjects gameObjects, CameraData cameraData, std::filesystem::path currentPath);
+	void LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesystem::path currentPath);
 	void Tick();
 	void Run(IGame& game);
 	void ProcessSingleFrame();
@@ -60,8 +68,8 @@ public:
 	std::string GetStartupSceneName() const { return startupSceneName; }
 private:
 	// Handle scene XML processing
-	void ProcessScene(GameObjects& gameObjects, CameraData& cameraData, SceneData& sceneData);
-	void ProcessCamera(tinyxml2::XMLElement* scene, CameraData& cameraData);
+	void ProcessScene(GameObjects& gameObjects, Cameras& cameras, SceneData& sceneData);
+	void ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras);
 	void ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameObjects);
 private:
 	IGame* game = nullptr;

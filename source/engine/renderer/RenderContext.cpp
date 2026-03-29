@@ -21,6 +21,8 @@
 #include "debugapi.h"
 #include "../Utils.h"
 
+#include <cstring>
+
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 
@@ -45,6 +47,10 @@ RenderContext::~RenderContext()
 	for (auto& rootSignature : rootSignatures)
 	{
 		delete rootSignature;
+	}
+	for (auto& camera : cameras)
+	{
+		delete camera;
 	}
 }
 
@@ -98,6 +104,8 @@ void RenderContext::UnloadAssets()
 		materials.pop_back();
 	}
 
+	sceneEntities.clear();
+
 	cbvSrvUavHeap.Reset();
 	rtvHeap.Reset();
 	dsvHeap.Reset();
@@ -111,11 +119,47 @@ std::vector<RenderItem>& RenderContext::GetRenderItems()
 
 RenderItem* RenderContext::GetRenderItemById(uint32_t id)
 {
-	const uint32_t index = id;
-	if (index >= renderItems.size())
-		return nullptr;
+	for (auto& item : renderItems)
+	{
+		if (item.id == id)
+		{
+			return &item;
+		}
+	}
+	return nullptr;
+}
 
-	return &renderItems[index];
+SceneEntityRecord* RenderContext::GetSceneEntityById(uint32_t id)
+{
+	for (auto& item : sceneEntities)
+	{
+		if (item.id == id)
+		{
+			return &item;
+		}
+	}
+	return nullptr;
+}
+
+void RenderContext::RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture)
+{
+	SceneEntityRecord record{};
+	record.id = id;
+	record.kind = SceneEntityKind::Renderable;
+	record.mesh = mesh;
+	record.texture = texture;
+	strncpy_s(record.name, name, _TRUNCATE);
+	sceneEntities.push_back(record);
+}
+
+void RenderContext::RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex)
+{
+	SceneEntityRecord record{};
+	record.id = id;
+	record.kind = SceneEntityKind::Camera;
+	record.cameraIndex = cameraIndex;
+	strncpy_s(record.name, name, _TRUNCATE);
+	sceneEntities.push_back(record);
 }
 
 void RenderContext::CreateRenderItem(const RenderItem& item)
@@ -586,7 +630,7 @@ void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture textu
 	dst.PlacedFootprint.Footprint.Width = 1;
 	dst.PlacedFootprint.Footprint.Height = 1;
 	dst.PlacedFootprint.Footprint.Depth = 1;
-	dst.PlacedFootprint.Footprint.RowPitch = 4; // 1 texel × 4 bytes (R32_UINT)
+	dst.PlacedFootprint.Footprint.RowPitch = 4; // 1 texel ï¿½ 4 bytes (R32_UINT)
 
 	auto sourceTexture = textures[texture.Index()]->GetResource();
 	D3D12_TEXTURE_COPY_LOCATION src = {};
@@ -762,9 +806,14 @@ UINT RenderContext::CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FOR
 	return offset;
 }
 
-void RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation)
+UINT RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation)
 {
 	cameras.push_back(new Camera(aspectRatio, position, rotation));
+	if (cameras.size() == 1)
+	{
+		activeCameraIndex = 0;
+	}
+	return static_cast<UINT>(cameras.size() - 1);
 }
 
 void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)
@@ -877,7 +926,7 @@ HTexture RenderContext::GetTexture(const char* name)
 	size_t index = 0;
 	for (const auto& texture : textures)
 	{
-		if (texture->GetName() == name)
+		if (strcmp(texture->GetName(), name) == 0)
 		{
 			return HTexture(index);
 		}

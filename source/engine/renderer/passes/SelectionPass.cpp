@@ -85,19 +85,17 @@ void SelectionPass::Execute()
 	renderContext.CleraRenderTarget(commandList, renderTarget);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
-	renderContext.SetInlineConstants(commandList, renderContext.GetCamera(0)->ViewProjecttion(), 0);
+	renderContext.SetInlineConstants(commandList, renderContext.GetActiveCamera()->ViewProjecttion(), 0);
 
-	UINT index = 0;
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)
 	{
-		UINT id = index + 1;
+		UINT id = item.id + 1;
 		renderContext.SetInlineConstants(commandList, id, 2);
 		renderContext.SetInlineConstants(commandList, item.World(), 1);
 		renderContext.BindGeometry(commandList, item.mesh);
 		renderContext.BindTexture(commandList, item.texture, 3);
 		renderContext.DrawMesh(commandList, item.mesh);
-		index++;
 	}
 
 	// Here we can pass the mouse position to the shader
