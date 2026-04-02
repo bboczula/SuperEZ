@@ -36,6 +36,17 @@ struct CameraData
 
 using Cameras = std::vector<CameraData>;
 
+struct SunlightData
+{
+	std::string name;
+	bool enabled = true;
+	DirectX::SimpleMath::Vector3 direction = { 0.0f, -1.0f, 0.0f };
+	DirectX::SimpleMath::Vector3 color = { 1.0f, 1.0f, 1.0f };
+	float intensity = 1.0f;
+};
+
+using Sunlights = std::vector<SunlightData>;
+
 struct SceneData
 {
 	std::filesystem::path currentPath;
