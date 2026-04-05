@@ -1,0 +1,112 @@
+<Scene>
+	<Camera name="MainCamera">
+		<Position x="0.1" y="5.8" z="4.6" />
+		<Rotation pitch="0.95" yaw="3.14" roll="0.0" />
+	</Camera>
+	<MeshLibrary file="slider.obj" />
+	<GameObject name="Piece2" mesh="Piece2_Mesh" texture="piece_2.bmp">
+		<Position x="-0.5" y="0.0" z="-1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece1" mesh="Piece1_Mesh" texture="piece_1.bmp">
+		<Position x="-1.5" y="0.0" z="-1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="BoxLeft" mesh="BoxLeft_Mesh" texture="blue.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="BoxRight" mesh="BoxRight_Mesh" texture="blue.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="BoxTop" mesh="BoxTop_Mesh" texture="blue.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="BoxBottom" mesh="BoxBottom_Mesh" texture="blue.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece3" mesh="Piece3_Mesh" texture="piece_3.bmp">
+		<Position x="0.5" y="0.0" z="-1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece4" mesh="Piece4_Mesh" texture="piece_4.bmp">
+		<Position x="1.5" y="0.0" z="-1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece5" mesh="Piece5_Mesh" texture="piece_5.bmp">
+		<Position x="-1.5" y="0.0" z="-0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece6" mesh="Piece6_Mesh" texture="piece_6.bmp">
+		<Position x="-0.5" y="0.0" z="-0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece7" mesh="Piece7_Mesh" texture="piece_7.bmp">
+		<Position x="0.5" y="0.0" z="-0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece8" mesh="Piece8_Mesh" texture="piece_8.bmp">
+		<Position x="1.5" y="0.0" z="-0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece9" mesh="Piece9_Mesh" texture="piece_9.bmp">
+		<Position x="-1.5" y="0.0" z="0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece10" mesh="Piece10_Mesh" texture="piece_10.bmp">
+		<Position x="-0.5" y="0.0" z="0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece11" mesh="Piece11_Mesh" texture="piece_11.bmp">
+		<Position x="0.5" y="0.0" z="0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece12" mesh="Piece12_Mesh" texture="piece_12.bmp">
+		<Position x="1.5" y="0.0" z="0.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece13" mesh="Piece13_Mesh" texture="piece_13.bmp">
+		<Position x="-1.5" y="0.0" z="1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece14" mesh="Piece14_Mesh" texture="piece_14.bmp">
+		<Position x="-0.5" y="0.0" z="1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Piece15" mesh="Piece15_Mesh" texture="piece_15.bmp">
+		<Position x="0.5" y="0.0" z="1.5" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="BoxBack" mesh="Back_Mesh" texture="blue.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="GoodJob" mesh="GoodJob_Mesh" texture="good_job.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+</Scene>

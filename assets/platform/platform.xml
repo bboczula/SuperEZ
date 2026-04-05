@@ -1,0 +1,42 @@
+<Scene>
+<Camera name="MainCamera">
+	<Position x="7.7" y="8.1" z="7.6" />
+	<Rotation pitch="0.6" yaw="3.9" roll="0.0" />
+</Camera>
+<MeshLibrary file="platform.obj" />
+<GameObject name="platform_1" mesh="plane_1_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="platform_2" mesh="plane_2_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="platform_3" mesh="plane_3_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="platform_4" mesh="plane_4_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="floor" mesh="floor_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="ball_green" mesh="ball_green_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="ball_color" mesh="ball_color_Mesh" texture="platformer_texture.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+</Scene>

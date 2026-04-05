@@ -1,0 +1,22 @@
+# Blender 4.4.3 MTL File: 'uploads_files_673137_Chess_pieces_with_rig_PBR_Textures_Blender_2.8.blend'
+# www.blender.org
+
+newmtl Chess_Board
+Ka 1.000000 1.000000 1.000000
+Ks 0.300000 0.300000 0.300000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd C:/Board_DiffuseMap.png
+map_Ns C:/Board_RoughnessMap.png
+
+newmtl Chess_Pieces
+Ka 1.000000 1.000000 1.000000
+Kd 0.818661 0.822697 0.753856
+Ks 0.300000 0.300000 0.300000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Ns C:/Pieces_RoughnessMap.png
