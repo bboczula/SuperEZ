@@ -80,7 +80,7 @@ public:
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
 	HDepthBuffer CreateDepthBuffer();
-	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
+	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);

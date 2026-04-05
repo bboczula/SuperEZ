@@ -692,7 +692,7 @@ HBuffer RenderContext::CreateReadbackBuffer()
 	return HBuffer(buffers.size() - 1);
 }
 
-void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
+void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -709,9 +709,11 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 2 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 3 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
-	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vbIndexTexture.Index(), vbvTexture, vertexCount, name));
+	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
+		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, name));
 }
 
 void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)

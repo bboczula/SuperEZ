@@ -203,16 +203,26 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesyste
 		};
 
 		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))
+		{
 			continue;
-
+		}
 		auto vbPosition = CreateVB("POSITION", 4);
+
 		auto vbColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), meshDescriptor.numOfVertices, meshName.c_str());
 
 		if (!TryGetMesh(AssetSuite::MeshOutputFormat::TEXCOORD))
+		{
 			continue;
-
+		}
 		auto vbTexcoord = CreateVB("TEXCOORD", 2);
-		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, meshName.c_str());
+
+		if (!TryGetMesh(AssetSuite::MeshOutputFormat::NORMAL))
+		{
+			continue;
+		}
+		auto vbNormals = CreateVB("NORMAL", 3);
+
+		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
 
 		//auto texturePath = std::filesystem::current_path() / textureName;
 		auto texturePath = currentPath.remove_filename() / textureName;
