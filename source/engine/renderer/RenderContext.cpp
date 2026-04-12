@@ -104,7 +104,17 @@ void RenderContext::UnloadAssets()
 		materials.pop_back();
 	}
 
+	while (!cameras.empty())
+	{
+		delete cameras.back();
+		cameras.pop_back();
+	}
+
+	renderItems.clear();
 	sceneEntities.clear();
+	currentSelectedObjectID = ~0u;
+	wasObjectSeleced = false;
+	activeCameraIndex = 0;
 
 	cbvSrvUavHeap.Reset();
 	rtvHeap.Reset();

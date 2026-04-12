@@ -423,6 +423,8 @@ void Engine::LoadSceneAssets(std::string sceneName)
 
 void Engine::UnloadSceneAssets()
 {
+	sceneService->Reset();
+	mCoordinator.Reset();
 	renderContext.UnloadAssets();
 }
 

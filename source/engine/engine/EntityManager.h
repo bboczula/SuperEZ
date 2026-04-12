@@ -7,10 +7,20 @@
 class EntityManager {
 public:
       EntityManager() {
+            Reset();
+      }
+
+      void Reset() {
+            std::queue<Entity> empty;
+            std::swap(mAvailableEntities, empty);
+
             // Fill the queue with all possible IDs (0 to 4999)
             for (Entity i = 0; i < MAX_ENTITIES; ++i) {
                   mAvailableEntities.push(i);
             }
+
+            mSignatures.fill({});
+            mLivingEntityCount = 0;
       }
 
       Entity CreateEntity() {
