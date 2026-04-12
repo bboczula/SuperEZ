@@ -49,7 +49,7 @@ void TestPass::ConfigurePipelineState()
 {
 	// Pre-AutomaticInitialize Procedure
 	inputLayout = renderContext.CreateInputLayout();
-	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
+	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord, VertexStream::Normal);
 
 	// Now we can create the root signature
 	RootSignatureBuilder builder;

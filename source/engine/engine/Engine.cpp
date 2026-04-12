@@ -41,22 +41,30 @@ RawInput rawInput;
 CursorInput cursorInput;
 ImGuiHandler imGuiHandler;
 
-// Utility functions for logging
-inline std::ostream& operator<<(std::ostream& os, const DirectX::SimpleMath::Vector3& v)
+std::vector<float> NormalizeNormalStream(const std::vector<float>& rawNormals, UINT vertexCount)
 {
-	return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
-}
+	if (vertexCount == 0)
+	{
+		return {};
+	}
 
-inline std::ostream& operator<<(std::ostream& os, const CameraData& c)
-{
-	return os << "CameraData { " << "position: " << c.position << ", " << "rotation: " << c.rotation << " }";
-}
+	const size_t sourceComponents = rawNormals.size() / vertexCount;
+	assert(sourceComponents * vertexCount == rawNormals.size() && "Unexpected normal stream size.");
+	assert(sourceComponents >= 3 && "Normal stream must contain at least xyz components.");
 
-inline std::ostream& operator<<(std::ostream& os, const GameObjectData& c)
-{
-	return os << "GameObjectData { " << "name: " << c.name << ", " << "mesh: "
-		<< c.meshName << ", " << "texture: " << c.textureName << ", " << "position: "
-		<< c.position << ", " << "rotation: " << c.rotation << ", " << "scale: " << c.scale << " }";
+	std::vector<float> normalizedNormals;
+	normalizedNormals.reserve(static_cast<size_t>(vertexCount) * 4);
+
+	for (UINT vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
+	{
+		const size_t sourceIndex = static_cast<size_t>(vertexIndex) * sourceComponents;
+		normalizedNormals.push_back(rawNormals[sourceIndex + 0]);
+		normalizedNormals.push_back(rawNormals[sourceIndex + 1]);
+		normalizedNormals.push_back(rawNormals[sourceIndex + 2]);
+		normalizedNormals.push_back(sourceComponents >= 4 ? rawNormals[sourceIndex + 3] : 0.0f);
+	}
+
+	return normalizedNormals;
 }
 
 Engine::Engine()
@@ -220,7 +228,14 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesyste
 		{
 			continue;
 		}
-		auto vbNormals = CreateVB("NORMAL", 3);
+		const UINT vertexCount = meshDescriptor.numOfVertices * 3;
+		auto normalizedNormals = NormalizeNormalStream(meshOutput, vertexCount);
+		std::string normalBufferName = "NORMAL_" + meshName;
+		auto vbNormals = renderContext.CreateVertexBuffer(
+			vertexCount,
+			4,
+			normalizedNormals.data(),
+			normalBufferName.c_str());
 
 		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
 
@@ -317,7 +332,6 @@ void Engine::ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras)
 		}
 
 		cameras.emplace_back(cameraData);
-		std::cout << "[Camera] " << cameraData << "\n";
 		firstCamera = false;
 	}
 }
@@ -354,7 +368,6 @@ void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameOb
 		gameObject.scale.z = scale->FloatAttribute("z", 1.0f);
 
 		gameObjects.emplace_back(gameObject);
-		std::cout << "[GameObject] " << gameObject << "\n";
 	}
 }
 

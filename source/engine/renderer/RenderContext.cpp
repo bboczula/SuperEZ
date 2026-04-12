@@ -719,7 +719,7 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 2 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 3 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 4 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
@@ -1017,9 +1017,10 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 	{
 		meshes[mesh.Index()]->GetPositionVertexBufferView(),
 		meshes[mesh.Index()]->GetColorVertexBufferView(),
-		meshes[mesh.Index()]->GetTextureVertexBufferView()
+		meshes[mesh.Index()]->GetTextureVertexBufferView(),
+		meshes[mesh.Index()]->GetNormalsVertexBufferView()
 	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 3, vbvPosition);
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 4, vbvPosition);
 }
 
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)

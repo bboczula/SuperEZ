@@ -13,6 +13,7 @@ public:
 	D3D12_VERTEX_BUFFER_VIEW GetPositionVertexBufferView() { return vbvPosition; }
 	D3D12_VERTEX_BUFFER_VIEW GetColorVertexBufferView() { return vbvColor; }
 	D3D12_VERTEX_BUFFER_VIEW GetTextureVertexBufferView() { return vbvTexture; }
+	D3D12_VERTEX_BUFFER_VIEW GetNormalsVertexBufferView() { return vbvNormals; }
 	UINT GetVertexCount() { return vertexCount; }
 	const char* GetName() { return name; }
 private:
