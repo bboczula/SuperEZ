@@ -101,7 +101,6 @@ public:
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
-	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
@@ -113,6 +112,9 @@ public:
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();
+	template<typename T>
+	HBuffer CreateConsantBuffer();
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
@@ -158,6 +160,8 @@ public:
 	// A huuuuge hack...
 	std::vector<RenderItem> renderItems;
 private:
+	HBuffer CreateConstantBufferInternal(UINT bufferSizeInBytes);
+private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
@@ -182,3 +186,12 @@ private:
 	bool wasObjectSeleced = false;
 	UINT activeCameraIndex = 0;
 };
+
+template<typename T>
+inline HBuffer RenderContext::CreateConsantBuffer()
+{
+	// Round size up to 256
+	UINT cbSize = (sizeof(T) + 255) & ~255;
+
+	return CreateConstantBufferInternal(cbSize);
+}

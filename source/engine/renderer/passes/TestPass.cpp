@@ -70,6 +70,7 @@ void TestPass::ConfigurePipelineState()
 #endif
 	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
+	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightData>();
 	deviceContext.Flush();
 }
 

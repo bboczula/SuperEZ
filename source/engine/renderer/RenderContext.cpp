@@ -1157,6 +1157,36 @@ void RenderContext::Dispatch(HCommandList commandList, UINT threadGroupX, UINT t
 	commandLists[commandList.Index()]->GetCommandList()->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 }
 
+HBuffer RenderContext::CreateConstantBufferInternal(UINT bufferSizeInBytes)
+{
+	D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
+	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSizeInBytes);
+	ID3D12Resource* constantBuffer;
+	deviceContext.CreateUploadResource(flags, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, IID_PPV_ARGS(&constantBuffer));
+
+	CHAR tempName[32];
+	strcpy_s(tempName, "ConstantBuffer");
+	WCHAR wName[32];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	constantBuffer->SetName(wName);
+
+	// Here I need to create a CBV for this buffer and return the handle index, but I also need to store
+	// the buffer in the RenderContext so I can update it later. This is a bit tricky, because I need to return both
+	// the buffer handle and the descriptor handle index. For now, I'll just return the buffer handle and assume that
+	// the caller will create the CBV and store the descriptor handle index somewhere else.
+	// This is not ideal, but it will work for now.
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = constantBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = (bufferSizeInBytes + 255) & ~255; // CB size is required to be 256-byte aligned.
+	deviceContext.GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvUavHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC));
+
+	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
+	buffers.push_back(new Buffer(constantBuffer, layout, tempName));
+	return HBuffer(buffers.size() - 1);
+}
+
 void RenderContext::ExecuteCommandList(HCommandList commandList)
 {
 	ID3D12CommandList* ppCommandLists[] = { commandLists[commandList.Index()]->GetCommandList()};
