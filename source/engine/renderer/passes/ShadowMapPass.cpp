@@ -21,6 +21,8 @@ void ShadowMapPass::ConfigurePipelineState()
 
     // Now we can create the root signature
     RootSignatureBuilder builder;
+    builder.AddCBV(0, D3D12_SHADER_VISIBILITY_VERTEX); // Light view-projection @ b0
+    builder.AddConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX); // Object world @ b1
     rootSignature = renderContext.CreateRootSignature(builder);
 
     depthBuffer = renderContext.CreateDepthBuffer(ShadowMapSize, ShadowMapSize, "DB_ShadowMap");
@@ -48,9 +50,14 @@ void ShadowMapPass::Update()
 
 void ShadowMapPass::Execute()
 {
+    renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
+    renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
+    renderContext.ClearDepthBuffer(commandList, depthBuffer);
+
     renderContext.UpdateSunlightViewProjection();
     const SunlightViewProjection& lightViewProjection = renderContext.GetSunlightViewProjection();
     renderContext.UpdateConstantBuffer(lightViewProjectionBuffer, &lightViewProjection, sizeof(lightViewProjection));
+    renderContext.BindConstantBuffer(commandList, lightViewProjectionBuffer, 0);
 }
 
 void ShadowMapPass::PostSubmit()
