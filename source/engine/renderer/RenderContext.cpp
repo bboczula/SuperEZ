@@ -1128,6 +1128,9 @@ void RenderContext::SetDescriptorHeapCompute(HCommandList commandList)
 
 void RenderContext::TransitionTo(HCommandList commandList, HTexture texture, D3D12_RESOURCE_STATES state)
 {
+	assert(texture.IsValid() && "Invalid texture handle.");
+	assert(texture.Index() < textures.size() && "Texture handle index out of range.");
+
 	if (textures[texture.Index()]->GetCurrentState() == state)
 	{
 		return;

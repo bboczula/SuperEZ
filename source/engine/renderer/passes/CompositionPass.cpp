@@ -46,7 +46,7 @@ void CompositionPass::Update()
 
 void CompositionPass::Execute()
 {
-	HTexture sceneColorTexture = renderContext.GetTexture("RT_TestPass");
+	HTexture sceneColorTexture = renderContext.GetTexture("RT_ForwardPass");
 	HTexture highlightTexture = renderContext.GetTexture("HighlightOutputTexture");
 	// The input texture needs to be 4, previous ones don't have valid SRV offset
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);

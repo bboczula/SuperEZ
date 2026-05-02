@@ -40,7 +40,7 @@ void GrayscalePass::Update()
 
 void GrayscalePass::Execute()
 {
-	HTexture sceneColorTexture = renderContext.GetTexture("RT_TestPass");
+	HTexture sceneColorTexture = renderContext.GetTexture("RT_ForwardPass");
 	// The input texture needs to be 4, previous ones don't have valid SRV offset
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeapCompute(commandList);

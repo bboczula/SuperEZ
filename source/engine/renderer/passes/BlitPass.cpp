@@ -33,7 +33,7 @@ void BlitPass::Execute()
 #if IS_EDITOR
 		renderContext.GetTexture("RT_ImGui");
 #else
-		renderContext.GetTexture("RT_TestPass");
+		renderContext.GetTexture("RT_ForwardPass");
 #endif
 	renderContext.TransitionTo(commandList, sourceTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	
