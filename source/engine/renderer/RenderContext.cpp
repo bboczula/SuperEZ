@@ -584,7 +584,9 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
 
 	CHAR name[] = "TextureUploadBuffer";
-	buffers.push_back(new Buffer(textureUploadBuffer, layout, name));
+	buffers.push_back(new Buffer(textureUploadBuffer, layout, name, BufferKind::TextureUpload,
+		static_cast<UINT>(uploadBufferSize), nullptr, Buffer::InvalidDescriptorIndex,
+		D3D12_RESOURCE_STATE_GENERIC_READ));
 
 	return HBuffer(buffers.size() - 1);
 }
@@ -697,7 +699,9 @@ HBuffer RenderContext::CreateReadbackBuffer()
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(readbackBuffer, layout, name));
+	buffers.push_back(new Buffer(readbackBuffer, layout, name, BufferKind::Readback,
+		readbackBufferSize, nullptr, Buffer::InvalidDescriptorIndex,
+		D3D12_RESOURCE_STATE_COPY_DEST));
 
 	return HBuffer(buffers.size() - 1);
 }
@@ -1023,6 +1027,25 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 4, vbvPosition);
 }
 
+void RenderContext::BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot)
+{
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootConstantBufferView(
+		slot, buffers[buffer.Index()]->GetResource()->GetGPUVirtualAddress());
+}
+
+void RenderContext::UpdateConstantBuffer(HBuffer buffer, const void* data, UINT sizeInBytes)
+{
+	Buffer* constantBuffer = buffers[buffer.Index()];
+	assert(constantBuffer->GetKind() == BufferKind::Constant);
+	assert(sizeInBytes <= constantBuffer->GetSizeInBytes());
+
+	UINT8* mappedData = nullptr;
+	CD3DX12_RANGE readRange(0, 0);
+	ExitIfFailed(constantBuffer->GetResource()->Map(0, &readRange, reinterpret_cast<void**>(&mappedData)));
+	memcpy(mappedData, data, sizeInBytes);
+	constantBuffer->GetResource()->Unmap(0, nullptr);
+}
+
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
 {
 	auto rtvHandleIndex = renderTargets[renderTarget.Index()]->GetDescriptorIndex();
@@ -1180,10 +1203,12 @@ HBuffer RenderContext::CreateConstantBufferInternal(UINT bufferSizeInBytes)
 	cbvDesc.BufferLocation = constantBuffer->GetGPUVirtualAddress();
 	cbvDesc.SizeInBytes = (bufferSizeInBytes + 255) & ~255; // CB size is required to be 256-byte aligned.
 	deviceContext.GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvUavHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC));
+	auto cbvDescriptorIndex = cbvSrvUavHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1;
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(constantBuffer, layout, tempName));
+	buffers.push_back(new Buffer(constantBuffer, layout, tempName, BufferKind::Constant,
+		bufferSizeInBytes, nullptr, cbvDescriptorIndex, D3D12_RESOURCE_STATE_GENERIC_READ));
 	return HBuffer(buffers.size() - 1);
 }
 

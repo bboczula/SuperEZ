@@ -11,6 +11,14 @@ cbuffer ObjectData : register(b1)
     row_major float4x4 world;
 };
 
+cbuffer SunlightData : register(b2)
+{
+    float4 lightDirection;
+    float4 lightColor;
+    float ambientStrength;
+    float diffuseStrength;
+};
+
 struct VSInput
 {
     float4 position : POSITION;
@@ -48,12 +56,8 @@ float4 PSMain(PSInput input) : SV_TARGET
 
     float3 normal = normalize(input.worldNormal);
 
-    // Direction points from the light toward the scene, like sunlight.
-    float3 lightDirection = normalize(float3(-0.4f, -1.0f, -0.3f));
-    float3 lightColor = float3(1.0f, 0.98f, 0.92f);
-    float ambientStrength = 0.2f;
-    float diffuseStrength = saturate(dot(normal, -lightDirection));
+    float diffuse = saturate(dot(normal, -normalize(lightDirection.xyz))) * diffuseStrength;
 
-    float3 lighting = lightColor * (ambientStrength + diffuseStrength);
+    float3 lighting = lightColor.xyz * (ambientStrength + diffuse);
     return float4(albedo.rgb * lighting, albedo.a);
 }

@@ -11,10 +11,10 @@ class FreeCamera;
 
 struct SunlightData
 {
-	float lightDirection[3] = { -0.4f, -1.0f, -0.3f };
-	float lightColor[3] = {1.0f, 0.98f, 0.92f};
+	float lightDirection[4] = { -0.4f, -1.0f, -0.3f, 0.0f };
+	float lightColor[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
 	float ambientStrength = 0.2f;
-	float diffuseStrength = 0.0f; // This will be calculated later
+	float diffuseStrength = 1.0f;
 };
 
 class TestPass : public RenderPass

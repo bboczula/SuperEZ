@@ -143,6 +143,8 @@ public:
 	void SetDescriptorHeap(HCommandList commandList);
 	void SetDescriptorHeapCompute(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
+	void BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot);
+	void UpdateConstantBuffer(HBuffer buffer, const void* data, UINT sizeInBytes);
 	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlyUAV(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlySRV(HCommandList commandList, HTexture texture, UINT slot);
