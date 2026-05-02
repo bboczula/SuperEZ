@@ -54,6 +54,7 @@ void ShadowMapPass::Update()
 void ShadowMapPass::Execute()
 {
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
+	renderContext.TransitionTo(commandList, shadowMapTexture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 	renderContext.BindDepthBuffer(commandList, depthBuffer);
 	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
@@ -61,6 +62,19 @@ void ShadowMapPass::Execute()
     const SunlightViewProjection& lightViewProjection = renderContext.GetSunlightViewProjection();
     renderContext.UpdateConstantBuffer(lightViewProjectionBuffer, &lightViewProjection, sizeof(lightViewProjection));
     renderContext.BindConstantBuffer(commandList, lightViewProjectionBuffer, 0);
+
+	const auto& items = renderContext.GetRenderItems();
+	for (const RenderItem& item : items)
+	{
+		if (!item.mesh.IsValid())
+		{
+			continue;
+		}
+
+		renderContext.SetInlineConstants(commandList, item.World(), 1);
+		renderContext.BindGeometry(commandList, item.mesh);
+		renderContext.DrawMesh(commandList, item.mesh);
+	}
 }
 
 void ShadowMapPass::PostSubmit()

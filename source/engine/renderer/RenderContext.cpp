@@ -607,7 +607,8 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
+	textures.push_back(new Texture(width, height, resource, &tempName[0],
+		static_cast<size_t>(descHandleOffset), initResourceState));
 
 	return HTexture(textures.size() - 1);
 }
