@@ -22,6 +22,7 @@
 #include "../Utils.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstring>
 
@@ -188,25 +189,6 @@ void RenderContext::UpdateSunlightViewProjection()
 	using DirectX::SimpleMath::Matrix;
 	using DirectX::SimpleMath::Vector3;
 
-	Vector3 sceneCenter = Vector3::Zero;
-	for (const RenderItem& item : renderItems)
-	{
-		sceneCenter += item.position;
-	}
-
-	if (!renderItems.empty())
-	{
-		sceneCenter /= static_cast<float>(renderItems.size());
-	}
-
-	float sceneRadius = 20.0f;
-	for (const RenderItem& item : renderItems)
-	{
-		const float itemDistance = (item.position - sceneCenter).Length();
-		const float itemScale = (std::max)(item.scale.x, (std::max)(item.scale.y, item.scale.z));
-		sceneRadius = (std::max)(sceneRadius, itemDistance + itemScale);
-	}
-
 	Vector3 lightDirection(
 		sunlightConstants.lightDirection[0],
 		sunlightConstants.lightDirection[1],
@@ -223,10 +205,79 @@ void RenderContext::UpdateSunlightViewProjection()
 		up = Vector3::UnitZ;
 	}
 
+	Vector3 sceneMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 sceneMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (const RenderItem& item : renderItems)
+	{
+		if (!item.mesh.IsValid())
+		{
+			continue;
+		}
+
+		const Mesh* mesh = meshes[item.mesh.Index()];
+		const Vector3 localMin = mesh->GetLocalMin();
+		const Vector3 localMax = mesh->GetLocalMax();
+		const Matrix world = item.World();
+		for (int x = 0; x < 2; ++x)
+		{
+			for (int y = 0; y < 2; ++y)
+			{
+				for (int z = 0; z < 2; ++z)
+				{
+					const Vector3 localCorner(
+						x == 0 ? localMin.x : localMax.x,
+						y == 0 ? localMin.y : localMax.y,
+						z == 0 ? localMin.z : localMax.z);
+					const Vector3 worldCorner = Vector3::Transform(localCorner, world);
+					sceneMin = Vector3::Min(sceneMin, worldCorner);
+					sceneMax = Vector3::Max(sceneMax, worldCorner);
+				}
+			}
+		}
+	}
+
+	if (sceneMin.x == FLT_MAX)
+	{
+		sceneMin = Vector3(-1.0f, -1.0f, -1.0f);
+		sceneMax = Vector3(1.0f, 1.0f, 1.0f);
+	}
+
+	const Vector3 sceneCenter = (sceneMin + sceneMax) * 0.5f;
+	const Vector3 sceneExtents = (sceneMax - sceneMin) * 0.5f;
+	const float sceneRadius = (std::max)(sceneExtents.Length(), 0.5f);
 	const float lightDistance = sceneRadius * 2.0f;
 	const Vector3 lightPosition = sceneCenter - lightDirection * lightDistance;
 	const Matrix lightView = Matrix::CreateLookAt(lightPosition, sceneCenter, up);
-	const Matrix lightProjection = Matrix::CreateOrthographic(sceneRadius * 2.0f, sceneRadius * 2.0f, 0.1f, sceneRadius * 4.0f);
+
+	Vector3 lightMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 lightMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (int x = 0; x < 2; ++x)
+	{
+		for (int y = 0; y < 2; ++y)
+		{
+			for (int z = 0; z < 2; ++z)
+			{
+				const Vector3 worldCorner(
+					x == 0 ? sceneMin.x : sceneMax.x,
+					y == 0 ? sceneMin.y : sceneMax.y,
+					z == 0 ? sceneMin.z : sceneMax.z);
+				const Vector3 lightCorner = Vector3::Transform(worldCorner, lightView);
+				lightMin = Vector3::Min(lightMin, lightCorner);
+				lightMax = Vector3::Max(lightMax, lightCorner);
+			}
+		}
+	}
+
+	const float padding = sceneRadius * 0.15f;
+	const float nearPlane = (std::max)(-lightMax.z - padding, 0.1f);
+	const float farPlane = (std::max)(-lightMin.z + padding, nearPlane + 0.5f);
+	const Matrix lightProjection = Matrix::CreateOrthographicOffCenter(
+		lightMin.x - padding,
+		lightMax.x + padding,
+		lightMin.y - padding,
+		lightMax.y + padding,
+		nearPlane,
+		farPlane);
 	sunlightViewProjection.viewProjection = lightView * lightProjection;
 }
 
@@ -446,6 +497,8 @@ HInputLayout RenderContext::CreateInputLayout()
 
 HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
 {
+	using DirectX::SimpleMath::Vector3;
+
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
 	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
@@ -468,7 +521,25 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	vertexBuffer->SetName(wName);
 
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName));
+	Vector3 localMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 localMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	if (meshData != nullptr && numOfFloatsPerVertex >= 3)
+	{
+		for (UINT vertexIndex = 0; vertexIndex < numOfVertices; ++vertexIndex)
+		{
+			const UINT offset = vertexIndex * numOfFloatsPerVertex;
+			const Vector3 position(meshData[offset + 0], meshData[offset + 1], meshData[offset + 2]);
+			localMin = Vector3::Min(localMin, position);
+			localMax = Vector3::Max(localMax, position);
+		}
+	}
+	else
+	{
+		localMin = Vector3(-1.0f, -1.0f, -1.0f);
+		localMax = Vector3(1.0f, 1.0f, 1.0f);
+	}
+
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName, localMin, localMax));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -820,8 +891,10 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 4 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
+	const auto localMin = vertexBuffers[vbIndexPosition.Index()]->GetLocalMin();
+	const auto localMax = vertexBuffers[vbIndexPosition.Index()]->GetLocalMax();
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
-		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, name));
+		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
 void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
