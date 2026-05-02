@@ -51,6 +51,8 @@ struct SunlightConstants
 	float lightColor[4] = { 1.0f, 0.98f, 0.92f, 0.0f };
 	float ambientStrength = 0.2f;
 	float diffuseStrength = 1.0f;
+	float shadowBias = 0.001f;
+	float shadowSlopeBias = 0.002f;
 };
 
 struct SunlightViewProjection

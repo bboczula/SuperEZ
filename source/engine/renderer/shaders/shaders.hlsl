@@ -18,6 +18,8 @@ cbuffer SunlightData : register(b2)
     float4 lightColor;
     float ambientStrength;
     float diffuseStrength;
+    float shadowBias;
+    float shadowSlopeBias;
 };
 
 cbuffer LightViewProjectionData : register(b3)
@@ -68,15 +70,16 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 shadowNdc = input.shadowPosition.xyz / input.shadowPosition.w;
     float2 shadowUv = shadowNdc.xy * float2(0.5f, -0.5f) + 0.5f;
     float pixelLightDepth = shadowNdc.z;
+    float lightFacing = saturate(dot(normal, -normalize(lightDirection.xyz)));
+    float depthBias = max(shadowBias, (1.0f - lightFacing) * shadowSlopeBias);
     float shadowMapDepth = shadowMap.Sample(LinearSampler, shadowUv).r;
-    float shadowBias = 0.001f;
     bool insideShadowMap =
         shadowUv.x >= 0.0f && shadowUv.x <= 1.0f &&
         shadowUv.y >= 0.0f && shadowUv.y <= 1.0f &&
         pixelLightDepth >= 0.0f && pixelLightDepth <= 1.0f;
-    float shadowVisibility = (!insideShadowMap || pixelLightDepth <= shadowMapDepth + shadowBias) ? 1.0f : 0.0f;
+    float shadowVisibility = (!insideShadowMap || pixelLightDepth <= shadowMapDepth + depthBias) ? 1.0f : 0.0f;
 
-    float diffuse = saturate(dot(normal, -normalize(lightDirection.xyz))) * diffuseStrength;
+    float diffuse = lightFacing * diffuseStrength;
     float3 ambientLight = lightColor.xyz * ambientStrength;
     float3 directLight = lightColor.xyz * diffuse * shadowVisibility;
     float3 lighting = ambientLight + directLight;
