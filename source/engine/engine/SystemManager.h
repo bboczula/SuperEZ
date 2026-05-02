@@ -69,6 +69,13 @@ public:
             }
       }
 
+      void Reset() {
+            for (auto const& pair : mSystems) {
+                  auto const& system = pair.second;
+                  system->mEntities.clear();
+            }
+      }
+
 private:
       // Map from system type string -> System Pointer
       std::unordered_map<const char*, std::shared_ptr<System>> mSystems;

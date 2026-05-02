@@ -1,0 +1,172 @@
+<Scene>
+	<Camera name="MainCamera">
+		<Position x="0.7" y="0.3" z="0.0" />
+		<Rotation pitch="0.4" yaw="4.7" roll="0.0" />
+	</Camera>
+	<MeshLibrary file="chess_blender_export.obj" />
+	<GameObject name="Black_Pawn_08" mesh="Black_Pawn_08_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_07" mesh="Black_Pawn_07_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_06" mesh="Black_Pawn_06_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_05" mesh="Black_Pawn_05_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_04" mesh="Black_Pawn_04_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_03" mesh="Black_Pawn_03_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_02" mesh="Black_Pawn_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Pawn_01" mesh="Black_Pawn_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Rook_02" mesh="Black_Rook_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Knight_" mesh="Black_Knight_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Bishop_" mesh="Black_Bishop_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Queen" mesh="Black_Queen_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_King" mesh="Black_King_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Bishop_01" mesh="Black_Bishop_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Knight_01" mesh="Black_Knight_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Black_Rook_01" mesh="Black_Rook_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Bishop_01" mesh="White_Bishop_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Bishop_02" mesh="White_Bishop_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_King" mesh="White_King_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Knight_01" mesh="White_Knight_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Knight_02" mesh="White_Knight_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_01" mesh="White_Pawn_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_02" mesh="White_Pawn_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_03" mesh="White_Pawn_03_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_04" mesh="White_Pawn_04_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_05" mesh="White_Pawn_05_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_06" mesh="White_Pawn_06_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_07" mesh="White_Pawn_07_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Pawn_08" mesh="White_Pawn_08_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Queen" mesh="White_Queen_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Rook_01" mesh="White_Rook_01_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="White_Rook_02" mesh="White_Rook_02_Mesh" texture="Pieces_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="Chess_board" mesh="Chess_board_Mesh" texture="Board_DiffuseMap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+</Scene>

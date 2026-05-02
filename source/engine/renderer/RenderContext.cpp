@@ -104,7 +104,17 @@ void RenderContext::UnloadAssets()
 		materials.pop_back();
 	}
 
+	while (!cameras.empty())
+	{
+		delete cameras.back();
+		cameras.pop_back();
+	}
+
+	renderItems.clear();
 	sceneEntities.clear();
+	currentSelectedObjectID = ~0u;
+	wasObjectSeleced = false;
+	activeCameraIndex = 0;
 
 	cbvSrvUavHeap.Reset();
 	rtvHeap.Reset();
@@ -158,6 +168,15 @@ void RenderContext::RegisterCameraEntity(uint32_t id, const char* name, UINT cam
 	record.id = id;
 	record.kind = SceneEntityKind::Camera;
 	record.cameraIndex = cameraIndex;
+	strncpy_s(record.name, name, _TRUNCATE);
+	sceneEntities.push_back(record);
+}
+
+void RenderContext::RegisterSunlightEntity(uint32_t id, const char* name)
+{
+	SceneEntityRecord record{};
+	record.id = id;
+	record.kind = SceneEntityKind::Sunlight;
 	strncpy_s(record.name, name, _TRUNCATE);
 	sceneEntities.push_back(record);
 }
@@ -574,7 +593,9 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
 
 	CHAR name[] = "TextureUploadBuffer";
-	buffers.push_back(new Buffer(textureUploadBuffer, layout, name));
+	buffers.push_back(new Buffer(textureUploadBuffer, layout, name, BufferKind::TextureUpload,
+		static_cast<UINT>(uploadBufferSize), nullptr, Buffer::InvalidDescriptorIndex,
+		D3D12_RESOURCE_STATE_GENERIC_READ));
 
 	return HBuffer(buffers.size() - 1);
 }
@@ -687,12 +708,14 @@ HBuffer RenderContext::CreateReadbackBuffer()
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(readbackBuffer, layout, name));
+	buffers.push_back(new Buffer(readbackBuffer, layout, name, BufferKind::Readback,
+		readbackBufferSize, nullptr, Buffer::InvalidDescriptorIndex,
+		D3D12_RESOURCE_STATE_COPY_DEST));
 
 	return HBuffer(buffers.size() - 1);
 }
 
-void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name)
+void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -709,9 +732,11 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
 	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 2 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 4 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
-	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor, vbIndexTexture.Index(), vbvTexture, vertexCount, name));
+	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
+		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, name));
 }
 
 void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
@@ -1005,9 +1030,29 @@ void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 	{
 		meshes[mesh.Index()]->GetPositionVertexBufferView(),
 		meshes[mesh.Index()]->GetColorVertexBufferView(),
-		meshes[mesh.Index()]->GetTextureVertexBufferView()
+		meshes[mesh.Index()]->GetTextureVertexBufferView(),
+		meshes[mesh.Index()]->GetNormalsVertexBufferView()
 	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 3, vbvPosition);
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 4, vbvPosition);
+}
+
+void RenderContext::BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot)
+{
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootConstantBufferView(
+		slot, buffers[buffer.Index()]->GetResource()->GetGPUVirtualAddress());
+}
+
+void RenderContext::UpdateConstantBuffer(HBuffer buffer, const void* data, UINT sizeInBytes)
+{
+	Buffer* constantBuffer = buffers[buffer.Index()];
+	assert(constantBuffer->GetKind() == BufferKind::Constant);
+	assert(sizeInBytes <= constantBuffer->GetSizeInBytes());
+
+	UINT8* mappedData = nullptr;
+	CD3DX12_RANGE readRange(0, 0);
+	ExitIfFailed(constantBuffer->GetResource()->Map(0, &readRange, reinterpret_cast<void**>(&mappedData)));
+	memcpy(mappedData, data, sizeInBytes);
+	constantBuffer->GetResource()->Unmap(0, nullptr);
 }
 
 void RenderContext::CleraRenderTarget(HCommandList commandList, HRenderTarget renderTarget)
@@ -1142,6 +1187,38 @@ void RenderContext::DrawMesh(HCommandList commandList, HMesh mesh)
 void RenderContext::Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ)
 {
 	commandLists[commandList.Index()]->GetCommandList()->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
+}
+
+HBuffer RenderContext::CreateConstantBufferInternal(UINT bufferSizeInBytes)
+{
+	D3D12_HEAP_FLAGS flags = D3D12_HEAP_FLAG_NONE;
+	D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSizeInBytes);
+	ID3D12Resource* constantBuffer;
+	deviceContext.CreateUploadResource(flags, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, IID_PPV_ARGS(&constantBuffer));
+
+	CHAR tempName[32];
+	strcpy_s(tempName, "ConstantBuffer");
+	WCHAR wName[32];
+	size_t numOfCharsConverted;;
+	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
+	constantBuffer->SetName(wName);
+
+	// Here I need to create a CBV for this buffer and return the handle index, but I also need to store
+	// the buffer in the RenderContext so I can update it later. This is a bit tricky, because I need to return both
+	// the buffer handle and the descriptor handle index. For now, I'll just return the buffer handle and assume that
+	// the caller will create the CBV and store the descriptor handle index somewhere else.
+	// This is not ideal, but it will work for now.
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = constantBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = (bufferSizeInBytes + 255) & ~255; // CB size is required to be 256-byte aligned.
+	deviceContext.GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvUavHeap.Allocate(DescriptorHeap::HeapPartition::DYNAMIC));
+	auto cbvDescriptorIndex = cbvSrvUavHeap.Size(DescriptorHeap::HeapPartition::DYNAMIC) - 1;
+
+	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
+	buffers.push_back(new Buffer(constantBuffer, layout, tempName, BufferKind::Constant,
+		bufferSizeInBytes, nullptr, cbvDescriptorIndex, D3D12_RESOURCE_STATE_GENERIC_READ));
+	return HBuffer(buffers.size() - 1);
 }
 
 void RenderContext::ExecuteCommandList(HCommandList commandList)

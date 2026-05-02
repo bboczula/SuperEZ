@@ -25,4 +25,5 @@ public:
 private:
 	FreeCamera* freeCamera;
 	BOOL isPerspectiveCamera = TRUE;
+	HBuffer sunlightBuffer;
 };

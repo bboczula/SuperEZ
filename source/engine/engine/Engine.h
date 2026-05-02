@@ -36,6 +36,18 @@ struct CameraData
 
 using Cameras = std::vector<CameraData>;
 
+struct SunlightData
+{
+	std::string name;
+	bool enabled = true;
+	DirectX::SimpleMath::Vector3 direction = { -0.4f, -1.0f, -0.3f };
+	DirectX::SimpleMath::Vector3 color = { 1.0f, 0.98f, 0.92f };
+	float ambientStrength = 0.2f;
+	float diffuseStrength = 1.0f;
+};
+
+using Sunlights = std::vector<SunlightData>;
+
 struct SceneData
 {
 	std::filesystem::path currentPath;
@@ -56,7 +68,7 @@ public:
 	~Engine();
 	void Initialize();
 	void CreateRenderResources();
-	void LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesystem::path currentPath);
+	void LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunlights, std::filesystem::path currentPath);
 	void Tick();
 	void Run(IGame& game);
 	void ProcessSingleFrame();
@@ -68,8 +80,9 @@ public:
 	std::string GetStartupSceneName() const { return startupSceneName; }
 private:
 	// Handle scene XML processing
-	void ProcessScene(GameObjects& gameObjects, Cameras& cameras, SceneData& sceneData);
+	void ProcessScene(GameObjects& gameObjects, Cameras& cameras, Sunlights& sunlights, SceneData& sceneData);
 	void ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras);
+	void ProcessSunlights(tinyxml2::XMLElement* scene, Sunlights& sunlights);
 	void ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameObjects);
 private:
 	IGame* game = nullptr;

@@ -254,3 +254,33 @@ project "Game"
 		defines "NDEBUG"
 		runtime "Release"
 		optimize "on"
+project "SceneViewer"
+	kind "ConsoleApp"
+    language "C++"
+	cppdialect "C++20"
+	location(LOCATION_DIRECTORY_NAME)
+    targetdir "bin/%{cfg.buildcfg}"
+	debugdir "bin/%{cfg.buildcfg}"
+	links
+	{
+		"Engine"
+	}
+    files {
+		"source/sceneviewer/**.h", "source/sceneviewer/**.cpp"
+	}
+	filter "configurations:Debug"
+		defines "DEBUG"
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:Editor"
+		defines { "DEBUG", "IS_EDITOR" }
+		runtime "Debug"
+		symbols "on"
+	filter "configurations:PreRelease"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"
+	filter "configurations:Release"
+		defines "NDEBUG"
+		runtime "Release"
+		optimize "on"

@@ -120,11 +120,6 @@ void SelectionPass::Execute()
 
 		renderContext.SetWasObjectSelected(true);
 	}
-	else if (cursorInput.WasLeftButtonClicked())
-	{
-		renderContext.SetSelectedObjectId(UINT32_MAX);
-		renderContext.SetWasObjectSelected(false);
-	}
 
 }
 

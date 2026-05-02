@@ -49,12 +49,13 @@ void TestPass::ConfigurePipelineState()
 {
 	// Pre-AutomaticInitialize Procedure
 	inputLayout = renderContext.CreateInputLayout();
-	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord);
+	renderContext.GetInputLayout(inputLayout)->AppendElementT(VertexStream::Position, VertexStream::Color, VertexStream::TexCoord, VertexStream::Normal);
 
 	// Now we can create the root signature
 	RootSignatureBuilder builder;
 	builder.AddConstants(16, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
 	builder.AddConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
+	builder.AddCBV(2, D3D12_SHADER_VISIBILITY_PIXEL); // CBV t2 (light data)
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 	rootSignature = renderContext.CreateRootSignature(builder);
@@ -70,6 +71,9 @@ void TestPass::ConfigurePipelineState()
 #endif
 	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
+	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightConstants>();
+	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
+	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
 	deviceContext.Flush();
 }
 
@@ -137,13 +141,16 @@ void TestPass::Execute()
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.GetActiveCamera()->SetType(type);
 	renderContext.SetInlineConstants(commandList, renderContext.GetActiveCamera()->ViewProjecttion(), 0);
+	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
+	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
+	renderContext.BindConstantBuffer(commandList, sunlightBuffer, 2);
 
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)
 	{
 		renderContext.SetInlineConstants(commandList, item.World(), 1);
 		renderContext.BindGeometry(commandList, item.mesh);
-		renderContext.BindTexture(commandList, item.texture, 2);
+		renderContext.BindTexture(commandList, item.texture, 3);
 		renderContext.DrawMesh(commandList, item.mesh);
 	}
 }

@@ -49,6 +49,7 @@ public:
       bool IsTweeningPosition(EntityId id) const;
       void CancelPositionTween(EntityId id);
       void Update(float dtSeconds);
+      void Reset();
 private:
       bool HasInfoComponent(EntityId id) const;
       bool HasTransformComponent(EntityId id) const;

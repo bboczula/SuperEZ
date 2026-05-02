@@ -8,16 +8,20 @@
 #include "../../engine/states/EngineCommandQueue.h"
 #include "../../bind/CommandList.h"
 #include "../RenderTarget.h"
+#include "../../engine/Components.h"
+#include "../../engine/Coordinator.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_win32.h>
 #include <imgui_internal.h> // For ImGuiDockNodeFlags_DockSpace
 #include <filesystem>
+#include <cmath>
 
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
+extern Coordinator* editorCoordinator;
 
 namespace
 {
@@ -27,10 +31,23 @@ namespace
 		{
 		case SceneEntityKind::Camera:
 			return IM_COL32(110, 190, 255, 255);
+		case SceneEntityKind::Sunlight:
+			return IM_COL32(255, 220, 90, 255);
 		case SceneEntityKind::Renderable:
 		default:
 			return IM_COL32(255, 180, 90, 255);
 		}
+	}
+
+	SunlightConstants ToSunlightConstants(const SunlightComponent& sunlight)
+	{
+		const float enabled = sunlight.enabled ? 1.0f : 0.0f;
+		return SunlightConstants{
+			.lightDirection = { sunlight.direction[0], sunlight.direction[1], sunlight.direction[2], 0.0f },
+			.lightColor = { sunlight.color[0], sunlight.color[1], sunlight.color[2], 0.0f },
+			.ambientStrength = sunlight.ambientStrength * enabled,
+			.diffuseStrength = sunlight.diffuseStrength * enabled
+		};
 	}
 
 	void DrawCameraIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
@@ -71,6 +88,19 @@ namespace
 		drawList->AddLine(backTR, frontTR, color, 1.4f);
 		drawList->AddLine(backBR, frontBR, color, 1.4f);
 		drawList->AddLine(backBL, frontBL, color, 1.4f);
+	}
+
+	void DrawSunlightIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
+	{
+		const ImVec2 center(topLeft.x + 8.0f, topLeft.y + 8.0f);
+		drawList->AddCircle(center, 3.0f, color, 18, 1.7f);
+		for (int i = 0; i < 8; ++i)
+		{
+			const float angle = (3.14159265f * 2.0f * static_cast<float>(i)) / 8.0f;
+			const ImVec2 inner(center.x + cosf(angle) * 5.0f, center.y + sinf(angle) * 5.0f);
+			const ImVec2 outer(center.x + cosf(angle) * 7.5f, center.y + sinf(angle) * 7.5f);
+			drawList->AddLine(inner, outer, color, 1.4f);
+		}
 	}
 }
 
@@ -231,6 +261,10 @@ void ImGuiPass::Execute()
 			{
 				DrawCameraIcon(drawList, iconTopLeft, iconColor);
 			}
+			else if (entity.kind == SceneEntityKind::Sunlight)
+			{
+				DrawSunlightIcon(drawList, iconTopLeft, iconColor);
+			}
 			else
 			{
 				DrawCubeIcon(drawList, iconTopLeft, iconColor);
@@ -278,6 +312,37 @@ void ImGuiPass::Execute()
 					if (!isActiveCamera && ImGui::Button("Make Active Camera"))
 					{
 						renderContext.SetActiveCamera(entity->cameraIndex);
+					}
+				}
+				else if (entity->kind == SceneEntityKind::Sunlight)
+				{
+					ImGui::Text("Kind: Sunlight");
+					if (editorCoordinator == nullptr)
+					{
+						ImGui::Text("ECS is unavailable.");
+					}
+					else
+					{
+						Signature signature = editorCoordinator->GetEntityManager()->GetSignature(entity->id);
+						if (!signature.test(editorCoordinator->GetComponentType<SunlightComponent>()))
+						{
+							ImGui::Text("Sunlight component missing.");
+						}
+						else
+						{
+							SunlightComponent& sunlight = editorCoordinator->GetComponent<SunlightComponent>(entity->id);
+							bool changed = false;
+							changed |= ImGui::Checkbox("Enabled", &sunlight.enabled);
+							changed |= ImGui::DragFloat3("Direction", sunlight.direction, 0.01f, -1.0f, 1.0f);
+							changed |= ImGui::ColorEdit3("Color", sunlight.color);
+							changed |= ImGui::DragFloat("Ambient", &sunlight.ambientStrength, 0.01f, 0.0f, 1.0f);
+							changed |= ImGui::DragFloat("Diffuse", &sunlight.diffuseStrength, 0.01f, 0.0f, 10.0f);
+
+							if (changed)
+							{
+								renderContext.SetSunlightConstants(ToSunlightConstants(sunlight));
+							}
+						}
 					}
 				}
 				else

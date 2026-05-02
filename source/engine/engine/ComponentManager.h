@@ -55,6 +55,13 @@ public:
             }
       }
 
+      void Reset() {
+            for (auto const& pair : mComponentArrays) {
+                  auto const& component = pair.second;
+                  component->Reset();
+            }
+      }
+
 private:
       // Helper to get the correct array pointer casted to the right type
       template<typename T>

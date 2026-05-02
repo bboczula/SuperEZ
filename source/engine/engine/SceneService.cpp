@@ -235,6 +235,12 @@ void SceneService::Update(float dtSeconds)
       }
 }
 
+void SceneService::Reset()
+{
+      m_positionTweens.clear();
+      m_pendingTweenCallbacks.clear();
+}
+
 bool SceneService::HasInfoComponent(EntityId id) const
 {
       Signature sig = coordinator->GetEntityManager()->GetSignature(id);

@@ -1,0 +1,172 @@
+<Scene>
+	<Camera name="MainCamera">
+		<Position x="9.5" y="0.8" z="-0.1" />
+		<Rotation pitch="0.12" yaw="4.6" roll="0.0" />
+	</Camera>
+	<MeshLibrary file="sponza.obj" />
+	<GameObject name="arcs_floor" mesh="arcs_floor_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_03" mesh="arcs_03_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object32" mesh="object32_Mesh" texture="00_skap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object31" mesh="object31_Mesh" texture="missing.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="pillar_cor" mesh="pillar_cor_Mesh" texture="01_STUB.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="pillar_flo" mesh="pillar_flo_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object28" mesh="object28_Mesh" texture="01_S_ba.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object27" mesh="object27_Mesh" texture="01_St_kp.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="pillar_qua" mesh="pillar_qua_Mesh" texture="01_STUB.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="pillar_rou" mesh="pillar_rou_Mesh" texture="x01_st.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_floo0" mesh="arcs_floo0_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object23" mesh="object23_Mesh" texture="00_skap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object21" mesh="object21_Mesh" texture="KAMEN-stup.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="puillar_fl" mesh="puillar_fl_Mesh" texture="01_STUB.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object19" mesh="object19_Mesh" texture="01_St_kp.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="relief" mesh="relief_Mesh" texture="reljef.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_small" mesh="arcs_small_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="holes" mesh="holes_Mesh" texture="x01_st.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="outside01" mesh="outside01_Mesh" texture="KAMEN.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_long" mesh="arcs_long_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="parapet" mesh="parapet_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="round_hole" mesh="round_hole_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="ceiling" mesh="ceiling_Mesh" texture="KAMEN-stup.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_01" mesh="arcs_01_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object6" mesh="object6_Mesh" texture="00_skap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object5" mesh="object5_Mesh" texture="00_skap.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object4" mesh="object4_Mesh" texture="01_St_kp.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="object3" mesh="object3_Mesh" texture="01_S_BA.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_02" mesh="arcs_02_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="arcs_04" mesh="arcs_04_Mesh" texture="SP_LUK.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="walls" mesh="walls_Mesh" texture="KAMEN.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="windows" mesh="windows_Mesh" texture="prozor1.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+	<GameObject name="doors" mesh="doors_Mesh" texture="vrata_ko.bmp">
+		<Position x="0.0" y="0.0" z="0.0" />
+		<Rotation x="0.0" y="0.0" z="0.0" />
+		<Scale x="1.0" y="1.0" z="1.0" />
+	</GameObject>
+</Scene>

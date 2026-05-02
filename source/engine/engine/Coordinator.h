@@ -12,6 +12,12 @@ public:
             mSystemManager = std::make_unique<SystemManager>();
       }
 
+      void Reset() {
+            mEntityManager->Reset();
+            mComponentManager->Reset();
+            mSystemManager->Reset();
+      }
+
       // --- Entity Methods ---
       Entity CreateEntity() {
             return mEntityManager->CreateEntity();

@@ -1,0 +1,22 @@
+<Scene>
+<Camera name="MainCamera">
+	<Position x="4.3" y="4.3" z="2.3" />
+	<Rotation pitch="0.8" yaw="4.2" roll="0.0" />
+</Camera>
+<MeshLibrary file="milkyway.obj" />
+<GameObject name="Moon" mesh="Moon_Mesh" texture="moon.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="Earth" mesh="Earth_Mesh" texture="earth.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+<GameObject name="Mars" mesh="Mars_Mesh" texture="mars.bmp">
+	<Position x="0.0" y="0.0" z="0.0" />
+	<Rotation x="0.0" y="0.0" z="0.0" />
+	<Scale x="1.0" y="1.0" z="1.0" />
+</GameObject>
+</Scene>

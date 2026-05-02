@@ -11,6 +11,7 @@ class IComponentArray {
 public:
       virtual ~IComponentArray() = default;
       virtual void EntityDestroyed(Entity entity) = 0;
+      virtual void Reset() = 0;
 };
 
 // The Implementation
@@ -62,6 +63,12 @@ public:
             if (mEntityToIndexMap.find(entity) != mEntityToIndexMap.end()) {
                   RemoveData(entity);
             }
+      }
+
+      void Reset() override {
+            mEntityToIndexMap.clear();
+            mIndexToEntityMap.clear();
+            mSize = 0;
       }
 
 private:

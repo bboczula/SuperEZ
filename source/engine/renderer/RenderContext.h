@@ -31,7 +31,8 @@ enum RenderTargetFormat
 enum class SceneEntityKind : unsigned char
 {
 	Renderable,
-	Camera
+	Camera,
+	Sunlight
 };
 
 struct SceneEntityRecord
@@ -42,6 +43,14 @@ struct SceneEntityRecord
 	HMesh mesh;
 	HTexture texture;
 	UINT cameraIndex = UINT32_MAX;
+};
+
+struct SunlightConstants
+{
+	float lightDirection[4] = { -0.4f, -1.0f, -0.3f, 0.0f };
+	float lightColor[4] = { 1.0f, 0.98f, 0.92f, 0.0f };
+	float ambientStrength = 0.2f;
+	float diffuseStrength = 1.0f;
 };
 
 class RenderContext
@@ -75,12 +84,15 @@ public:
 	SceneEntityRecord* GetSceneEntityById(uint32_t id);
 	void RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture);
 	void RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex);
+	void RegisterSunlightEntity(uint32_t id, const char* name);
+	const SunlightConstants& GetSunlightConstants() const { return sunlightConstants; }
+	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
 	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
 	HDepthBuffer CreateDepthBuffer();
-	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, const CHAR* name);
+	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
@@ -101,7 +113,6 @@ public:
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
-	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
@@ -113,6 +124,9 @@ public:
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();
+	template<typename T>
+	HBuffer CreateConsantBuffer();
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
@@ -141,6 +155,8 @@ public:
 	void SetDescriptorHeap(HCommandList commandList);
 	void SetDescriptorHeapCompute(HCommandList commandList);
 	void BindGeometry(HCommandList commandList, HMesh mesh);
+	void BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot);
+	void UpdateConstantBuffer(HBuffer buffer, const void* data, UINT sizeInBytes);
 	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlyUAV(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlySRV(HCommandList commandList, HTexture texture, UINT slot);
@@ -157,6 +173,8 @@ public:
 	void Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ);
 	// A huuuuge hack...
 	std::vector<RenderItem> renderItems;
+private:
+	HBuffer CreateConstantBufferInternal(UINT bufferSizeInBytes);
 private:
 	DescriptorHeap rtvHeap;
 	DescriptorHeap dsvHeap;
@@ -177,8 +195,18 @@ private:
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
 	std::vector<SceneEntityRecord> sceneEntities;
+	SunlightConstants sunlightConstants;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;
 	UINT activeCameraIndex = 0;
 };
+
+template<typename T>
+inline HBuffer RenderContext::CreateConsantBuffer()
+{
+	// Round size up to 256
+	UINT cbSize = (sizeof(T) + 255) & ~255;
+
+	return CreateConstantBufferInternal(cbSize);
+}
