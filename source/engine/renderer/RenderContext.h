@@ -69,6 +69,8 @@ public:
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
 		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
+	HPipelineState CreateDepthOnlyPipelineState(DeviceContext* deviceContext, HRootSignature rootSignature,
+		HShader vertexShader, HInputLayout inputLayout);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader computeShader);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
@@ -157,6 +159,7 @@ public:
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
+	void BindDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
 	void ResetCommandList(HCommandList commandList, HPipelineState pipelineState);
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);

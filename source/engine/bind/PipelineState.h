@@ -15,6 +15,8 @@ public:
 	};
 	void Create(const D3D12_INPUT_LAYOUT_DESC& inputLayoutDesc, ID3D12RootSignature* rootSignature,
 		const D3D12_SHADER_BYTECODE& vertexShader, const D3D12_SHADER_BYTECODE& pixelShader, DXGI_FORMAT renderTargetFrormat);
+	void CreateDepthOnly(const D3D12_INPUT_LAYOUT_DESC& inputLayoutDesc, ID3D12RootSignature* rootSignature,
+		const D3D12_SHADER_BYTECODE& vertexShader);
 	void Create(ID3D12RootSignature* rootSignature, const D3D12_SHADER_BYTECODE& computeShader);
 	ID3D12PipelineState* Get() { return pipelineState; }
 	bool IsGrpahics() const { return type == Type::Graphics; }

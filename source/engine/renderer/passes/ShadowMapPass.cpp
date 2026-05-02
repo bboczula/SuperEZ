@@ -1,9 +1,11 @@
 #include "ShadowMapPass.h"
 #include "../RenderContext.h"
 #include "../../bind/RootSignatureBuilder.h"
+#include "../../core/DeviceContext.h"
 #include "../../core/InputLayout.h"
 
 extern RenderContext renderContext;
+extern DeviceContext deviceContext;
 
 ShadowMapPass::ShadowMapPass() : RenderPass(L"ShadowMap", L"shadow_map.hlsl", Type::Graphics)
 {
@@ -42,6 +44,7 @@ void ShadowMapPass::PostAssetLoad()
 
 void ShadowMapPass::Initialize()
 {
+	pipelineState = renderContext.CreateDepthOnlyPipelineState(&deviceContext, rootSignature, vertexShader, inputLayout);
 }
 
 void ShadowMapPass::Update()
@@ -50,9 +53,9 @@ void ShadowMapPass::Update()
 
 void ShadowMapPass::Execute()
 {
-    renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
-    renderContext.BindRenderTargetWithDepth(commandList, renderTarget, depthBuffer);
-    renderContext.ClearDepthBuffer(commandList, depthBuffer);
+	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
+	renderContext.BindDepthBuffer(commandList, depthBuffer);
+	renderContext.ClearDepthBuffer(commandList, depthBuffer);
 
     renderContext.UpdateSunlightViewProjection();
     const SunlightViewProjection& lightViewProjection = renderContext.GetSunlightViewProjection();

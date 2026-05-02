@@ -395,6 +395,25 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
+HPipelineState RenderContext::CreateDepthOnlyPipelineState(DeviceContext* deviceContext, HRootSignature rootSignature,
+	HShader vertexShader, HInputLayout inputLayout)
+{
+	OutputDebugString(L"CreateDepthOnlyPipelineState\n");
+
+	assert(inputLayout.IsValid() && "InputLayout is not valid");
+	assert(rootSignature.IsValid() && "RootSignature is not valid");
+
+	PipelineState* pipelineState = new PipelineState();
+	pipelineState->CreateDepthOnly(inputLayouts[inputLayout.Index()]->GetInputLayoutDesc(),
+		rootSignatures[rootSignature.Index()]->GetRootSignature(),
+		CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob()));
+
+	pipelineStates.push_back(pipelineState);
+
+	OutputDebugString(L"CreateDepthOnlyPipelineState succeeded\n");
+	return HPipelineState(pipelineStates.size() - 1);
+}
+
 HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader computeShader)
 {
 	OutputDebugString(L"CreateComputePipelineState\n");
@@ -1057,6 +1076,27 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	auto viewport = renderTargets[renderTarget.Index()]->GetViewport();
 	auto scissorRect = renderTargets[renderTarget.Index()]->GetScissorRect();
 	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewport);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRect);
+}
+
+void RenderContext::BindDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)
+{
+	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
+	auto dsvHandle = dsvHeap.Get(DescriptorHeap::HeapPartition::STATIC, dsvHandleIndex);
+	D3D12_VIEWPORT viewport = {};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Width = static_cast<float>(depthBuffers[depthBuffer.Index()]->GetWidth());
+	viewport.Height = static_cast<float>(depthBuffers[depthBuffer.Index()]->GetHeight());
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	D3D12_RECT scissorRect = {};
+	scissorRect.left = 0;
+	scissorRect.top = 0;
+	scissorRect.right = static_cast<LONG>(depthBuffers[depthBuffer.Index()]->GetWidth());
+	scissorRect.bottom = static_cast<LONG>(depthBuffers[depthBuffer.Index()]->GetHeight());
+	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewport);
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 }
