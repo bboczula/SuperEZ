@@ -96,6 +96,8 @@ public:
 	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
 	void UpdateSunlightViewProjection();
 	const SunlightViewProjection& GetSunlightViewProjection() const { return sunlightViewProjection; }
+	void SetShadowMapTexture(HTexture texture) { shadowMapTexture = texture; }
+	HTexture GetShadowMapTexture() const { return shadowMapTexture; }
 	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
@@ -170,6 +172,7 @@ public:
 	void BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot);
 	void UpdateConstantBuffer(HBuffer buffer, const void* data, UINT sizeInBytes);
 	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
+	void BindTextureSRV(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlyUAV(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlySRV(HCommandList commandList, HTexture texture, UINT slot);
 	// Clearing
@@ -209,6 +212,7 @@ private:
 	std::vector<SceneEntityRecord> sceneEntities;
 	SunlightConstants sunlightConstants;
 	SunlightViewProjection sunlightViewProjection;
+	HTexture shadowMapTexture;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;

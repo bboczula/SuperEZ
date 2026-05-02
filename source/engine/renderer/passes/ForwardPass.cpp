@@ -58,6 +58,8 @@ void ForwardPass::ConfigurePipelineState()
 	builder.AddCBV(2, D3D12_SHADER_VISIBILITY_PIXEL); // CBV t2 (light data)
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t0
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
+	builder.AddSRVTable(1, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t1 (shadow map)
+	builder.AddCBV(3, D3D12_SHADER_VISIBILITY_VERTEX); // CBV b3 (light view-projection)
 	rootSignature = renderContext.CreateRootSignature(builder);
 
 	// Menu height seems to be 20 pixels
@@ -74,6 +76,9 @@ void ForwardPass::ConfigurePipelineState()
 	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightConstants>();
 	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
 	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
+	sunlightViewProjectionBuffer = renderContext.CreateConsantBuffer<SunlightViewProjection>();
+	const SunlightViewProjection& sunlightViewProjection = renderContext.GetSunlightViewProjection();
+	renderContext.UpdateConstantBuffer(sunlightViewProjectionBuffer, &sunlightViewProjection, sizeof(sunlightViewProjection));
 	deviceContext.Flush();
 }
 
@@ -144,6 +149,14 @@ void ForwardPass::Execute()
 	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
 	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
 	renderContext.BindConstantBuffer(commandList, sunlightBuffer, 2);
+	const SunlightViewProjection& sunlightViewProjection = renderContext.GetSunlightViewProjection();
+	renderContext.UpdateConstantBuffer(sunlightViewProjectionBuffer, &sunlightViewProjection, sizeof(sunlightViewProjection));
+	renderContext.BindConstantBuffer(commandList, sunlightViewProjectionBuffer, 6);
+	HTexture shadowMapTexture = renderContext.GetShadowMapTexture();
+	if (shadowMapTexture.IsValid())
+	{
+		renderContext.BindTextureSRV(commandList, shadowMapTexture, 5);
+	}
 
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)

@@ -245,17 +245,24 @@ void DeviceContext::CreateGpuResource(D3D12_HEAP_FLAGS heapFlags, const D3D12_RE
 	if (!requiresNullClearValue(isBuffer, isRenderTarget, isDepthStencil))
 	{
 		optimalClearValue.Format = desc->Format;
-		optimalClearValue.Color[0] = 1.0f;
 
-		switch (desc->Format)
+		if (isDepthStencil)
 		{
-		case DXGI_FORMAT_D32_FLOAT:
-			break;
-		case DXGI_FORMAT_R8G8B8A8_UNORM:
-			optimalClearValue.Color[1] = 0.980f;
-			optimalClearValue.Color[2] = 0.900f;
-			optimalClearValue.Color[3] = 1.0f;
-			break;
+			optimalClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+			optimalClearValue.DepthStencil.Depth = 1.0f;
+			optimalClearValue.DepthStencil.Stencil = 0;
+		}
+		else
+		{
+			optimalClearValue.Color[0] = 1.0f;
+			switch (desc->Format)
+			{
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+				optimalClearValue.Color[1] = 0.980f;
+				optimalClearValue.Color[2] = 0.900f;
+				optimalClearValue.Color[3] = 1.0f;
+				break;
+			}
 		}
 
 		clearValue = &optimalClearValue;

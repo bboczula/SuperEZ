@@ -297,7 +297,14 @@ HDepthBuffer RenderContext::CreateDepthBuffer(UINT width, UINT height, const cha
 	CHAR textureName[32];
 	snprintf(textureName, sizeof(textureName), "%s_Texture", name);
 	HTexture depth = CreateDepthTexture(width, height, textureName);
-	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	deviceContext.GetDevice()->CreateDepthStencilView(
+		textures[depth.Index()]->GetResource(),
+		&dsvDesc,
+		dsvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
 
 	depthBuffers.push_back(new DepthBuffer(width, height, depth.Index(), dsvHeap.Size(DescriptorHeap::HeapPartition::STATIC) - 1, name));
 
@@ -590,7 +597,7 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	OutputDebugString(L"CreateDepthTexture\n");
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS,
 		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
@@ -1108,6 +1115,14 @@ void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT
 		materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
 
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot + 1, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
+}
+
+void RenderContext::BindTextureSRV(HCommandList commandList, HTexture texture, UINT slot)
+{
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
+		textures[texture.Index()]->GetSrvDescriptorIndex(), cbvSrvUavHeap.GetDescriptorSize());
+
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
 }
 

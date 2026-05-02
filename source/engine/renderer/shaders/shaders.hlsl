@@ -1,5 +1,6 @@
 SamplerState LinearSampler : register(s0);
 Texture2D myTexture : register(t0);
+Texture2D shadowMap : register(t1);
 
 cbuffer CameraData : register(b0)
 {
@@ -19,6 +20,11 @@ cbuffer SunlightData : register(b2)
     float diffuseStrength;
 };
 
+cbuffer LightViewProjectionData : register(b3)
+{
+    row_major float4x4 lightViewProjection;
+};
+
 struct VSInput
 {
     float4 position : POSITION;
@@ -33,6 +39,8 @@ struct PSInput
     float4 color : COLOR;
     float2 texCoord : TEXCOORD;
     float3 worldNormal : TEXCOORD1;
+    float3 worldPosition : TEXCOORD2;
+    float4 shadowPosition : TEXCOORD3;
 };
 
 PSInput VSMain(VSInput input)
@@ -46,6 +54,8 @@ PSInput VSMain(VSInput input)
     o.color = input.color;
     o.texCoord = input.texCoord;
     o.worldNormal = normalize(mul(input.normal.xyz, (float3x3)world));
+    o.worldPosition = worldPos.xyz;
+    o.shadowPosition = mul(worldPos, lightViewProjection);
     return o;
 }
 
@@ -55,9 +65,20 @@ float4 PSMain(PSInput input) : SV_TARGET
     float4 albedo = myTexture.Sample(LinearSampler, uv);
 
     float3 normal = normalize(input.worldNormal);
+    float3 shadowNdc = input.shadowPosition.xyz / input.shadowPosition.w;
+    float2 shadowUv = shadowNdc.xy * float2(0.5f, -0.5f) + 0.5f;
+    float pixelLightDepth = shadowNdc.z;
+    float shadowMapDepth = shadowMap.Sample(LinearSampler, shadowUv).r;
+    float shadowBias = 0.001f;
+    bool insideShadowMap =
+        shadowUv.x >= 0.0f && shadowUv.x <= 1.0f &&
+        shadowUv.y >= 0.0f && shadowUv.y <= 1.0f &&
+        pixelLightDepth >= 0.0f && pixelLightDepth <= 1.0f;
+    float shadowVisibility = (!insideShadowMap || pixelLightDepth <= shadowMapDepth + shadowBias) ? 1.0f : 0.0f;
 
     float diffuse = saturate(dot(normal, -normalize(lightDirection.xyz))) * diffuseStrength;
-
-    float3 lighting = lightColor.xyz * (ambientStrength + diffuse);
+    float3 ambientLight = lightColor.xyz * ambientStrength;
+    float3 directLight = lightColor.xyz * diffuse * shadowVisibility;
+    float3 lighting = ambientLight + directLight;
     return float4(albedo.rgb * lighting, albedo.a);
 }

@@ -29,6 +29,7 @@ void ShadowMapPass::ConfigurePipelineState()
 
     depthBuffer = renderContext.CreateDepthBuffer(ShadowMapSize, ShadowMapSize, "DB_ShadowMap");
     shadowMapTexture = renderContext.GetTexture(depthBuffer);
+    renderContext.SetShadowMapTexture(shadowMapTexture);
     lightViewProjectionBuffer = renderContext.CreateConsantBuffer<SunlightViewProjection>();
     renderContext.UpdateSunlightViewProjection();
     const SunlightViewProjection& lightViewProjection = renderContext.GetSunlightViewProjection();
@@ -75,6 +76,8 @@ void ShadowMapPass::Execute()
 		renderContext.BindGeometry(commandList, item.mesh);
 		renderContext.DrawMesh(commandList, item.mesh);
 	}
+
+	renderContext.TransitionTo(commandList, shadowMapTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void ShadowMapPass::PostSubmit()
