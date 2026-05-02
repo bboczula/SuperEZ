@@ -53,6 +53,11 @@ struct SunlightConstants
 	float diffuseStrength = 1.0f;
 };
 
+struct SunlightViewProjection
+{
+	DirectX::SimpleMath::Matrix viewProjection = DirectX::SimpleMath::Matrix::Identity;
+};
+
 class RenderContext
 {
 public:
@@ -87,6 +92,8 @@ public:
 	void RegisterSunlightEntity(uint32_t id, const char* name);
 	const SunlightConstants& GetSunlightConstants() const { return sunlightConstants; }
 	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
+	void UpdateSunlightViewProjection();
+	const SunlightViewProjection& GetSunlightViewProjection() const { return sunlightViewProjection; }
 	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
@@ -198,6 +205,7 @@ private:
 	std::vector<Camera*> cameras;
 	std::vector<SceneEntityRecord> sceneEntities;
 	SunlightConstants sunlightConstants;
+	SunlightViewProjection sunlightViewProjection;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;

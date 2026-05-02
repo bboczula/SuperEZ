@@ -25,6 +25,10 @@ void ShadowMapPass::ConfigurePipelineState()
 
     depthBuffer = renderContext.CreateDepthBuffer(ShadowMapSize, ShadowMapSize, "DB_ShadowMap");
     shadowMapTexture = renderContext.GetTexture(depthBuffer);
+    lightViewProjectionBuffer = renderContext.CreateConsantBuffer<SunlightViewProjection>();
+    renderContext.UpdateSunlightViewProjection();
+    const SunlightViewProjection& lightViewProjection = renderContext.GetSunlightViewProjection();
+    renderContext.UpdateConstantBuffer(lightViewProjectionBuffer, &lightViewProjection, sizeof(lightViewProjection));
 
     // Temporary color target until the shadow pass gets a depth-only PSO.
     renderTarget = renderContext.CreateRenderTarget("RT_ShadowMapPass", RenderTargetFormat::RGB8_UNORM, ShadowMapSize, ShadowMapSize);
@@ -44,6 +48,9 @@ void ShadowMapPass::Update()
 
 void ShadowMapPass::Execute()
 {
+    renderContext.UpdateSunlightViewProjection();
+    const SunlightViewProjection& lightViewProjection = renderContext.GetSunlightViewProjection();
+    renderContext.UpdateConstantBuffer(lightViewProjectionBuffer, &lightViewProjection, sizeof(lightViewProjection));
 }
 
 void ShadowMapPass::PostSubmit()

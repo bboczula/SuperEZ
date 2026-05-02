@@ -21,6 +21,8 @@
 #include "debugapi.h"
 #include "../Utils.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstring>
 
 extern WindowContext windowContext;
@@ -179,6 +181,53 @@ void RenderContext::RegisterSunlightEntity(uint32_t id, const char* name)
 	record.kind = SceneEntityKind::Sunlight;
 	strncpy_s(record.name, name, _TRUNCATE);
 	sceneEntities.push_back(record);
+}
+
+void RenderContext::UpdateSunlightViewProjection()
+{
+	using DirectX::SimpleMath::Matrix;
+	using DirectX::SimpleMath::Vector3;
+
+	Vector3 sceneCenter = Vector3::Zero;
+	for (const RenderItem& item : renderItems)
+	{
+		sceneCenter += item.position;
+	}
+
+	if (!renderItems.empty())
+	{
+		sceneCenter /= static_cast<float>(renderItems.size());
+	}
+
+	float sceneRadius = 20.0f;
+	for (const RenderItem& item : renderItems)
+	{
+		const float itemDistance = (item.position - sceneCenter).Length();
+		const float itemScale = (std::max)(item.scale.x, (std::max)(item.scale.y, item.scale.z));
+		sceneRadius = (std::max)(sceneRadius, itemDistance + itemScale);
+	}
+
+	Vector3 lightDirection(
+		sunlightConstants.lightDirection[0],
+		sunlightConstants.lightDirection[1],
+		sunlightConstants.lightDirection[2]);
+	if (lightDirection.LengthSquared() < 0.0001f)
+	{
+		lightDirection = Vector3(-0.4f, -1.0f, -0.3f);
+	}
+	lightDirection.Normalize();
+
+	Vector3 up = Vector3::UnitY;
+	if (fabsf(lightDirection.Dot(up)) > 0.95f)
+	{
+		up = Vector3::UnitZ;
+	}
+
+	const float lightDistance = sceneRadius * 2.0f;
+	const Vector3 lightPosition = sceneCenter - lightDirection * lightDistance;
+	const Matrix lightView = Matrix::CreateLookAt(lightPosition, sceneCenter, up);
+	const Matrix lightProjection = Matrix::CreateOrthographic(sceneRadius * 2.0f, sceneRadius * 2.0f, 0.1f, sceneRadius * 4.0f);
+	sunlightViewProjection.viewProjection = lightView * lightProjection;
 }
 
 void RenderContext::CreateRenderItem(const RenderItem& item)
