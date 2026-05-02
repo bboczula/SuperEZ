@@ -31,7 +31,8 @@ enum RenderTargetFormat
 enum class SceneEntityKind : unsigned char
 {
 	Renderable,
-	Camera
+	Camera,
+	Sunlight
 };
 
 struct SceneEntityRecord
@@ -42,6 +43,14 @@ struct SceneEntityRecord
 	HMesh mesh;
 	HTexture texture;
 	UINT cameraIndex = UINT32_MAX;
+};
+
+struct SunlightConstants
+{
+	float lightDirection[4] = { -0.4f, -1.0f, -0.3f, 0.0f };
+	float lightColor[4] = { 1.0f, 0.98f, 0.92f, 0.0f };
+	float ambientStrength = 0.2f;
+	float diffuseStrength = 1.0f;
 };
 
 class RenderContext
@@ -75,6 +84,9 @@ public:
 	SceneEntityRecord* GetSceneEntityById(uint32_t id);
 	void RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture);
 	void RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex);
+	void RegisterSunlightEntity(uint32_t id, const char* name);
+	const SunlightConstants& GetSunlightConstants() const { return sunlightConstants; }
+	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
 	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
@@ -183,6 +195,7 @@ private:
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
 	std::vector<SceneEntityRecord> sceneEntities;
+	SunlightConstants sunlightConstants;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;

@@ -32,6 +32,17 @@ struct InfoComponent
     std::string name;
 };
 
+// For tracking one sunlight properties
+struct SunlightComponent
+{
+	bool enabled = true;
+	float direction[3] = { -0.4f, -1.0f, -0.3f };
+	float color[3] = { 1.0f, 0.98f, 0.92f };
+	float ambientStrength = 0.2f;
+	float diffuseStrength = 1.0f;
+};
+
+
 enum class CameraProjectionType : unsigned char
 {
     Perspective,

@@ -71,8 +71,9 @@ void TestPass::ConfigurePipelineState()
 #endif
 	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
-	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightData>();
-	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightData, sizeof(sunlightData));
+	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightConstants>();
+	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
+	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
 	deviceContext.Flush();
 }
 
@@ -140,6 +141,8 @@ void TestPass::Execute()
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.GetActiveCamera()->SetType(type);
 	renderContext.SetInlineConstants(commandList, renderContext.GetActiveCamera()->ViewProjecttion(), 0);
+	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
+	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
 	renderContext.BindConstantBuffer(commandList, sunlightBuffer, 2);
 
 	const auto& items = renderContext.GetRenderItems();

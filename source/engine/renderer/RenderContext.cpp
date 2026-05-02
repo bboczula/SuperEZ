@@ -172,6 +172,15 @@ void RenderContext::RegisterCameraEntity(uint32_t id, const char* name, UINT cam
 	sceneEntities.push_back(record);
 }
 
+void RenderContext::RegisterSunlightEntity(uint32_t id, const char* name)
+{
+	SceneEntityRecord record{};
+	record.id = id;
+	record.kind = SceneEntityKind::Sunlight;
+	strncpy_s(record.name, name, _TRUNCATE);
+	sceneEntities.push_back(record);
+}
+
 void RenderContext::CreateRenderItem(const RenderItem& item)
 {
 	renderItems.push_back(item);

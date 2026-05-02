@@ -40,6 +40,7 @@ Subject<WinMessageEvent> winMessageSubject;
 RawInput rawInput;
 CursorInput cursorInput;
 ImGuiHandler imGuiHandler;
+Coordinator* editorCoordinator = nullptr;
 
 std::vector<float> NormalizeNormalStream(const std::vector<float>& rawNormals, UINT vertexCount)
 {
@@ -92,6 +93,8 @@ void Engine::Initialize()
 	mCoordinator.RegisterComponent<MaterialComponent>();
 	mCoordinator.RegisterComponent<InfoComponent>();
 	mCoordinator.RegisterComponent<CameraComponent>();
+	mCoordinator.RegisterComponent<SunlightComponent>();
+	editorCoordinator = &mCoordinator;
 
 	rawInput.Initialize();
 	imGuiHandler.Initialize();
@@ -118,7 +121,7 @@ void Engine::CreateRenderResources()
 	// Here we can make engine speciffic allocations
 }
 
-void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesystem::path currentPath)
+void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunlights, std::filesystem::path currentPath)
 {
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
@@ -147,6 +150,18 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesyste
 			.width = 1.0f,
 			.height = 1.0f,
 			.active = true
+			});
+	}
+
+	if (sunlights.empty())
+	{
+		sunlights.push_back(SunlightData{
+			.name = "Sunlight",
+			.enabled = true,
+			.direction = { -0.4f, -1.0f, -0.3f },
+			.color = { 1.0f, 0.98f, 0.92f },
+			.ambientStrength = 0.2f,
+			.diffuseStrength = 1.0f
 			});
 	}
 
@@ -180,6 +195,42 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesyste
 			renderContext.SetActiveCamera(cameraIndex);
 			hasActiveCamera = true;
 		}
+	}
+
+	bool boundFirstEnabledSunlight = false;
+	for (const auto& sunlightData : sunlights)
+	{
+		Entity sunlightEntity = mCoordinator.CreateEntity();
+		mCoordinator.AddComponent(sunlightEntity, InfoComponent{ sunlightData.name });
+		mCoordinator.AddComponent(sunlightEntity, SunlightComponent{
+			.enabled = sunlightData.enabled,
+			.direction = { sunlightData.direction.x, sunlightData.direction.y, sunlightData.direction.z },
+			.color = { sunlightData.color.x, sunlightData.color.y, sunlightData.color.z },
+			.ambientStrength = sunlightData.ambientStrength,
+			.diffuseStrength = sunlightData.diffuseStrength
+			});
+		renderContext.RegisterSunlightEntity(sunlightEntity, sunlightData.name.c_str());
+
+		if (sunlightData.enabled && !boundFirstEnabledSunlight)
+		{
+			renderContext.SetSunlightConstants(SunlightConstants{
+				.lightDirection = { sunlightData.direction.x, sunlightData.direction.y, sunlightData.direction.z, 0.0f },
+				.lightColor = { sunlightData.color.x, sunlightData.color.y, sunlightData.color.z, 0.0f },
+				.ambientStrength = sunlightData.ambientStrength,
+				.diffuseStrength = sunlightData.diffuseStrength
+				});
+			boundFirstEnabledSunlight = true;
+		}
+	}
+	if (!boundFirstEnabledSunlight && !sunlights.empty())
+	{
+		const auto& sunlightData = sunlights.front();
+		renderContext.SetSunlightConstants(SunlightConstants{
+			.lightDirection = { sunlightData.direction.x, sunlightData.direction.y, sunlightData.direction.z, 0.0f },
+			.lightColor = { sunlightData.color.x, sunlightData.color.y, sunlightData.color.z, 0.0f },
+			.ambientStrength = 0.0f,
+			.diffuseStrength = 0.0f
+			});
 	}
 
 	for (const auto& gameObject : gameObjects)
@@ -271,7 +322,7 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, std::filesyste
 	game->OnInit(services);
 }
 
-void Engine::ProcessScene(GameObjects& gameObjects, Cameras& cameras, SceneData& sceneData)
+void Engine::ProcessScene(GameObjects& gameObjects, Cameras& cameras, Sunlights& sunlights, SceneData& sceneData)
 {
 	sceneData.currentPath.append(sceneData.sceneName);
 	std::filesystem::path scenePath = sceneData.currentPath / (std::string(sceneData.sceneName) + ".xml");
@@ -292,6 +343,7 @@ void Engine::ProcessScene(GameObjects& gameObjects, Cameras& cameras, SceneData&
 
 	ProcessGameObjects(scene, gameObjects);
 	ProcessCameras(scene, cameras);
+	ProcessSunlights(scene, sunlights);
 }
 
 void Engine::ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras)
@@ -333,6 +385,44 @@ void Engine::ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras)
 
 		cameras.emplace_back(cameraData);
 		firstCamera = false;
+	}
+}
+
+void Engine::ProcessSunlights(tinyxml2::XMLElement* scene, Sunlights& sunlights)
+{
+	for (tinyxml2::XMLElement* sunlightElem = scene->FirstChildElement("Sunlight");
+		sunlightElem != nullptr;
+		sunlightElem = sunlightElem->NextSiblingElement("Sunlight"))
+	{
+		SunlightData sunlightData;
+		const char* name = sunlightElem->Attribute("name");
+		sunlightData.name = name ? name : "Sunlight";
+		sunlightData.enabled = sunlightElem->BoolAttribute("enabled", true);
+
+		tinyxml2::XMLElement* direction = sunlightElem->FirstChildElement("Direction");
+		if (direction != nullptr)
+		{
+			sunlightData.direction.x = direction->FloatAttribute("x", sunlightData.direction.x);
+			sunlightData.direction.y = direction->FloatAttribute("y", sunlightData.direction.y);
+			sunlightData.direction.z = direction->FloatAttribute("z", sunlightData.direction.z);
+		}
+
+		tinyxml2::XMLElement* color = sunlightElem->FirstChildElement("Color");
+		if (color != nullptr)
+		{
+			sunlightData.color.x = color->FloatAttribute("r", color->FloatAttribute("x", sunlightData.color.x));
+			sunlightData.color.y = color->FloatAttribute("g", color->FloatAttribute("y", sunlightData.color.y));
+			sunlightData.color.z = color->FloatAttribute("b", color->FloatAttribute("z", sunlightData.color.z));
+		}
+
+		tinyxml2::XMLElement* lighting = sunlightElem->FirstChildElement("Lighting");
+		if (lighting != nullptr)
+		{
+			sunlightData.ambientStrength = lighting->FloatAttribute("ambient", sunlightData.ambientStrength);
+			sunlightData.diffuseStrength = lighting->FloatAttribute("diffuse", sunlightData.diffuseStrength);
+		}
+
+		sunlights.emplace_back(sunlightData);
 	}
 }
 
@@ -425,13 +515,14 @@ void Engine::LoadSceneAssets(std::string sceneName)
 {
 	GameObjects gameObjects;
 	Cameras cameras;
+	Sunlights sunlights;
 	SceneData sceneData =
 	{
 		std::filesystem::current_path() / "assets",
 		sceneName.c_str()
 	};
-	ProcessScene(gameObjects, cameras, sceneData);
-	LoadAssets(gameObjects, cameras, sceneData.currentPath);
+	ProcessScene(gameObjects, cameras, sunlights, sceneData);
+	LoadAssets(gameObjects, cameras, sunlights, sceneData.currentPath);
 }
 
 void Engine::UnloadSceneAssets()
