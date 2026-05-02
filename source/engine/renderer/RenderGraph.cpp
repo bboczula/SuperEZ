@@ -9,11 +9,15 @@
 #include "passes/HighlightPass.h"
 #include "passes/GrayscalePass.h"
 #include "passes/CompositionPass.h"
+#include "passes/ShadowMapPass.h"
 
 RenderGraph::RenderGraph()
 {
 	RenderPass* selectionPass = new SelectionPass();
 	renderPasses.push_back(selectionPass);
+
+	RenderPass* shadowMapPass = new ShadowMapPass();
+	renderPasses.push_back(shadowMapPass);
 
 	RenderPass* forwardPass = new ForwardPass();
 	renderPasses.push_back(forwardPass);
