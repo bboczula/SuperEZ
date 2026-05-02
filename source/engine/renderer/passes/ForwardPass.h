@@ -3,19 +3,18 @@
 #include "../RenderPass.h"
 
 
-// The test pass first will create its own Render Target and Vertex Buffer,
-// and then it will render a triangle to the screen.
+// The forward pass renders the scene from the active camera.
 
 class Orbit;
 class FreeCamera;
 
-class TestPass : public RenderPass
+class ForwardPass : public RenderPass
 {
 public:
-	TestPass();
+	ForwardPass();
 	void SetOrthographicProperties(const float aspectRatio);
 	void PostAssetLoad() override;
-	~TestPass();
+	~ForwardPass();
 	void ConfigurePipelineState() override;
 	void Initialize() override;
 	void Update() override;

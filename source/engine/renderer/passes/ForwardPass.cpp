@@ -1,4 +1,4 @@
-#include "TestPass.h"
+#include "ForwardPass.h"
 
 #include "../RenderContext.h"
 #include "../../core/DeviceContext.h"
@@ -18,11 +18,11 @@ extern RenderContext renderContext;
 extern WindowContext windowContext;
 extern RawInput rawInput;
 
-TestPass::TestPass() : RenderPass(L"Test", L"shaders.hlsl", Type::Graphics)
+ForwardPass::ForwardPass() : RenderPass(L"Forward", L"shaders.hlsl", Type::Graphics)
 {
 }
 
-void TestPass::SetOrthographicProperties(const float aspectRatio)
+void ForwardPass::SetOrthographicProperties(const float aspectRatio)
 {
 	float distanceToPlane = 5.0f;
 	float fov = DirectX::XMConvertToRadians(36.0f);
@@ -35,17 +35,17 @@ void TestPass::SetOrthographicProperties(const float aspectRatio)
 	renderContext.GetActiveCamera()->SetHeight(height);
 }
 
-void TestPass::PostAssetLoad()
+void ForwardPass::PostAssetLoad()
 {
 	// Create camera (can't be done in constructor because renderContext is not ready)
 	freeCamera = new FreeCamera(renderContext.GetActiveCamera());
 }
 
-TestPass::~TestPass()
+ForwardPass::~ForwardPass()
 {
 }
 
-void TestPass::ConfigurePipelineState()
+void ForwardPass::ConfigurePipelineState()
 {
 	// Pre-AutomaticInitialize Procedure
 	inputLayout = renderContext.CreateInputLayout();
@@ -69,7 +69,7 @@ void TestPass::ConfigurePipelineState()
 	viewportWidth -= 400; // Assuming the menu takes 400 pixels
 	viewportHeight -= menuHeight - 25; // Assuming the status bar takes 25 pixels
 #endif
-	renderTarget = renderContext.CreateRenderTarget("RT_TestPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
+	renderTarget = renderContext.CreateRenderTarget("RT_ForwardPass", RenderTargetFormat::RGB8_UNORM, viewportWidth, viewportHeight);
 	depthBuffer = renderContext.CreateDepthBuffer();
 	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightConstants>();
 	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
@@ -77,11 +77,11 @@ void TestPass::ConfigurePipelineState()
 	deviceContext.Flush();
 }
 
-void TestPass::Initialize()
+void ForwardPass::Initialize()
 {
 }
 
-void TestPass::Update()
+void ForwardPass::Update()
 {
 	if (rawInput.IsKeyDown(VK_NUMPAD1) || rawInput.IsKeyDown(VK_NUMPAD3) || rawInput.IsKeyDown(VK_NUMPAD7))
 	{
@@ -130,7 +130,7 @@ void TestPass::Update()
 	}
 }
 
-void TestPass::Execute()
+void ForwardPass::Execute()
 {
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeap(commandList);
@@ -155,11 +155,11 @@ void TestPass::Execute()
 	}
 }
 
-void TestPass::PostSubmit()
+void ForwardPass::PostSubmit()
 {
 }
 
-void TestPass::Allocate(DeviceContext* deviceContext)
+void ForwardPass::Allocate(DeviceContext* deviceContext)
 {
 	// We want our Render Pass
 }

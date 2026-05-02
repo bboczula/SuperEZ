@@ -1,6 +1,6 @@
 #include "RenderGraph.h"
 #include "RenderPass.h"
-#include "passes/TestPass.h"
+#include "passes/ForwardPass.h"
 #include "passes/ImGuiPass.h"
 #include "passes/BlitPass.h"
 #include "passes/SelectionPass.h"
@@ -15,8 +15,8 @@ RenderGraph::RenderGraph()
 	RenderPass* selectionPass = new SelectionPass();
 	renderPasses.push_back(selectionPass);
 
-	RenderPass* testPass = new TestPass();
-	renderPasses.push_back(testPass);
+	RenderPass* forwardPass = new ForwardPass();
+	renderPasses.push_back(forwardPass);
 
 #if IS_EDITOR
 	RenderPass* highlightClearPass = new HighlightClearPass();
