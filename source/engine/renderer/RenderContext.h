@@ -92,6 +92,7 @@ public:
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
 	HDepthBuffer CreateDepthBuffer();
+	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
@@ -101,6 +102,7 @@ public:
 	UINT GetActiveCameraIndex() const { return activeCameraIndex; }
 	void SetActiveCamera(UINT index) { activeCameraIndex = index; }
 	HTexture GetTexture(HRenderTarget renderTarget);
+	HTexture GetTexture(HDepthBuffer depthBuffer);
 	HTexture GetTexture(const char* name);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }

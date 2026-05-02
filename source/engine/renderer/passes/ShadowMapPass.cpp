@@ -23,7 +23,11 @@ void ShadowMapPass::ConfigurePipelineState()
     RootSignatureBuilder builder;
     rootSignature = renderContext.CreateRootSignature(builder);
 
-    renderTarget = renderContext.CreateRenderTarget("RT_ShadowMapPass", RenderTargetFormat::RGB8_UNORM, 64, 64);
+    depthBuffer = renderContext.CreateDepthBuffer(ShadowMapSize, ShadowMapSize, "DB_ShadowMap");
+    shadowMapTexture = renderContext.GetTexture(depthBuffer);
+
+    // Temporary color target until the shadow pass gets a depth-only PSO.
+    renderTarget = renderContext.CreateRenderTarget("RT_ShadowMapPass", RenderTargetFormat::RGB8_UNORM, ShadowMapSize, ShadowMapSize);
 }
 
 void ShadowMapPass::PostAssetLoad()

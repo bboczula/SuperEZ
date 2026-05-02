@@ -238,10 +238,19 @@ HDepthBuffer RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
-	HTexture depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
+	return CreateDepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom");
+}
+
+HDepthBuffer RenderContext::CreateDepthBuffer(UINT width, UINT height, const char* name)
+{
+	OutputDebugString(L"CreateDepthBuffer\n");
+
+	CHAR textureName[32];
+	snprintf(textureName, sizeof(textureName), "%s_Texture", name);
+	HTexture depth = CreateDepthTexture(width, height, textureName);
 	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
 
-	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size(DescriptorHeap::HeapPartition::STATIC) - 1, "DB_Custom"));
+	depthBuffers.push_back(new DepthBuffer(width, height, depth.Index(), dsvHeap.Size(DescriptorHeap::HeapPartition::STATIC) - 1, name));
 
 	return HDepthBuffer(depthBuffers.size() - 1);
 }
@@ -944,6 +953,11 @@ void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& buffer
 HTexture RenderContext::GetTexture(HRenderTarget renderTarget)
 {
 	return HTexture(renderTargets[renderTarget.Index()]->GetTextureIndex());
+}
+
+HTexture RenderContext::GetTexture(HDepthBuffer depthBuffer)
+{
+	return HTexture(depthBuffers[depthBuffer.Index()]->GetTextureIndex());
 }
 
 HTexture RenderContext::GetTexture(const char* name)
