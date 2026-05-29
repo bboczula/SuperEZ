@@ -2,8 +2,9 @@
 
 #include <string>
 
-VertexBuffer::VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, UINT numOfVertices, const char* name)
-	: resource(resource), sizeInBytes(sizeInBytes), numOfVertices(numOfVertices)
+VertexBuffer::VertexBuffer(ID3D12Resource* resource, UINT sizeInBytes, UINT numOfVertices, const char* name,
+	DirectX::SimpleMath::Vector3 localMin, DirectX::SimpleMath::Vector3 localMax)
+	: resource(resource), sizeInBytes(sizeInBytes), numOfVertices(numOfVertices), localMin(localMin), localMax(localMax)
 {
 	strcpy_s(this->name, name);
 }

@@ -51,6 +51,13 @@ struct SunlightConstants
 	float lightColor[4] = { 1.0f, 0.98f, 0.92f, 0.0f };
 	float ambientStrength = 0.2f;
 	float diffuseStrength = 1.0f;
+	float shadowBias = 0.001f;
+	float shadowSlopeBias = 0.002f;
+};
+
+struct SunlightViewProjection
+{
+	DirectX::SimpleMath::Matrix viewProjection = DirectX::SimpleMath::Matrix::Identity;
 };
 
 class RenderContext
@@ -64,6 +71,8 @@ public:
 	HShader CreateShader(LPCWSTR shaderFileName, LPCSTR entryPoint, LPCSTR shaderModel);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader vertexShader,
 		HShader pixelShader, HInputLayout inputLayout, HRenderTarget renderTarget);
+	HPipelineState CreateDepthOnlyPipelineState(DeviceContext* deviceContext, HRootSignature rootSignature,
+		HShader vertexShader, HInputLayout inputLayout);
 	HPipelineState CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader computeShader);
 	HInputLayout CreateInputLayout();
 	InputLayout* GetInputLayout(HInputLayout inputLayout) { return inputLayouts[inputLayout.Index()]; }
@@ -87,11 +96,16 @@ public:
 	void RegisterSunlightEntity(uint32_t id, const char* name);
 	const SunlightConstants& GetSunlightConstants() const { return sunlightConstants; }
 	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
+	void UpdateSunlightViewProjection();
+	const SunlightViewProjection& GetSunlightViewProjection() const { return sunlightViewProjection; }
+	void SetShadowMapTexture(HTexture texture) { shadowMapTexture = texture; }
+	HTexture GetShadowMapTexture() const { return shadowMapTexture; }
 	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
 	HDepthBuffer CreateDepthBuffer();
+	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
 	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
@@ -101,6 +115,7 @@ public:
 	UINT GetActiveCameraIndex() const { return activeCameraIndex; }
 	void SetActiveCamera(UINT index) { activeCameraIndex = index; }
 	HTexture GetTexture(HRenderTarget renderTarget);
+	HTexture GetTexture(HDepthBuffer depthBuffer);
 	HTexture GetTexture(const char* name);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
@@ -148,6 +163,7 @@ public:
 	// Binding
 	void BindRenderTarget(HCommandList commandList, HRenderTarget renderTarget);
 	void BindRenderTargetWithDepth(HCommandList commandList, HRenderTarget renderTarget, HDepthBuffer depthBuffer);
+	void BindDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer);
 	void ResetCommandList(HCommandList commandList, HPipelineState pipelineState);
 	void ResetCommandList(HCommandList commandList);
 	void CloseCommandList(HCommandList commandList);
@@ -158,6 +174,7 @@ public:
 	void BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot);
 	void UpdateConstantBuffer(HBuffer buffer, const void* data, UINT sizeInBytes);
 	void BindTexture(HCommandList commandList, HTexture texture, UINT slot);
+	void BindTextureSRV(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlyUAV(HCommandList commandList, HTexture texture, UINT slot);
 	void BindTextureOnlySRV(HCommandList commandList, HTexture texture, UINT slot);
 	// Clearing
@@ -196,6 +213,8 @@ private:
 	std::vector<Camera*> cameras;
 	std::vector<SceneEntityRecord> sceneEntities;
 	SunlightConstants sunlightConstants;
+	SunlightViewProjection sunlightViewProjection;
+	HTexture shadowMapTexture;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;

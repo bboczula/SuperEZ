@@ -161,7 +161,9 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			.direction = { -0.4f, -1.0f, -0.3f },
 			.color = { 1.0f, 0.98f, 0.92f },
 			.ambientStrength = 0.2f,
-			.diffuseStrength = 1.0f
+			.diffuseStrength = 1.0f,
+			.shadowBias = 0.001f,
+			.shadowSlopeBias = 0.002f
 			});
 	}
 
@@ -207,7 +209,9 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			.direction = { sunlightData.direction.x, sunlightData.direction.y, sunlightData.direction.z },
 			.color = { sunlightData.color.x, sunlightData.color.y, sunlightData.color.z },
 			.ambientStrength = sunlightData.ambientStrength,
-			.diffuseStrength = sunlightData.diffuseStrength
+			.diffuseStrength = sunlightData.diffuseStrength,
+			.shadowBias = sunlightData.shadowBias,
+			.shadowSlopeBias = sunlightData.shadowSlopeBias
 			});
 		renderContext.RegisterSunlightEntity(sunlightEntity, sunlightData.name.c_str());
 
@@ -217,7 +221,9 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 				.lightDirection = { sunlightData.direction.x, sunlightData.direction.y, sunlightData.direction.z, 0.0f },
 				.lightColor = { sunlightData.color.x, sunlightData.color.y, sunlightData.color.z, 0.0f },
 				.ambientStrength = sunlightData.ambientStrength,
-				.diffuseStrength = sunlightData.diffuseStrength
+				.diffuseStrength = sunlightData.diffuseStrength,
+				.shadowBias = sunlightData.shadowBias,
+				.shadowSlopeBias = sunlightData.shadowSlopeBias
 				});
 			boundFirstEnabledSunlight = true;
 		}
@@ -229,7 +235,9 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			.lightDirection = { sunlightData.direction.x, sunlightData.direction.y, sunlightData.direction.z, 0.0f },
 			.lightColor = { sunlightData.color.x, sunlightData.color.y, sunlightData.color.z, 0.0f },
 			.ambientStrength = 0.0f,
-			.diffuseStrength = 0.0f
+			.diffuseStrength = 0.0f,
+			.shadowBias = sunlightData.shadowBias,
+			.shadowSlopeBias = sunlightData.shadowSlopeBias
 			});
 	}
 
@@ -420,6 +428,8 @@ void Engine::ProcessSunlights(tinyxml2::XMLElement* scene, Sunlights& sunlights)
 		{
 			sunlightData.ambientStrength = lighting->FloatAttribute("ambient", sunlightData.ambientStrength);
 			sunlightData.diffuseStrength = lighting->FloatAttribute("diffuse", sunlightData.diffuseStrength);
+			sunlightData.shadowBias = lighting->FloatAttribute("shadowBias", sunlightData.shadowBias);
+			sunlightData.shadowSlopeBias = lighting->FloatAttribute("shadowSlopeBias", sunlightData.shadowSlopeBias);
 		}
 
 		sunlights.emplace_back(sunlightData);

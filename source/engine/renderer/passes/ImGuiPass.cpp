@@ -46,7 +46,9 @@ namespace
 			.lightDirection = { sunlight.direction[0], sunlight.direction[1], sunlight.direction[2], 0.0f },
 			.lightColor = { sunlight.color[0], sunlight.color[1], sunlight.color[2], 0.0f },
 			.ambientStrength = sunlight.ambientStrength * enabled,
-			.diffuseStrength = sunlight.diffuseStrength * enabled
+			.diffuseStrength = sunlight.diffuseStrength * enabled,
+			.shadowBias = sunlight.shadowBias,
+			.shadowSlopeBias = sunlight.shadowSlopeBias
 		};
 	}
 
@@ -337,6 +339,8 @@ void ImGuiPass::Execute()
 							changed |= ImGui::ColorEdit3("Color", sunlight.color);
 							changed |= ImGui::DragFloat("Ambient", &sunlight.ambientStrength, 0.01f, 0.0f, 1.0f);
 							changed |= ImGui::DragFloat("Diffuse", &sunlight.diffuseStrength, 0.01f, 0.0f, 10.0f);
+							changed |= ImGui::DragFloat("Shadow Bias", &sunlight.shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
+							changed |= ImGui::DragFloat("Shadow Slope Bias", &sunlight.shadowSlopeBias, 0.0001f, 0.0f, 0.05f, "%.6f");
 
 							if (changed)
 							{

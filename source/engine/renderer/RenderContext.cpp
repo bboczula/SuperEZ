@@ -21,6 +21,9 @@
 #include "debugapi.h"
 #include "../Utils.h"
 
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
 #include <cstring>
 
 extern WindowContext windowContext;
@@ -181,6 +184,103 @@ void RenderContext::RegisterSunlightEntity(uint32_t id, const char* name)
 	sceneEntities.push_back(record);
 }
 
+void RenderContext::UpdateSunlightViewProjection()
+{
+	using DirectX::SimpleMath::Matrix;
+	using DirectX::SimpleMath::Vector3;
+
+	Vector3 lightDirection(
+		sunlightConstants.lightDirection[0],
+		sunlightConstants.lightDirection[1],
+		sunlightConstants.lightDirection[2]);
+	if (lightDirection.LengthSquared() < 0.0001f)
+	{
+		lightDirection = Vector3(-0.4f, -1.0f, -0.3f);
+	}
+	lightDirection.Normalize();
+
+	Vector3 up = Vector3::UnitY;
+	if (fabsf(lightDirection.Dot(up)) > 0.95f)
+	{
+		up = Vector3::UnitZ;
+	}
+
+	Vector3 sceneMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 sceneMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (const RenderItem& item : renderItems)
+	{
+		if (!item.mesh.IsValid())
+		{
+			continue;
+		}
+
+		const Mesh* mesh = meshes[item.mesh.Index()];
+		const Vector3 localMin = mesh->GetLocalMin();
+		const Vector3 localMax = mesh->GetLocalMax();
+		const Matrix world = item.World();
+		for (int x = 0; x < 2; ++x)
+		{
+			for (int y = 0; y < 2; ++y)
+			{
+				for (int z = 0; z < 2; ++z)
+				{
+					const Vector3 localCorner(
+						x == 0 ? localMin.x : localMax.x,
+						y == 0 ? localMin.y : localMax.y,
+						z == 0 ? localMin.z : localMax.z);
+					const Vector3 worldCorner = Vector3::Transform(localCorner, world);
+					sceneMin = Vector3::Min(sceneMin, worldCorner);
+					sceneMax = Vector3::Max(sceneMax, worldCorner);
+				}
+			}
+		}
+	}
+
+	if (sceneMin.x == FLT_MAX)
+	{
+		sceneMin = Vector3(-1.0f, -1.0f, -1.0f);
+		sceneMax = Vector3(1.0f, 1.0f, 1.0f);
+	}
+
+	const Vector3 sceneCenter = (sceneMin + sceneMax) * 0.5f;
+	const Vector3 sceneExtents = (sceneMax - sceneMin) * 0.5f;
+	const float sceneRadius = (std::max)(sceneExtents.Length(), 0.5f);
+	const float lightDistance = sceneRadius * 2.0f;
+	const Vector3 lightPosition = sceneCenter - lightDirection * lightDistance;
+	const Matrix lightView = Matrix::CreateLookAt(lightPosition, sceneCenter, up);
+
+	Vector3 lightMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 lightMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (int x = 0; x < 2; ++x)
+	{
+		for (int y = 0; y < 2; ++y)
+		{
+			for (int z = 0; z < 2; ++z)
+			{
+				const Vector3 worldCorner(
+					x == 0 ? sceneMin.x : sceneMax.x,
+					y == 0 ? sceneMin.y : sceneMax.y,
+					z == 0 ? sceneMin.z : sceneMax.z);
+				const Vector3 lightCorner = Vector3::Transform(worldCorner, lightView);
+				lightMin = Vector3::Min(lightMin, lightCorner);
+				lightMax = Vector3::Max(lightMax, lightCorner);
+			}
+		}
+	}
+
+	const float padding = sceneRadius * 0.15f;
+	const float nearPlane = (std::max)(-lightMax.z - padding, 0.1f);
+	const float farPlane = (std::max)(-lightMin.z + padding, nearPlane + 0.5f);
+	const Matrix lightProjection = Matrix::CreateOrthographicOffCenter(
+		lightMin.x - padding,
+		lightMax.x + padding,
+		lightMin.y - padding,
+		lightMax.y + padding,
+		nearPlane,
+		farPlane);
+	sunlightViewProjection.viewProjection = lightView * lightProjection;
+}
+
 void RenderContext::CreateRenderItem(const RenderItem& item)
 {
 	renderItems.push_back(item);
@@ -238,10 +338,26 @@ HDepthBuffer RenderContext::CreateDepthBuffer()
 {
 	OutputDebugString(L"CreateDepthBuffer\n");
 
-	HTexture depth = CreateDepthTexture(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom_Texture");
-	deviceContext.GetDevice()->CreateDepthStencilView(textures[depth.Index()]->GetResource(), nullptr, dsvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
+	return CreateDepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), "DB_Custom");
+}
 
-	depthBuffers.push_back(new DepthBuffer(windowContext.GetWidth(), windowContext.GetHeight(), depth.Index(), dsvHeap.Size(DescriptorHeap::HeapPartition::STATIC) - 1, "DB_Custom"));
+HDepthBuffer RenderContext::CreateDepthBuffer(UINT width, UINT height, const char* name)
+{
+	OutputDebugString(L"CreateDepthBuffer\n");
+
+	CHAR textureName[32];
+	snprintf(textureName, sizeof(textureName), "%s_Texture", name);
+	HTexture depth = CreateDepthTexture(width, height, textureName);
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	deviceContext.GetDevice()->CreateDepthStencilView(
+		textures[depth.Index()]->GetResource(),
+		&dsvDesc,
+		dsvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
+
+	depthBuffers.push_back(new DepthBuffer(width, height, depth.Index(), dsvHeap.Size(DescriptorHeap::HeapPartition::STATIC) - 1, name));
 
 	return HDepthBuffer(depthBuffers.size() - 1);
 }
@@ -337,6 +453,25 @@ HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, 
 	return HPipelineState(pipelineStates.size() - 1);
 }
 
+HPipelineState RenderContext::CreateDepthOnlyPipelineState(DeviceContext* deviceContext, HRootSignature rootSignature,
+	HShader vertexShader, HInputLayout inputLayout)
+{
+	OutputDebugString(L"CreateDepthOnlyPipelineState\n");
+
+	assert(inputLayout.IsValid() && "InputLayout is not valid");
+	assert(rootSignature.IsValid() && "RootSignature is not valid");
+
+	PipelineState* pipelineState = new PipelineState();
+	pipelineState->CreateDepthOnly(inputLayouts[inputLayout.Index()]->GetInputLayoutDesc(),
+		rootSignatures[rootSignature.Index()]->GetRootSignature(),
+		CD3DX12_SHADER_BYTECODE(shaders[vertexShader.Index()]->GetBlob()));
+
+	pipelineStates.push_back(pipelineState);
+
+	OutputDebugString(L"CreateDepthOnlyPipelineState succeeded\n");
+	return HPipelineState(pipelineStates.size() - 1);
+}
+
 HPipelineState RenderContext::CreatePipelineState(DeviceContext* deviceContext, HRootSignature rootSignature, HShader computeShader)
 {
 	OutputDebugString(L"CreateComputePipelineState\n");
@@ -362,6 +497,8 @@ HInputLayout RenderContext::CreateInputLayout()
 
 HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
 {
+	using DirectX::SimpleMath::Vector3;
+
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
 	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
@@ -384,7 +521,25 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	vertexBuffer->SetName(wName);
 
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName));
+	Vector3 localMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 localMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	if (meshData != nullptr && numOfFloatsPerVertex >= 3)
+	{
+		for (UINT vertexIndex = 0; vertexIndex < numOfVertices; ++vertexIndex)
+		{
+			const UINT offset = vertexIndex * numOfFloatsPerVertex;
+			const Vector3 position(meshData[offset + 0], meshData[offset + 1], meshData[offset + 2]);
+			localMin = Vector3::Min(localMin, position);
+			localMax = Vector3::Max(localMax, position);
+		}
+	}
+	else
+	{
+		localMin = Vector3(-1.0f, -1.0f, -1.0f);
+		localMax = Vector3(1.0f, 1.0f, 1.0f);
+	}
+
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName, localMin, localMax));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -513,7 +668,7 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	OutputDebugString(L"CreateDepthTexture\n");
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT,
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS,
 		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
@@ -530,7 +685,8 @@ HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* 
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset)));
+	textures.push_back(new Texture(width, height, resource, &tempName[0],
+		static_cast<size_t>(descHandleOffset), initResourceState));
 
 	return HTexture(textures.size() - 1);
 }
@@ -735,8 +891,10 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 4 * sizeof(float));
 
 	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
+	const auto localMin = vertexBuffers[vbIndexPosition.Index()]->GetLocalMin();
+	const auto localMax = vertexBuffers[vbIndexPosition.Index()]->GetLocalMax();
 	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
-		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, name));
+		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
 void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
@@ -946,6 +1104,11 @@ HTexture RenderContext::GetTexture(HRenderTarget renderTarget)
 	return HTexture(renderTargets[renderTarget.Index()]->GetTextureIndex());
 }
 
+HTexture RenderContext::GetTexture(HDepthBuffer depthBuffer)
+{
+	return HTexture(depthBuffers[depthBuffer.Index()]->GetTextureIndex());
+}
+
 HTexture RenderContext::GetTexture(const char* name)
 {
 	size_t index = 0;
@@ -998,12 +1161,41 @@ void RenderContext::BindRenderTargetWithDepth(HCommandList commandList, HRenderT
 	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRect);
 }
 
+void RenderContext::BindDepthBuffer(HCommandList commandList, HDepthBuffer depthBuffer)
+{
+	auto dsvHandleIndex = depthBuffers[depthBuffer.Index()]->GetDescriptorIndex();
+	auto dsvHandle = dsvHeap.Get(DescriptorHeap::HeapPartition::STATIC, dsvHandleIndex);
+	D3D12_VIEWPORT viewport = {};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Width = static_cast<float>(depthBuffers[depthBuffer.Index()]->GetWidth());
+	viewport.Height = static_cast<float>(depthBuffers[depthBuffer.Index()]->GetHeight());
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	D3D12_RECT scissorRect = {};
+	scissorRect.left = 0;
+	scissorRect.top = 0;
+	scissorRect.right = static_cast<LONG>(depthBuffers[depthBuffer.Index()]->GetWidth());
+	scissorRect.bottom = static_cast<LONG>(depthBuffers[depthBuffer.Index()]->GetHeight());
+	commandLists[commandList.Index()]->GetCommandList()->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetViewports(1, &viewport);
+	commandLists[commandList.Index()]->GetCommandList()->RSSetScissorRects(1, &scissorRect);
+}
+
 void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
 	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
 		materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
 
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot + 1, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
+	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
+}
+
+void RenderContext::BindTextureSRV(HCommandList commandList, HTexture texture, UINT slot)
+{
+	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
+		textures[texture.Index()]->GetSrvDescriptorIndex(), cbvSrvUavHeap.GetDescriptorSize());
+
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);
 }
 
