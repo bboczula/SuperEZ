@@ -376,7 +376,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		ExitIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer[i])));
 		backBuffer[i]->SetName(L"Render Context Back Buffer");
 		CHAR name[] = "BackBuffer";
-		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0], 0));
+		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), 1, backBuffer[i], &name[0], 0));
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
 		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
@@ -667,6 +667,7 @@ HTexture RenderContext::CreateTextureResource(const TextureCreateDesc& textureDe
 	textures.push_back(new Texture(
 		textureDesc.width,
 		textureDesc.height,
+		mipLevels,
 		resource,
 		&tempName[0],
 		srvDescriptorIndex,

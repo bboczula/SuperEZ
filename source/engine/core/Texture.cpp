@@ -47,8 +47,8 @@ std::vector<TextureMipDesc> CalculateTextureMipChain(UINT width, UINT height)
 	return mipChain;
 }
 
-Texture::Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, size_t srvDescriptorIndex, D3D12_RESOURCE_STATES initState, TextuureLifeSpan span)
-	: width(width), height(height), resource(resource), currentState(initState), srvDescriptorIndex(srvDescriptorIndex), lifeSpan(span)
+Texture::Texture(UINT width, UINT height, UINT mipLevels, ID3D12Resource* resource, CHAR* name, size_t srvDescriptorIndex, D3D12_RESOURCE_STATES initState, TextuureLifeSpan span)
+	: width(width), height(height), mipLevels(mipLevels), resource(resource), currentState(initState), srvDescriptorIndex(srvDescriptorIndex), lifeSpan(span)
 {
 	strcpy_s(this->name, name);
 }
