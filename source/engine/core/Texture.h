@@ -3,11 +3,22 @@
 #include <Windows.h>
 #include <d3d12.h>
 
+#include <vector>
+
 enum TextuureLifeSpan
 {
 	APP,
 	SCENE
 };
+
+struct TextureMipDesc
+{
+	UINT width = 1;
+	UINT height = 1;
+};
+
+UINT CalculateTextureMipCount(UINT width, UINT height);
+std::vector<TextureMipDesc> CalculateTextureMipChain(UINT width, UINT height);
 
 class Texture
 {
