@@ -160,7 +160,12 @@ void ImGuiPass::Initialize()
 	ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\CascadiaMono.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
 
 	// Create a texture for the color
-	colorCopyTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R8G8B8A8_UNORM, "Color_Copy");
+	TextureCreateDesc textureDesc;
+	textureDesc.width = 1920;
+	textureDesc.height = 1080;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.name = "Color_Copy";
+	colorCopyTexture = renderContext.CreateEmptyTexture(textureDesc);
 }
 
 void ImGuiPass::Update()

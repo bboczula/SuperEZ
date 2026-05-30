@@ -29,7 +29,17 @@ void CompositionPass::ConfigurePipelineState()
 	viewportWidth -= 400; // Assuming the menu takes 400 pixels
 	viewportHeight -= menuHeight - 25; // Assuming the status bar takes 25 pixels
 #endif
-	outputTexture = renderContext.CreateEmptyTexture(viewportWidth, viewportHeight, DXGI_FORMAT_R8G8B8A8_UNORM, "CompositionTexture", true);
+	TextureCreateDesc textureDesc;
+	textureDesc.width = viewportWidth;
+	textureDesc.height = viewportHeight;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.name = "CompositionTexture";
+	textureDesc.createUav = true;
+	textureDesc.createRtv = true;
+	textureDesc.staticSrv = true;
+	textureDesc.staticUav = true;
+	textureDesc.lifeSpan = APP;
+	outputTexture = renderContext.CreateEmptyTexture(textureDesc);
 }
 
 void CompositionPass::PostAssetLoad()

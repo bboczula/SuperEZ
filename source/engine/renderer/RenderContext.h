@@ -5,13 +5,13 @@
 #include "../asset/Handle.h"
 #include "RenderItem.h"
 #include "../bind/CommandList.h"
+#include "../core/Texture.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
 class DeviceContext;
 class RenderTarget;
 class DepthBuffer;
-class Texture;
 class Buffer;
 class VertexBuffer;
 class Mesh;
@@ -58,6 +58,28 @@ struct SunlightConstants
 struct SunlightViewProjection
 {
 	DirectX::SimpleMath::Matrix viewProjection = DirectX::SimpleMath::Matrix::Identity;
+};
+
+struct TextureCreateDesc
+{
+	UINT width = 1;
+	UINT height = 1;
+	UINT mipLevels = 1;
+	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN;
+	const CHAR* name = "Texture";
+
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+
+	bool createSrv = true;
+	bool createUav = false;
+	bool createRtv = false;
+	bool createDsv = false;
+	bool staticSrv = false;
+	bool staticUav = false;
+
+	TextuureLifeSpan lifeSpan = SCENE;
 };
 
 class RenderContext
@@ -124,7 +146,8 @@ public:
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav = false);
+	HTexture CreateTextureResource(const TextureCreateDesc& desc);
+	HTexture CreateEmptyTexture(TextureCreateDesc desc);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
@@ -132,7 +155,7 @@ public:
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
 	UINT CreateShaderResourceView(HTexture& textureHandle);
-	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
+	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels = 1);
 	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
 	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);

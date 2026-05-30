@@ -23,7 +23,17 @@ void GrayscalePass::ConfigurePipelineState()
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_ALL); // SRV t0
 	rootSignature = renderContext.CreateRootSignature(builder);
 
-	outputTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R8G8B8A8_UNORM, "GrayscaleInputTexture", true);
+	TextureCreateDesc textureDesc;
+	textureDesc.width = 1920;
+	textureDesc.height = 1080;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.name = "GrayscaleInputTexture";
+	textureDesc.createUav = true;
+	textureDesc.createRtv = true;
+	textureDesc.staticSrv = true;
+	textureDesc.staticUav = true;
+	textureDesc.lifeSpan = APP;
+	outputTexture = renderContext.CreateEmptyTexture(textureDesc);
 }
 
 void GrayscalePass::PostAssetLoad()

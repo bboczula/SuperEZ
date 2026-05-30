@@ -618,104 +618,110 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	return vertexBuffer;
 }
 
-HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav)
+HTexture RenderContext::CreateTextureResource(const TextureCreateDesc& textureDesc)
 {
-	OutputDebugString(L"CreateEmptyTexture\n");
-
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	OutputDebugString(L"CreateTextureResource\n");
 
 	D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_NONE;
-	if(isUav)
+	if (textureDesc.createUav)
 	{
 		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		// This is a hack, but let's roll with it for now
+	}
+	if (textureDesc.createRtv)
+	{
 		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
-		width, height, 1, 0, 1, 0, resourceFlags);
+	if (textureDesc.createDsv)
+	{
+		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
 
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
+	const UINT mipLevels = textureDesc.mipLevels > 0 ? textureDesc.mipLevels : 1;
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(
+		textureDesc.format,
+		textureDesc.width,
+		textureDesc.height,
+		1,
+		mipLevels,
+		1,
+		0,
+		resourceFlags);
 
-	ID3D12Resource* resource;
-	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-	resource->SetName(L"Empty Texture");
-
-	bool isStatic = isUav ? true : false;
-	TextuureLifeSpan span = isUav ? APP : SCENE;
+	ID3D12Resource* resource = nullptr;
+	deviceContext.CreateGpuResource(textureDesc.heapFlags, &desc, textureDesc.initialState, IID_PPV_ARGS(&resource));
 
 	size_t textureHandleIndex = textures.size();
-	auto descHandleOffset = CreateShaderResourceView(resource, format, isStatic);
+	size_t srvDescriptorIndex = 0;
+	if (textureDesc.createSrv)
+	{
+		const DXGI_FORMAT srvFormat = textureDesc.srvFormat == DXGI_FORMAT_UNKNOWN ? textureDesc.format : textureDesc.srvFormat;
+		srvDescriptorIndex = CreateShaderResourceView(resource, srvFormat, textureDesc.staticSrv, mipLevels);
+	}
 	
 	CHAR tempName[32];
-	strcpy_s(tempName, name);
+	strncpy_s(tempName, textureDesc.name ? textureDesc.name : "Texture", _TRUNCATE);
 	WCHAR wName[32];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset), D3D12_RESOURCE_STATE_COMMON, span));
+	textures.push_back(new Texture(
+		textureDesc.width,
+		textureDesc.height,
+		resource,
+		&tempName[0],
+		srvDescriptorIndex,
+		textureDesc.initialState,
+		textureDesc.lifeSpan));
 
-	if (isUav)
+	if (textureDesc.createUav)
 	{
-		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, format, true);
+		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, textureDesc.format, textureDesc.staticUav);
 		textures[textureHandleIndex]->SetUavDescriptorIndex(uavDescHandleOffset);
 	}
 
 	return HTexture(textureHandleIndex);
 }
 
+HTexture RenderContext::CreateEmptyTexture(TextureCreateDesc desc)
+{
+	OutputDebugString(L"CreateEmptyTexture\n");
+
+	return CreateTextureResource(desc);
+}
+
 HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateDepthTexture\n");
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS,
-		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	TextureCreateDesc desc;
+	desc.width = width;
+	desc.height = height;
+	desc.format = DXGI_FORMAT_R32_TYPELESS;
+	desc.srvFormat = DXGI_FORMAT_R32_FLOAT;
+	desc.name = name;
+	desc.createDsv = true;
+	desc.initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	desc.staticSrv = true;
+	desc.lifeSpan = APP;
 
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-
-	ID3D12Resource* resource;
-	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-	resource->SetName(L"Depth Texture");
-
-	auto descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R32_FLOAT, true);
-
-	CHAR tempName[32];
-	strcpy_s(tempName, name);
-	WCHAR wName[32];
-	size_t numOfCharsConverted;;
-	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
-	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0],
-		static_cast<size_t>(descHandleOffset), initResourceState));
-
-	return HTexture(textures.size() - 1);
+	return CreateTextureResource(desc);
 }
 
 HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	TextureCreateDesc desc;
+	desc.width = width;
+	desc.height = height;
+	desc.format = format;
+	desc.name = name;
+	desc.createRtv = true;
+	desc.initialState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	desc.staticSrv = true;
+	desc.lifeSpan = APP;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
-		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-	ID3D12Resource* resource;
-	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-
-	UINT descHandleOffset = CreateShaderResourceView(resource, format, true);
-
-	CHAR tempName[32];
-	strcpy_s(tempName, name);
-	WCHAR wName[32];
-	size_t numOfCharsConverted;;
-	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
-	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], descHandleOffset, initResourceState));
-
-	return HTexture(textures.size() - 1);
+	return CreateTextureResource(desc);
 }
 
 void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HTexture destination)
@@ -901,7 +907,12 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 {
 	OutputDebugString(L"CreateTexture\n");
 	
-	auto textureHandle = CreateEmptyTexture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, name);
+	TextureCreateDesc textureDesc;
+	textureDesc.width = width;
+	textureDesc.height = height;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.name = name;
+	auto textureHandle = CreateEmptyTexture(textureDesc);
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
 	if (data == nullptr)
@@ -949,13 +960,13 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 	return offset;
 }
 
-UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic)
+UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MipLevels = mipLevels > 0 ? mipLevels : 1;
 
 	auto heapType = isStatic ? DescriptorHeap::HeapPartition::STATIC : DescriptorHeap::HeapPartition::DYNAMIC;
 	auto descriptorHandle = cbvSrvUavHeap.Allocate(heapType);
