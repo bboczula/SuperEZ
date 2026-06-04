@@ -62,6 +62,7 @@ struct SunlightViewProjection
 
 struct TextureCreateDesc
 {
+public:
 	UINT width = 1;
 	UINT height = 1;
 	UINT mipLevels = 1;
@@ -80,6 +81,31 @@ struct TextureCreateDesc
 	bool staticUav = false;
 
 	TextuureLifeSpan lifeSpan = SCENE;
+
+	void UseSingleMip()
+	{
+		mipLevels = 1;
+	}
+
+	void UseFullMipChain()
+	{
+		mipLevels = CalculateFullMipChainLevels();
+	}
+private:
+	UINT CalculateFullMipChainLevels() const
+	{
+		UINT maxDimension = width > height ? width : height;
+		maxDimension = maxDimension > 1 ? maxDimension : 1;
+
+		UINT fullMipChainLevels = 1;
+		while (maxDimension > 1)
+		{
+			maxDimension /= 2;
+			++fullMipChainLevels;
+		}
+
+		return fullMipChainLevels;
+	}
 };
 
 class RenderContext
@@ -129,7 +155,7 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
-	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
+	void CreateTexture(const TextureCreateDesc& desc, BYTE* data);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
@@ -156,9 +182,9 @@ public:
 	void CreateDefaultSamplers();
 	UINT CreateShaderResourceView(HTexture& textureHandle);
 	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels = 1);
-	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
-	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
-	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
+	void UploadTextureToBuffer(const TextureCreateDesc& desc, BYTE* data, HBuffer& bufferHandle);
+	void FillTextureUploadBuffer(const TextureCreateDesc& desc, HBuffer& bufferHandle);
+	void LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle);
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();

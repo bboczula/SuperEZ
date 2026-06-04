@@ -10,20 +10,6 @@ namespace
 	}
 }
 
-UINT CalculateTextureMipCount(UINT width, UINT height)
-{
-	UINT maxDimension = MaxUint(MaxUint(width, height), 1u);
-	UINT mipCount = 1;
-
-	while (maxDimension > 1)
-	{
-		maxDimension /= 2;
-		++mipCount;
-	}
-
-	return mipCount;
-}
-
 std::vector<TextureMipDesc> CalculateTextureMipChain(UINT width, UINT height)
 {
 	std::vector<TextureMipDesc> mipChain;

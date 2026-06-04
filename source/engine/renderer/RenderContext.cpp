@@ -840,8 +840,8 @@ void RenderContext::CreateDefaultSamplers()
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.MaxLOD = 0.0f;
 	samplerDesc.MipLODBias = 0.0f;
 	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
@@ -904,28 +904,25 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
-void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
+void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");
 	
-	TextureCreateDesc textureDesc;
-	textureDesc.width = width;
-	textureDesc.height = height;
-	textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	textureDesc.name = name;
-	auto textureHandle = CreateEmptyTexture(textureDesc);
+	auto textureHandle = CreateEmptyTexture(desc);
+
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
 	if (data == nullptr)
 	{
-		FillTextureUploadBuffer(width, height, bufferHandle);
+		FillTextureUploadBuffer(desc, bufferHandle);
 	}
 	else
 	{
-		UploadTextureToBuffer(width, height, data, bufferHandle);
+		UploadTextureToBuffer(desc, data, bufferHandle);
 	}
 
 	auto uploadCommandList = CreateCommandList();
+
 	ResetCommandList(uploadCommandList);
 
 	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
@@ -939,7 +936,7 @@ void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHA
 	ExecuteCommandList(uploadCommandList);
 
 	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
-	materials.push_back(new Material(textureHandle, descHandleOffset, name));
+	materials.push_back(new Material(textureHandle, descHandleOffset, desc.name));
 }
 
 UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
@@ -1011,20 +1008,20 @@ UINT RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3
 	return static_cast<UINT>(cameras.size() - 1);
 }
 
-void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)
+void RenderContext::UploadTextureToBuffer(const TextureCreateDesc& desc, BYTE* data, HBuffer& bufferHandle)
 {
 	unsigned int index = 0;
-	std::vector<UINT32> pixels(width * height);
-	for (UINT y = 0; y < height; ++y)
+	std::vector<UINT32> pixels(desc.width * desc.height);
+	for (UINT y = 0; y < desc.height; ++y)
 	{
-		for (UINT x = 0; x < width; ++x)
+		for (UINT x = 0; x < desc.width; ++x)
 		{
 			//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
 			UINT r = data[index++];
 			UINT g = data[index++];
 			UINT b = data[index++];
 			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
-			pixels[y * width + x] = packed;
+			pixels[y * desc.width + x] = packed;
 		}
 	}
 
@@ -1034,26 +1031,26 @@ void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, H
 
 	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 
-	for (UINT y = 0; y < height; ++y) {
+	for (UINT y = 0; y < desc.height; ++y) {
 		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
-			&pixels[y * width],
-			width * sizeof(UINT32));
+			&pixels[y * desc.width],
+			desc.width * sizeof(UINT32));
 	}
 
 	uploadBuffer->Unmap(0, nullptr);
 }
 
-void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle)
+void RenderContext::FillTextureUploadBuffer(const TextureCreateDesc& desc, HBuffer& bufferHandle)
 {
 	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
-	std::vector<UINT32> pixels(width * height);
-	for (UINT y = 0; y < height; ++y)
+	std::vector<UINT32> pixels(desc.width * desc.height);
+	for (UINT y = 0; y < desc.height; ++y)
 	{
-		for (UINT x = 0; x < width; ++x)
+		for (UINT x = 0; x < desc.width; ++x)
 		{
 			// Normalized coords
-			float fx = static_cast<float>(x) / width;
-			float fy = static_cast<float>(y) / height;
+			float fx = static_cast<float>(x) / desc.width;
+			float fy = static_cast<float>(y) / desc.height;
 
 			// HSV-based hue gradient across X
 			float hue = fx; // 0 to 1
@@ -1088,7 +1085,7 @@ void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bu
 			UINT ig = static_cast<UINT>(g * checkerMix * 255.0f);
 			UINT ib = static_cast<UINT>(b * checkerMix * 255.0f);
 
-			pixels[y * width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
+			pixels[y * desc.width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
 		}
 	}
 
@@ -1098,16 +1095,16 @@ void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bu
 
 	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 
-	for (UINT y = 0; y < height; ++y) {
+	for (UINT y = 0; y < desc.height; ++y) {
 		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
-			&pixels[y * width],
-			width * sizeof(UINT32));
+			&pixels[y * desc.width],
+			desc.width * sizeof(UINT32));
 	}
 
 	uploadBuffer->Unmap(0, nullptr);
 }
 
-void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle)
+void RenderContext::LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle)
 {
 }
 

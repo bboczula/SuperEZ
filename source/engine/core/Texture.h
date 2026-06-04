@@ -17,7 +17,6 @@ struct TextureMipDesc
 	UINT height = 1;
 };
 
-UINT CalculateTextureMipCount(UINT width, UINT height);
 std::vector<TextureMipDesc> CalculateTextureMipChain(UINT width, UINT height);
 
 class Texture
