@@ -912,31 +912,61 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
-	if (data == nullptr)
+	// Here is where I need to do the MIP loop
+	for (int i = 0; i < desc.mipLevels; ++i)
 	{
-		FillTextureUploadBuffer(desc, bufferHandle);
+		if (i != 0)
+		{
+			break;
+		}
+
+		std::vector<UINT32> pixels(desc.width * desc.height);
+		if (data != nullptr)
+		{
+			PrepareTextureForUpload(pixels, desc.width, desc.height, data);
+		}
+		else
+		{
+			// Generate Texture For Upload
+			GenerateTextureForUpload(pixels, desc.width, desc.height, bufferHandle);
+		}
+
+		UploadTextureToBuffer(pixels, desc.width, desc.height, bufferHandle);
+
+		auto uploadCommandList = CreateCommandList();
+
+		ResetCommandList(uploadCommandList);
+
+		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
+
+		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
+
+		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+		CloseCommandList(uploadCommandList);
+
+		ExecuteCommandList(uploadCommandList);
 	}
-	else
-	{
-		UploadTextureToBuffer(desc, data, bufferHandle);
-	}
-
-	auto uploadCommandList = CreateCommandList();
-
-	ResetCommandList(uploadCommandList);
-
-	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
-
-	CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
-
-	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-	CloseCommandList(uploadCommandList);
-
-	ExecuteCommandList(uploadCommandList);
 
 	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
 	materials.push_back(new Material(textureHandle, descHandleOffset, desc.name));
+}
+
+void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data)
+{
+	unsigned int index = 0;
+	for (UINT y = 0; y < height; ++y)
+	{
+		for (UINT x = 0; x < width; ++x)
+		{
+			//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
+			UINT r = data[index++];
+			UINT g = data[index++];
+			UINT b = data[index++];
+			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
+			pixels[y * width + x] = packed;
+		}
+	}
 }
 
 UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
@@ -1008,49 +1038,34 @@ UINT RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3
 	return static_cast<UINT>(cameras.size() - 1);
 }
 
-void RenderContext::UploadTextureToBuffer(const TextureCreateDesc& desc, BYTE* data, HBuffer& bufferHandle)
+void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle)
 {
-	unsigned int index = 0;
-	std::vector<UINT32> pixels(desc.width * desc.height);
-	for (UINT y = 0; y < desc.height; ++y)
-	{
-		for (UINT x = 0; x < desc.width; ++x)
-		{
-			//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
-			UINT r = data[index++];
-			UINT g = data[index++];
-			UINT b = data[index++];
-			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
-			pixels[y * desc.width + x] = packed;
-		}
-	}
-
 	UINT8* mappedData = nullptr;
 	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
 	auto layout = buffers[bufferHandle.Index()]->GetLayout();
 
 	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 
-	for (UINT y = 0; y < desc.height; ++y) {
+	for (UINT y = 0; y < height; ++y) {
 		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
-			&pixels[y * desc.width],
-			desc.width * sizeof(UINT32));
+			&pixels[y * width],
+			width * sizeof(UINT32));
 	}
 
 	uploadBuffer->Unmap(0, nullptr);
 }
 
-void RenderContext::FillTextureUploadBuffer(const TextureCreateDesc& desc, HBuffer& bufferHandle)
+void RenderContext::GenerateTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle)
 {
 	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
-	std::vector<UINT32> pixels(desc.width * desc.height);
-	for (UINT y = 0; y < desc.height; ++y)
+	std::vector<UINT32> localPixels(width * height);
+	for (UINT y = 0; y < height; ++y)
 	{
-		for (UINT x = 0; x < desc.width; ++x)
+		for (UINT x = 0; x < width; ++x)
 		{
 			// Normalized coords
-			float fx = static_cast<float>(x) / desc.width;
-			float fy = static_cast<float>(y) / desc.height;
+			float fx = static_cast<float>(x) / width;
+			float fy = static_cast<float>(y) / height;
 
 			// HSV-based hue gradient across X
 			float hue = fx; // 0 to 1
@@ -1085,23 +1100,9 @@ void RenderContext::FillTextureUploadBuffer(const TextureCreateDesc& desc, HBuff
 			UINT ig = static_cast<UINT>(g * checkerMix * 255.0f);
 			UINT ib = static_cast<UINT>(b * checkerMix * 255.0f);
 
-			pixels[y * desc.width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
+			pixels[y * width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
 		}
 	}
-
-	UINT8* mappedData = nullptr;
-	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
-	auto layout = buffers[bufferHandle.Index()]->GetLayout();
-
-	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-
-	for (UINT y = 0; y < desc.height; ++y) {
-		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
-			&pixels[y * desc.width],
-			desc.width * sizeof(UINT32));
-	}
-
-	uploadBuffer->Unmap(0, nullptr);
 }
 
 void RenderContext::LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle)
