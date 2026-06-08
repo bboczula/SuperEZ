@@ -23,10 +23,6 @@ public:
 	{
 		return resource;
 	}
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT GetLayout()
-	{
-		return layout;
-	}
 	D3D12_RESOURCE_STATES GetCurrentState()
 	{
 		return currentState;
@@ -47,7 +43,6 @@ public:
 	BufferKind GetKind() const { return kind; }
 private:
 	ID3D12Resource* resource;
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
 	D3D12_RESOURCE_STATES currentState;
 	D3D12_RESOURCE_STATES previousState;
 	CHAR name[32];
