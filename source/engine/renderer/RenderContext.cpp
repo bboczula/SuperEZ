@@ -745,8 +745,8 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 
 	auto texture = textures[textureHandle.Index()]->GetResource();
 	auto textureDesc = texture->GetDesc();
-	auto footprints = deviceContext.GetCopyableFootprints(textureDesc, textureDesc.MipLevels);
-	UINT64 uploadBufferSize = footprints.totalBytes;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
+	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
 
 	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -756,7 +756,6 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
 
 	CHAR name[] = "TextureUploadBuffer";
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
 	buffers.push_back(new Buffer(textureUploadBuffer, layout, name, BufferKind::TextureUpload,
 		static_cast<UINT>(uploadBufferSize), nullptr, Buffer::InvalidDescriptorIndex,
 		D3D12_RESOURCE_STATE_GENERIC_READ));
@@ -783,7 +782,7 @@ std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t si
 	return data;
 }
 
-void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex)
+void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
 	
@@ -791,9 +790,10 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 	D3D12_TEXTURE_COPY_LOCATION dst = {};
 	dst.pResource = gpuTexture;
 	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	dst.SubresourceIndex = subresourceIndex;
+	dst.SubresourceIndex = 0;
 
 	auto uploadBuffer = buffers[buffer.Index()]->GetResource();
+	auto layout = buffers[buffer.Index()]->GetLayout();
 	D3D12_TEXTURE_COPY_LOCATION src = {};
 	src.pResource = uploadBuffer;
 	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -912,84 +912,26 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
 
-	// Get the MIP footprint information
-	auto textureDesc = GetTexture(textureHandle)->GetResource()->GetDesc();
-	auto footprints = deviceContext.GetCopyableFootprints(textureDesc, desc.mipLevels);
-
-	UINT mipWidth = desc.width;
-	UINT mipHeight = desc.height;
-	std::vector<UINT32> pixels(mipWidth * mipHeight);
-	if (data != nullptr)
+	// Here is where I need to do the MIP loop
+	for (int i = 0; i < desc.mipLevels; ++i)
 	{
-		PrepareTextureForUpload(pixels, mipWidth, mipHeight, data);
-	}
-	else
-	{
-		GenerateTextureForUpload(pixels, mipWidth, mipHeight, bufferHandle);
-	}
-
-	for (UINT i = 0; i < desc.mipLevels; ++i)
-	{
-		const auto& layout = footprints.layouts[i];
-		UploadTextureToBuffer(
-			pixels,
-			mipWidth,
-			mipHeight,
-			bufferHandle,
-			layout.Offset,
-			layout.Footprint.RowPitch);
-
-		if (i + 1 < desc.mipLevels)
+		if (i != 0)
 		{
-			const UINT nextWidth = (std::max)(mipWidth / 2, 1u);
-			const UINT nextHeight = (std::max)(mipHeight / 2, 1u);
-			std::vector<UINT32> nextPixels(nextWidth * nextHeight);
-
-			for (UINT y = 0; y < nextHeight; ++y)
-			{
-				for (UINT x = 0; x < nextWidth; ++x)
-				{
-					const UINT sourceX = x * 2;
-					const UINT sourceY = y * 2;
-					UINT sampleCount = 0;
-					UINT r = 0;
-					UINT g = 0;
-					UINT b = 0;
-					UINT a = 0;
-
-					for (UINT offsetY = 0; offsetY < 2; ++offsetY)
-					{
-						for (UINT offsetX = 0; offsetX < 2; ++offsetX)
-						{
-							const UINT sampleX = sourceX + offsetX;
-							const UINT sampleY = sourceY + offsetY;
-							if (sampleX >= mipWidth || sampleY >= mipHeight)
-							{
-								continue;
-							}
-
-							const UINT32 sample = pixels[sampleY * mipWidth + sampleX];
-							a += (sample >> 24) & 0xFF;
-							r += (sample >> 16) & 0xFF;
-							g += (sample >> 8) & 0xFF;
-							b += sample & 0xFF;
-							++sampleCount;
-						}
-					}
-
-					const UINT32 averaged =
-						((a / sampleCount) << 24) |
-						((r / sampleCount) << 16) |
-						((g / sampleCount) << 8) |
-						(b / sampleCount);
-					nextPixels[y * nextWidth + x] = averaged;
-				}
-			}
-
-			pixels = std::move(nextPixels);
-			mipWidth = nextWidth;
-			mipHeight = nextHeight;
+			break;
 		}
+
+		std::vector<UINT32> pixels(desc.width * desc.height);
+		if (data != nullptr)
+		{
+			PrepareTextureForUpload(pixels, desc.width, desc.height, data);
+		}
+		else
+		{
+			// Generate Texture For Upload
+			GenerateTextureForUpload(pixels, desc.width, desc.height, bufferHandle);
+		}
+
+		UploadTextureToBuffer(pixels, desc.width, desc.height, bufferHandle);
 
 		auto uploadCommandList = CreateCommandList();
 
@@ -997,7 +939,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 
 		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
 
-		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle, layout, i);
+		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
 
 		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -1096,16 +1038,18 @@ UINT RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3
 	return static_cast<UINT>(cameras.size() - 1);
 }
 
-void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, UINT64 offset, UINT64 rowPitch)
+void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle)
 {
 	UINT8* mappedData = nullptr;
 	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
+	auto layout = buffers[bufferHandle.Index()]->GetLayout();
 
 	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 
-	for (UINT y = 0; y < height; ++y)
-	{
-		memcpy(mappedData + offset + y * rowPitch, &pixels[y * width], width * sizeof(UINT32));
+	for (UINT y = 0; y < height; ++y) {
+		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
+			&pixels[y * width],
+			width * sizeof(UINT32));
 	}
 
 	uploadBuffer->Unmap(0, nullptr);

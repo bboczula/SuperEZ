@@ -295,23 +295,3 @@ UINT64 DeviceContext::GetCopyableFootprintsSize(D3D12_RESOURCE_DESC& resourceDes
 
 	return totalBytes;
 }
-
-CopyableFootprints DeviceContext::GetCopyableFootprints(const D3D12_RESOURCE_DESC& resourceDesc, UINT subresourceCount)
-{
-	CopyableFootprints footprints;
-	footprints.layouts.resize(subresourceCount);
-	footprints.rowCounts.resize(subresourceCount);
-	footprints.rowSizesInBytes.resize(subresourceCount);
-
-	device->GetCopyableFootprints(
-		&resourceDesc,
-		0,
-		subresourceCount,
-		0,
-		footprints.layouts.data(),
-		footprints.rowCounts.data(),
-		footprints.rowSizesInBytes.data(),
-		&footprints.totalBytes);
-
-	return footprints;
-}
