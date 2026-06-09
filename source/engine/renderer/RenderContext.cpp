@@ -780,7 +780,7 @@ std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t si
 	return data;
 }
 
-void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout)
+void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
 	
@@ -788,7 +788,7 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 	D3D12_TEXTURE_COPY_LOCATION dst = {};
 	dst.pResource = gpuTexture;
 	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	dst.SubresourceIndex = 0;
+	dst.SubresourceIndex = subresourceIndex;
 
 	auto uploadBuffer = buffers[buffer.Index()]->GetResource();
 	D3D12_TEXTURE_COPY_LOCATION src = {};
@@ -916,23 +916,20 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 	// Here is where I need to do the MIP loop
 	for (int i = 0; i < desc.mipLevels; ++i)
 	{
-		if (i != 0)
+		auto width = layout[i].Footprint.Width;
+		auto height = layout[i].Footprint.Height;
+		std::vector<UINT32> pixels(width * height);
+		if (data != nullptr && i == 0) // Only for the first MIP level
 		{
-			break;
-		}
-
-		std::vector<UINT32> pixels(desc.width * desc.height);
-		if (data != nullptr)
-		{
-			PrepareTextureForUpload(pixels, desc.width, desc.height, data);
+			PrepareTextureForUpload(pixels, width, height, data);
 		}
 		else
 		{
 			// Generate Texture For Upload
-			GenerateTextureForUpload(pixels, desc.width, desc.height, bufferHandle);
+			GenerateTextureForUpload(pixels, width, height, bufferHandle);
 		}
 
-		UploadTextureToBuffer(pixels, desc.width, desc.height, bufferHandle, layout[i]);
+		UploadTextureToBuffer(pixels, width, height, bufferHandle, layout[i]);
 
 		auto uploadCommandList = CreateCommandList();
 
@@ -940,7 +937,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 
 		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
 
-		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle, layout[i]);
+		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle, layout[i], i);
 
 		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 

@@ -178,7 +178,7 @@ public:
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
-	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout);
+	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
 	UINT CreateShaderResourceView(HTexture& textureHandle);

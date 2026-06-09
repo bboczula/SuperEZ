@@ -292,7 +292,7 @@ UINT64 DeviceContext::GetCopyableFootprintsSize(D3D12_RESOURCE_DESC& resourceDes
 {
 	UINT64 totalBytes = 0;
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layoutArray = layout.data();
-	device->GetCopyableFootprints(&resourceDesc, 0, 1, 0, layoutArray, nullptr, nullptr, &totalBytes);
+	device->GetCopyableFootprints(&resourceDesc, 0, layout.size(), 0, layoutArray, nullptr, nullptr, &totalBytes);
 
 	return totalBytes;
 }
