@@ -288,10 +288,11 @@ void DeviceContext::CreateReadbackResource(D3D12_HEAP_FLAGS heapFlags, const D3D
 	device->CreateCommittedResource(&heapProperties, heapFlags, desc, initResourceState, nullptr, riidResource, ppResource);
 }
 
-UINT64 DeviceContext::GetCopyableFootprintsSize(D3D12_RESOURCE_DESC& resourceDesc, D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout)
+UINT64 DeviceContext::GetCopyableFootprintsSize(D3D12_RESOURCE_DESC& resourceDesc, std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>& layout)
 {
 	UINT64 totalBytes = 0;
-	device->GetCopyableFootprints(&resourceDesc, 0, 1, 0, &layout, nullptr, nullptr, &totalBytes);
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layoutArray = layout.data();
+	device->GetCopyableFootprints(&resourceDesc, 0, 1, 0, layoutArray, nullptr, nullptr, &totalBytes);
 
 	return totalBytes;
 }

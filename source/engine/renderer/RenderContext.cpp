@@ -739,14 +739,12 @@ void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HText
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
-HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
+HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize)
 {
 	OutputDebugString(L"CreateTextureUploadBuffer\n");
 
 	auto texture = textures[textureHandle.Index()]->GetResource();
 	auto textureDesc = texture->GetDesc();
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
-	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
 
 	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -756,7 +754,7 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
 
 	CHAR name[] = "TextureUploadBuffer";
-	buffers.push_back(new Buffer(textureUploadBuffer, layout, name, BufferKind::TextureUpload,
+	buffers.push_back(new Buffer(textureUploadBuffer, name, BufferKind::TextureUpload,
 		static_cast<UINT>(uploadBufferSize), nullptr, Buffer::InvalidDescriptorIndex,
 		D3D12_RESOURCE_STATE_GENERIC_READ));
 
@@ -782,7 +780,7 @@ std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t si
 	return data;
 }
 
-void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
+void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
 	
@@ -793,7 +791,6 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 	dst.SubresourceIndex = 0;
 
 	auto uploadBuffer = buffers[buffer.Index()]->GetResource();
-	auto layout = buffers[buffer.Index()]->GetLayout();
 	D3D12_TEXTURE_COPY_LOCATION src = {};
 	src.pResource = uploadBuffer;
 	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -871,7 +868,7 @@ HBuffer RenderContext::CreateReadbackBuffer()
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(readbackBuffer, layout, name, BufferKind::Readback,
+	buffers.push_back(new Buffer(readbackBuffer, name, BufferKind::Readback,
 		readbackBufferSize, nullptr, Buffer::InvalidDescriptorIndex,
 		D3D12_RESOURCE_STATE_COPY_DEST));
 
@@ -910,7 +907,11 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 	
 	auto textureHandle = CreateEmptyTexture(desc);
 
-	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
+	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layout(desc.mipLevels);
+	auto textureDesc = GetTexture(textureHandle)->GetResource()->GetDesc();
+	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
+
+	auto bufferHandle = CreateTextureUploadBuffer(textureHandle, uploadBufferSize);
 
 	// Here is where I need to do the MIP loop
 	for (int i = 0; i < desc.mipLevels; ++i)
@@ -931,7 +932,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 			GenerateTextureForUpload(pixels, desc.width, desc.height, bufferHandle);
 		}
 
-		UploadTextureToBuffer(pixels, desc.width, desc.height, bufferHandle);
+		UploadTextureToBuffer(pixels, desc.width, desc.height, bufferHandle, layout[i]);
 
 		auto uploadCommandList = CreateCommandList();
 
@@ -939,7 +940,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 
 		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
 
-		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
+		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle, layout[i]);
 
 		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -1038,11 +1039,10 @@ UINT RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3
 	return static_cast<UINT>(cameras.size() - 1);
 }
 
-void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle)
+void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout)
 {
 	UINT8* mappedData = nullptr;
 	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
-	auto layout = buffers[bufferHandle.Index()]->GetLayout();
 
 	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 
@@ -1421,7 +1421,7 @@ HBuffer RenderContext::CreateConstantBufferInternal(UINT bufferSizeInBytes)
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(constantBuffer, layout, tempName, BufferKind::Constant,
+	buffers.push_back(new Buffer(constantBuffer, tempName, BufferKind::Constant,
 		bufferSizeInBytes, nullptr, cbvDescriptorIndex, D3D12_RESOURCE_STATE_GENERIC_READ));
 	return HBuffer(buffers.size() - 1);
 }

@@ -16,16 +16,12 @@ class Buffer
 {
 public:
 	static constexpr size_t InvalidDescriptorIndex = static_cast<size_t>(-1);
-	Buffer(ID3D12Resource* resource, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, CHAR* name, BufferKind kind = BufferKind::Generic, UINT sizeInBytes = 0,
+	Buffer(ID3D12Resource* resource, CHAR* name, BufferKind kind = BufferKind::Generic, UINT sizeInBytes = 0,
 		void* mappedData = nullptr, size_t cbvDescriptorIndex = InvalidDescriptorIndex,
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON);
 	ID3D12Resource* GetResource()
 	{
 		return resource;
-	}
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT GetLayout()
-	{
-		return layout;
 	}
 	D3D12_RESOURCE_STATES GetCurrentState()
 	{
@@ -47,7 +43,6 @@ public:
 	BufferKind GetKind() const { return kind; }
 private:
 	ID3D12Resource* resource;
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
 	D3D12_RESOURCE_STATES currentState;
 	D3D12_RESOURCE_STATES previousState;
 	CHAR name[32];

@@ -178,12 +178,12 @@ public:
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
-	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
 	UINT CreateShaderResourceView(HTexture& textureHandle);
 	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels = 1);
-	void UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle);
+	void UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout);
 	void GenerateTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle);
 	void LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle);
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
@@ -191,7 +191,7 @@ public:
 	HBuffer CreateReadbackBuffer();
 	template<typename T>
 	HBuffer CreateConsantBuffer();
-	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize);
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
