@@ -913,15 +913,26 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 
 	auto bufferHandle = CreateTextureUploadBuffer(textureHandle, uploadBufferSize);
 
+	std::vector<UINT32> previousPixels;
+	UINT previousWidth = 0;
+	UINT previousHeight = 0;
+
 	// Here is where I need to do the MIP loop
 	for (int i = 0; i < desc.mipLevels; ++i)
 	{
 		auto width = layout[i].Footprint.Width;
 		auto height = layout[i].Footprint.Height;
 		std::vector<UINT32> pixels(width * height);
-		if (data != nullptr && i == 0) // Only for the first MIP level
+		if (data != nullptr)
 		{
-			PrepareTextureForUpload(pixels, width, height, data);
+			if (i == 0)
+			{
+				PrepareTextureForUpload(pixels, width, height, data);
+			}
+			else
+			{
+				PrepareAndDonwsampleTexture(previousPixels, previousWidth, previousHeight, pixels, width, height);
+			}
 		}
 		else
 		{
@@ -944,6 +955,10 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 		CloseCommandList(uploadCommandList);
 
 		ExecuteCommandList(uploadCommandList);
+
+		previousPixels = std::move(pixels);
+		previousWidth = width;
+		previousHeight = height;
 	}
 
 	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
@@ -963,6 +978,55 @@ void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigne
 			UINT b = data[index++];
 			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
 			pixels[y * width + x] = packed;
+		}
+	}
+}
+
+void RenderContext::PrepareAndDonwsampleTexture(
+	const std::vector<UINT32>& srcPixels,
+	UINT srcWidth,
+	UINT srcHeight,
+	std::vector<UINT32>& dstPixels,
+	UINT dstWidth,
+	UINT dstHeight)
+{
+	dstPixels.resize(static_cast<size_t>(dstWidth) * dstHeight);
+
+	for (UINT y = 0; y < dstHeight; ++y)
+	{
+		for (UINT x = 0; x < dstWidth; ++x)
+		{
+			UINT r = 0;
+			UINT g = 0;
+			UINT b = 0;
+			UINT a = 0;
+
+			for (UINT oy = 0; oy < 2; ++oy)
+			{
+				for (UINT ox = 0; ox < 2; ++ox)
+				{
+					const UINT srcX = (std::min)(srcWidth - 1, x * 2 + ox);
+					const UINT srcY = (std::min)(srcHeight - 1, y * 2 + oy);
+
+					const UINT32 pixel = srcPixels[static_cast<size_t>(srcY) * srcWidth + srcX];
+
+					r += (pixel >> 0) & 0xFF;
+					g += (pixel >> 8) & 0xFF;
+					b += (pixel >> 16) & 0xFF;
+					a += (pixel >> 24) & 0xFF;
+				}
+			}
+
+			r = (r + 2) / 4;
+			g = (g + 2) / 4;
+			b = (b + 2) / 4;
+			a = (a + 2) / 4;
+
+			dstPixels[static_cast<size_t>(y) * dstWidth + x] =
+				(a << 24) |
+				(b << 16) |
+				(g << 8) |
+				(r << 0);
 		}
 	}
 }
