@@ -184,7 +184,7 @@ public:
 	UINT CreateShaderResourceView(HTexture& textureHandle);
 	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels = 1);
 	void UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout);
-	void GenerateTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle);
+	void GenerateTextureForUpload(std::vector<UINT32>& pixels, UINT mipIndex);
 	void LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle);
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers

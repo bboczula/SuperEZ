@@ -838,7 +838,7 @@ void RenderContext::CreateDefaultSamplers()
 	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerDesc.MinLOD = 0.0f;
-	samplerDesc.MaxLOD = 0.0f;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
 	samplerDesc.MipLODBias = 0.0f;
 	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
@@ -926,7 +926,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 		else
 		{
 			// Generate Texture For Upload
-			GenerateTextureForUpload(pixels, width, height, bufferHandle);
+			GenerateTextureForUpload(pixels, i);
 		}
 
 		UploadTextureToBuffer(pixels, width, height, bufferHandle, layout[i]);
@@ -1052,54 +1052,30 @@ void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, uns
 	uploadBuffer->Unmap(0, nullptr);
 }
 
-void RenderContext::GenerateTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle)
+void RenderContext::GenerateTextureForUpload(std::vector<UINT32>& pixels, UINT mipIndex)
 {
-	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
-	std::vector<UINT32> localPixels(width * height);
-	for (UINT y = 0; y < height; ++y)
+	static constexpr UINT32 mipColors[16] =
 	{
-		for (UINT x = 0; x < width; ++x)
-		{
-			// Normalized coords
-			float fx = static_cast<float>(x) / width;
-			float fy = static_cast<float>(y) / height;
+		0xFFFF0000, // Red
+		0xFF00FF00, // Green
+		0xFF0000FF, // Blue
+		0xFFFFFF00, // Yellow
+		0xFFFF00FF, // Magenta
+		0xFF00FFFF, // Cyan
+		0xFFFF8000, // Orange
+		0xFF8000FF, // Purple
+		0xFF00FF80, // Spring green
+		0xFF0080FF, // Azure
+		0xFFFF0080, // Rose
+		0xFF80FF00, // Lime
+		0xFFFFFFFF, // White
+		0xFFB0B0B0, // Light gray
+		0xFF606060, // Dark gray
+		0xFF000000  // Black
+	};
 
-			// HSV-based hue gradient across X
-			float hue = fx; // 0 to 1
-			float brightness = 0.3f + 0.7f * (1.0f - fy); // dark at bottom, bright at top
-			float saturation = 1.0f;
-
-			// Convert HSV to RGB
-			float h = hue * 6.0f;
-			int i = static_cast<int>(floor(h));
-			float f = h - i;
-			float p = brightness * (1.0f - saturation);
-			float q = brightness * (1.0f - saturation * f);
-			float t = brightness * (1.0f - saturation * (1.0f - f));
-
-			float r, g, b;
-			switch (i % 6)
-			{
-			case 0: r = brightness; g = t;         b = p;        break;
-			case 1: r = q;         g = brightness; b = p;        break;
-			case 2: r = p;         g = brightness; b = t;        break;
-			case 3: r = p;         g = q;         b = brightness; break;
-			case 4: r = t;         g = p;         b = brightness; break;
-			case 5: r = brightness; g = p;         b = q;        break;
-			}
-
-			// Checker overlay
-			int checkerSize = 16;
-			bool checker = ((x / checkerSize) % 2) ^ ((y / checkerSize) % 2);
-			float checkerMix = checker ? 1.0f : 0.8f;
-
-			UINT ir = static_cast<UINT>(r * checkerMix * 255.0f);
-			UINT ig = static_cast<UINT>(g * checkerMix * 255.0f);
-			UINT ib = static_cast<UINT>(b * checkerMix * 255.0f);
-
-			pixels[y * width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
-		}
-	}
+	const UINT32 color = mipColors[mipIndex % 16];
+	std::fill(pixels.begin(), pixels.end(), color);
 }
 
 void RenderContext::LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle)
