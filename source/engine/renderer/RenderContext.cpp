@@ -998,31 +998,35 @@ void RenderContext::PrepareAndDonwsampleTexture(
 	{
 		for (UINT x = 0; x < dstWidth; ++x)
 		{
+			const UINT srcX0 = static_cast<UINT>((static_cast<UINT64>(x) * srcWidth) / dstWidth);
+			const UINT srcX1 = static_cast<UINT>((static_cast<UINT64>(x + 1) * srcWidth) / dstWidth);
+			const UINT srcY0 = static_cast<UINT>((static_cast<UINT64>(y) * srcHeight) / dstHeight);
+			const UINT srcY1 = static_cast<UINT>((static_cast<UINT64>(y + 1) * srcHeight) / dstHeight);
+
 			UINT r = 0;
 			UINT g = 0;
 			UINT b = 0;
 			UINT a = 0;
+			UINT sampleCount = 0;
 
-			for (UINT oy = 0; oy < 2; ++oy)
+			for (UINT srcY = srcY0; srcY < srcY1; ++srcY)
 			{
-				for (UINT ox = 0; ox < 2; ++ox)
+				for (UINT srcX = srcX0; srcX < srcX1; ++srcX)
 				{
-					const UINT srcX = (std::min)(srcWidth - 1, x * 2 + ox);
-					const UINT srcY = (std::min)(srcHeight - 1, y * 2 + oy);
-
 					const UINT32 pixel = srcPixels[static_cast<size_t>(srcY) * srcWidth + srcX];
 
 					r += (pixel >> 0) & 0xFF;
 					g += (pixel >> 8) & 0xFF;
 					b += (pixel >> 16) & 0xFF;
 					a += (pixel >> 24) & 0xFF;
+					++sampleCount;
 				}
 			}
 
-			r = (r + 2) / 4;
-			g = (g + 2) / 4;
-			b = (b + 2) / 4;
-			a = (a + 2) / 4;
+			r = (r + sampleCount / 2) / sampleCount;
+			g = (g + sampleCount / 2) / sampleCount;
+			b = (b + sampleCount / 2) / sampleCount;
+			a = (a + sampleCount / 2) / sampleCount;
 
 			dstPixels[static_cast<size_t>(y) * dstWidth + x] =
 				(a << 24) |

@@ -221,25 +221,20 @@ CpuTextureData TextureGenerator::GenerateNextMip(const CpuTextureData& source)
 	{
 		for (UINT x = 0; x < nextWidth; ++x)
 		{
-			const UINT sourceX = x * 2;
-			const UINT sourceY = y * 2;
+			const UINT sourceX0 = static_cast<UINT>((static_cast<UINT64>(x) * source.width) / nextWidth);
+			const UINT sourceX1 = static_cast<UINT>((static_cast<UINT64>(x + 1) * source.width) / nextWidth);
+			const UINT sourceY0 = static_cast<UINT>((static_cast<UINT64>(y) * source.height) / nextHeight);
+			const UINT sourceY1 = static_cast<UINT>((static_cast<UINT64>(y + 1) * source.height) / nextHeight);
 			UINT sampleCount = 0;
 			UINT r = 0;
 			UINT g = 0;
 			UINT b = 0;
 			UINT a = 0;
 
-			for (UINT offsetY = 0; offsetY < 2; ++offsetY)
+			for (UINT sampleY = sourceY0; sampleY < sourceY1; ++sampleY)
 			{
-				for (UINT offsetX = 0; offsetX < 2; ++offsetX)
+				for (UINT sampleX = sourceX0; sampleX < sourceX1; ++sampleX)
 				{
-					const UINT sampleX = sourceX + offsetX;
-					const UINT sampleY = sourceY + offsetY;
-					if (sampleX >= source.width || sampleY >= source.height)
-					{
-						continue;
-					}
-
 					const RgbaColor sample = ReadPixel(source, sampleX, sampleY);
 					r += sample.r;
 					g += sample.g;
@@ -250,10 +245,10 @@ CpuTextureData TextureGenerator::GenerateNextMip(const CpuTextureData& source)
 			}
 
 			const RgbaColor averaged{
-				static_cast<uint8_t>(r / sampleCount),
-				static_cast<uint8_t>(g / sampleCount),
-				static_cast<uint8_t>(b / sampleCount),
-				static_cast<uint8_t>(a / sampleCount)
+				static_cast<uint8_t>((r + sampleCount / 2) / sampleCount),
+				static_cast<uint8_t>((g + sampleCount / 2) / sampleCount),
+				static_cast<uint8_t>((b + sampleCount / 2) / sampleCount),
+				static_cast<uint8_t>((a + sampleCount / 2) / sampleCount)
 			};
 			WritePixel(mip, x, y, averaged);
 		}
