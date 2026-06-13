@@ -5,13 +5,13 @@
 #include "../asset/Handle.h"
 #include "RenderItem.h"
 #include "../bind/CommandList.h"
+#include "../core/Texture.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
 class DeviceContext;
 class RenderTarget;
 class DepthBuffer;
-class Texture;
 class Buffer;
 class VertexBuffer;
 class Mesh;
@@ -58,6 +58,54 @@ struct SunlightConstants
 struct SunlightViewProjection
 {
 	DirectX::SimpleMath::Matrix viewProjection = DirectX::SimpleMath::Matrix::Identity;
+};
+
+struct TextureCreateDesc
+{
+public:
+	UINT width = 1;
+	UINT height = 1;
+	UINT mipLevels = 1;
+	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN;
+	const CHAR* name = "Texture";
+
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+
+	bool createSrv = true;
+	bool createUav = false;
+	bool createRtv = false;
+	bool createDsv = false;
+	bool staticSrv = false;
+	bool staticUav = false;
+
+	TextuureLifeSpan lifeSpan = SCENE;
+
+	void UseSingleMip()
+	{
+		mipLevels = 1;
+	}
+
+	void UseFullMipChain()
+	{
+		mipLevels = CalculateFullMipChainLevels();
+	}
+private:
+	UINT CalculateFullMipChainLevels() const
+	{
+		UINT maxDimension = width > height ? width : height;
+		maxDimension = maxDimension > 1 ? maxDimension : 1;
+
+		UINT fullMipChainLevels = 1;
+		while (maxDimension > 1)
+		{
+			maxDimension /= 2;
+			++fullMipChainLevels;
+		}
+
+		return fullMipChainLevels;
+	}
 };
 
 class RenderContext
@@ -107,7 +155,9 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
-	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
+	void CreateTexture(const TextureCreateDesc& desc, BYTE* data);
+	void PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data);
+	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
@@ -124,24 +174,25 @@ public:
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav = false);
+	HTexture CreateTextureResource(const TextureCreateDesc& desc);
+	HTexture CreateEmptyTexture(TextureCreateDesc desc);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
-	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
 	UINT CreateShaderResourceView(HTexture& textureHandle);
-	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
-	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
-	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
-	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
+	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels = 1);
+	void UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout);
+	void GenerateTextureForUpload(std::vector<UINT32>& pixels, UINT mipIndex);
+	void LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle);
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();
 	template<typename T>
 	HBuffer CreateConsantBuffer();
-	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize);
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);

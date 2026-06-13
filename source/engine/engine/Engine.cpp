@@ -266,7 +266,15 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data)
 		{
 			std::string name = "TEX_" + meshName;
-			renderContext.CreateTexture(desc.width, desc.height, data.data(), name.c_str());
+
+			TextureCreateDesc textureDesc;
+			textureDesc.width = desc.width;
+			textureDesc.height = desc.height;
+			textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			textureDesc.name = name.c_str();
+			textureDesc.UseFullMipChain();
+
+			renderContext.CreateTexture(textureDesc, data.data());
 		};
 
 		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))

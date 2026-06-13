@@ -3,19 +3,33 @@
 #include <Windows.h>
 #include <d3d12.h>
 
+#include <vector>
+
 enum TextuureLifeSpan
 {
 	APP,
 	SCENE
 };
 
+struct TextureMipDesc
+{
+	UINT width = 1;
+	UINT height = 1;
+};
+
+std::vector<TextureMipDesc> CalculateTextureMipChain(UINT width, UINT height);
+
 class Texture
 {
 public:
-	Texture(UINT width, UINT height, ID3D12Resource* resource, CHAR* name, size_t srvDescriptorIndex,
+	Texture(UINT width, UINT height, UINT mipLevels, ID3D12Resource* resource, CHAR* name, size_t srvDescriptorIndex,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON, TextuureLifeSpan span = APP);
 	~Texture();
 	ID3D12Resource* GetResource();
+	UINT GetMipLevels() const
+	{
+		return mipLevels;
+	}
 	D3D12_RESOURCE_STATES GetCurrentState()
 	{
 		return currentState;
@@ -57,6 +71,7 @@ private:
 	CHAR name[32];
 	UINT width;
 	UINT height;
+	UINT mipLevels;
 	size_t srvDescriptorIndex;
 	size_t uavDescriptorIndex;
 };
