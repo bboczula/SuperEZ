@@ -397,6 +397,11 @@ void ImGuiPass::Execute()
 	ImGui::Image(textureID, size);
 	ImGui::End();
 
+	if (settings != nullptr)
+	{
+		DrawRenderPassSettingsWindow(settings);
+	}
+
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 25));
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 25));
 	ImGui::Begin("StatusBar", nullptr,
@@ -460,4 +465,44 @@ std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
 		return std::string(filename);
 	}
 	return "";
+}
+
+void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
+{
+	ImGui::Begin("Render Pass Settings");
+
+	if (ImGui::BeginTabBar("RenderPassSettingsTabs"))
+	{
+		if (ImGui::BeginTabItem("ShadowMap"))
+		{
+			static bool enabled = true;
+			static float shadowBias = 0.001f;
+
+			ImGui::Text("ShadowMap Pass");
+			ImGui::Separator();
+
+			ImGui::Checkbox("Enabled", &enabled);
+			ImGui::DragFloat("Shadow Bias", &shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
+
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Forward"))
+		{
+			static bool enabled = true;
+			static float exposure = 1.0f;
+
+			ImGui::Text("Forward Pass");
+			ImGui::Separator();
+
+			ImGui::Checkbox("Enabled", &enabled);
+			ImGui::DragFloat("Exposure", &exposure, 0.01f, 0.0f, 10.0f, "%.2f");
+
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }

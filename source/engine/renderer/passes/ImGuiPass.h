@@ -22,6 +22,7 @@ public:
 	void RegisterSettings(RenderPassSettings& registry) override;
 private:
 	std::string OpenFileDialog_Win32(HWND owner = NULL);
+	void DrawRenderPassSettingsWindow(RenderPassSettings* settings);
 	HTexture colorCopyTexture; // Texture to copy color data for ImGui rendering
 	RenderPassSettings* settings = nullptr;
 };
