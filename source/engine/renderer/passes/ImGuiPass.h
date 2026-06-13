@@ -6,10 +6,12 @@
 
 #include "../RenderPass.h"
 
+class RenderPassSettings;;
+
 class ImGuiPass : public RenderPass
 {
 public:
-	ImGuiPass();
+	ImGuiPass(RenderPassSettings* settings);
 	void ConfigurePipelineState() override;
 	void PostAssetLoad() override;
 	void Initialize() override;
@@ -21,4 +23,5 @@ public:
 private:
 	std::string OpenFileDialog_Win32(HWND owner = NULL);
 	HTexture colorCopyTexture; // Texture to copy color data for ImGui rendering
+	RenderPassSettings* settings = nullptr;
 };

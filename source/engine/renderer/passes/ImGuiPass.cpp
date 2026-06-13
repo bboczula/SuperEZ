@@ -106,7 +106,7 @@ namespace
 	}
 }
 
-ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", L"", Type::Drawless)
+ImGuiPass::ImGuiPass(RenderPassSettings* settings) : RenderPass(L"ImGui", L"", Type::Drawless), settings(settings)
 {
 }
 

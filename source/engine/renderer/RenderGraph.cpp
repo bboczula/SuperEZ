@@ -38,7 +38,7 @@ RenderGraph::RenderGraph()
 	RenderPass* compositionPass = new CompositionPass();
 	renderPasses.push_back(compositionPass);
 
-	RenderPass* imguiPass = new ImGuiPass();
+	RenderPass* imguiPass = new ImGuiPass(&settings);
 	renderPasses.push_back(imguiPass);
 #endif
 
