@@ -70,3 +70,7 @@ void GrayscalePass::PostSubmit()
 void GrayscalePass::Allocate(DeviceContext* deviceContext)
 {
 }
+
+void GrayscalePass::RegisterSettings(RenderPassSettings& registry)
+{
+}

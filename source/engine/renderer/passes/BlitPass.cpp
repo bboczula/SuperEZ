@@ -55,3 +55,7 @@ void BlitPass::PostSubmit()
 void BlitPass::Allocate(DeviceContext* deviceContext)
 {
 }
+
+void BlitPass::RegisterSettings(RenderPassSettings& registry)
+{
+}

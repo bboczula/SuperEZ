@@ -20,6 +20,7 @@ public:
     void Execute() override;
     void PostSubmit() override;
     void Allocate(DeviceContext* deviceContext) override;
+    void RegisterSettings(RenderPassSettings& registry) override;
 private:
     static constexpr UINT ShadowMapSize = 2048;
     HTexture shadowMapTexture;

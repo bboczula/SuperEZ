@@ -176,3 +176,7 @@ void ForwardPass::Allocate(DeviceContext* deviceContext)
 {
 	// We want our Render Pass
 }
+
+void ForwardPass::RegisterSettings(RenderPassSettings& registry)
+{
+}

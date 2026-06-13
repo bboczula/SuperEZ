@@ -23,4 +23,5 @@ private:
 	bool skipFrame = true; // Skip frame if no selection is made
 	bool pendingReadbackSignal = false;
 	UINT64 pendingFenceValue = 0;
+	void RegisterSettings(RenderPassSettings& registry) override;
 };

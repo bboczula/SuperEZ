@@ -2,6 +2,7 @@
 
 #include <d3d12.h>
 #include "../asset/Handle.h"
+#include "RenderPassSettings.h"
 
 class RenderTarget;
 class DeviceContext;
@@ -28,6 +29,7 @@ public:
 	void PostExecute();
 	virtual void PostSubmit() = 0;
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
+	virtual void RegisterSettings(RenderPassSettings& settings) = 0;
 	RenderPass::Type GetType() const { return type; }
 protected:
 	RenderPass::Type type;

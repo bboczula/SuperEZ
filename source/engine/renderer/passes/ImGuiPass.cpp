@@ -441,6 +441,10 @@ void ImGuiPass::Allocate(DeviceContext* deviceContext)
 {
 }
 
+void ImGuiPass::RegisterSettings(RenderPassSettings& registry)
+{
+}
+
 std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
 {
 	char filename[MAX_PATH] = { 0 };

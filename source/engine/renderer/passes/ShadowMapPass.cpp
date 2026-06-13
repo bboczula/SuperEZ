@@ -87,3 +87,7 @@ void ShadowMapPass::PostSubmit()
 void ShadowMapPass::Allocate(DeviceContext* deviceContext)
 {
 }
+
+void ShadowMapPass::RegisterSettings(RenderPassSettings& registry)
+{
+}

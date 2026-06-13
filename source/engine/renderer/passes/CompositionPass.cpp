@@ -85,3 +85,7 @@ void CompositionPass::PostSubmit()
 void CompositionPass::Allocate(DeviceContext* deviceContext)
 {
 }
+
+void CompositionPass::RegisterSettings(RenderPassSettings& registry)
+{
+}

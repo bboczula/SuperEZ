@@ -93,3 +93,7 @@ void HighlightInputPass::PostSubmit()
 void HighlightInputPass::Allocate(DeviceContext* deviceContext)
 {
 }
+
+void HighlightInputPass::RegisterSettings(RenderPassSettings& registry)
+{
+}
