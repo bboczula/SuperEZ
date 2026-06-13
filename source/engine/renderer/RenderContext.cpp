@@ -904,6 +904,8 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");
+
+	assert(desc.mipLevels > 0 && "Mip levels must be greater than 0");
 	
 	auto textureHandle = CreateEmptyTexture(desc);
 
