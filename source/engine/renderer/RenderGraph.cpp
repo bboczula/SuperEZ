@@ -69,6 +69,7 @@ void RenderGraph::Initialize()
 		renderPass->ConfigurePipelineState();
 		renderPass->AutomaticInitialize();
 		renderPass->Initialize();
+		renderPass->RegisterSettings(settings);
 	}
 }
 

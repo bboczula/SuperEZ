@@ -27,4 +27,5 @@ private:
 	BOOL isPerspectiveCamera = TRUE;
 	HBuffer sunlightBuffer;
 	HBuffer sunlightViewProjectionBuffer;
+	float forwadVariable = 1.0f;
 };

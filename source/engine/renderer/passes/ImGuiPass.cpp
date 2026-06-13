@@ -473,34 +473,17 @@ void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
 
 	if (ImGui::BeginTabBar("RenderPassSettingsTabs"))
 	{
-		if (ImGui::BeginTabItem("ShadowMap"))
+		for (const RenderPassSettingsGroup& group : settings->GetGroups())
 		{
-			static bool enabled = true;
-			static float shadowBias = 0.001f;
+			char passName[128] = {};
+			wcstombs_s(nullptr, passName, group.passName, _TRUNCATE);
 
-			ImGui::Text("ShadowMap Pass");
-			ImGui::Separator();
+			if (ImGui::BeginTabItem(passName))
+			{
+				ImGui::EndTabItem();
 
-			ImGui::Checkbox("Enabled", &enabled);
-			ImGui::DragFloat("Shadow Bias", &shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
-
-			ImGui::EndTabItem();
+			}
 		}
-
-		if (ImGui::BeginTabItem("Forward"))
-		{
-			static bool enabled = true;
-			static float exposure = 1.0f;
-
-			ImGui::Text("Forward Pass");
-			ImGui::Separator();
-
-			ImGui::Checkbox("Enabled", &enabled);
-			ImGui::DragFloat("Exposure", &exposure, 0.01f, 0.0f, 10.0f, "%.2f");
-
-			ImGui::EndTabItem();
-		}
-
 		ImGui::EndTabBar();
 	}
 

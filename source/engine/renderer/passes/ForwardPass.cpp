@@ -177,6 +177,14 @@ void ForwardPass::Allocate(DeviceContext* deviceContext)
 	// We want our Render Pass
 }
 
-void ForwardPass::RegisterSettings(RenderPassSettings& registry)
+void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 {
+	settings.AddFloat(
+		GetName(),
+		"shadow_bias",
+		"Shadow Bias",
+		&forwadVariable,
+		0.0f,
+		0.05f,
+		0.0001f);
 }

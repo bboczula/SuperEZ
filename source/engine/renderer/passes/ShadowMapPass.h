@@ -25,4 +25,5 @@ private:
     static constexpr UINT ShadowMapSize = 2048;
     HTexture shadowMapTexture;
     HBuffer lightViewProjectionBuffer;
+    float shadowVariable = 1.0f;
 };

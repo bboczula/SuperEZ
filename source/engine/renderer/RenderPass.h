@@ -7,6 +7,7 @@
 class RenderTarget;
 class DeviceContext;
 class RenderContext;
+class RenderPassSettings;
 
 class RenderPass
 {
@@ -31,6 +32,7 @@ public:
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
 	virtual void RegisterSettings(RenderPassSettings& settings) = 0;
 	RenderPass::Type GetType() const { return type; }
+	const wchar_t* GetName() const { return name; }
 protected:
 	RenderPass::Type type;
 	HShader vertexShader;
