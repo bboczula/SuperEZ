@@ -480,6 +480,17 @@ void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
 
 			if (ImGui::BeginTabItem(passName))
 			{
+				for (const RenderPassSetting& setting : group.settings)
+				{
+					if (setting.type == RenderPassSettingType::Bool)
+					{
+						ImGui::Checkbox(setting.label, static_cast<bool*>(setting.value));
+					}
+					else if (setting.type == RenderPassSettingType::Float)
+					{
+						ImGui::DragFloat(setting.label, static_cast<float*>(setting.value), setting.step, setting.min, setting.max);
+					}
+				}
 				ImGui::EndTabItem();
 
 			}
