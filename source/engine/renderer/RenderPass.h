@@ -2,10 +2,12 @@
 
 #include <d3d12.h>
 #include "../asset/Handle.h"
+#include "RenderPassSettings.h"
 
 class RenderTarget;
 class DeviceContext;
 class RenderContext;
+class RenderPassSettings;
 
 class RenderPass
 {
@@ -28,7 +30,9 @@ public:
 	void PostExecute();
 	virtual void PostSubmit() = 0;
 	virtual void Allocate(DeviceContext* deviceContext) = 0;
+	virtual void RegisterSettings(RenderPassSettings& settings);
 	RenderPass::Type GetType() const { return type; }
+	const wchar_t* GetName() const { return name; }
 protected:
 	RenderPass::Type type;
 	HShader vertexShader;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../RenderPass.h"
+#include "../RenderContext.h"
 
 
 // The forward pass renders the scene from the active camera.
@@ -21,9 +22,13 @@ public:
 	void Execute() override;
 	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
+	void RegisterSettings(RenderPassSettings& registry) override;
 private:
 	FreeCamera* freeCamera;
 	BOOL isPerspectiveCamera = TRUE;
 	HBuffer sunlightBuffer;
 	HBuffer sunlightViewProjectionBuffer;
+	HBuffer debugSettingsBuffer;
+	DebugSettings debugSettings;
+	bool visualizeSelectedMip = false;
 };

@@ -1,4 +1,5 @@
 #include <vector>
+#include "RenderPassSettings.h"
 
 class RenderPass;
 
@@ -11,4 +12,5 @@ public:
 	void PostAssetLoad();
 private:
 	std::vector<RenderPass*> renderPasses;
+	RenderPassSettings settings;
 };

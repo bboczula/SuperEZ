@@ -106,7 +106,7 @@ namespace
 	}
 }
 
-ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", L"", Type::Drawless)
+ImGuiPass::ImGuiPass(RenderPassSettings* settings) : RenderPass(L"ImGui", L"", Type::Drawless), settings(settings)
 {
 }
 
@@ -397,6 +397,11 @@ void ImGuiPass::Execute()
 	ImGui::Image(textureID, size);
 	ImGui::End();
 
+	if (settings != nullptr)
+	{
+		DrawRenderPassSettingsWindow(settings);
+	}
+
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 25));
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 25));
 	ImGui::Begin("StatusBar", nullptr,
@@ -456,4 +461,77 @@ std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
 		return std::string(filename);
 	}
 	return "";
+}
+
+void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
+{
+	ImGui::Begin("Render Pass Settings");
+
+	if (ImGui::BeginTabBar("RenderPassSettingsTabs"))
+	{
+		for (const RenderPassSettingsGroup& group : settings->GetGroups())
+		{
+			char passName[128] = {};
+			wcstombs_s(nullptr, passName, group.passName, _TRUNCATE);
+
+			if (ImGui::BeginTabItem(passName))
+			{
+				for (const RenderPassSetting& setting : group.settings)
+				{
+					bool changed = false;
+
+					if (setting.type == RenderPassSettingType::Bool)
+					{
+						changed = ImGui::Checkbox(setting.label, static_cast<bool*>(setting.value));
+					}
+					else if (setting.type == RenderPassSettingType::Float)
+					{
+						changed = ImGui::DragFloat(setting.label, static_cast<float*>(setting.value), setting.step, setting.min, setting.max);
+					}
+					else if (setting.type == RenderPassSettingType::Combo)
+					{
+						changed = ImGui::Combo(
+							setting.label,
+							static_cast<int*>(setting.value),
+							setting.comboItems,
+							setting.comboItemCount);
+					}
+					else if (setting.type == RenderPassSettingType::ColorLegend)
+					{
+						ImGui::TextUnformatted(setting.label);
+						if (ImGui::BeginTable(setting.name, 4))
+						{
+							for (int i = 0; i < setting.legendItemCount; ++i)
+							{
+								const unsigned int color = setting.legendColors[i];
+								const ImVec4 colorValue(
+									static_cast<float>((color >> 24) & 0xff) / 255.0f,
+									static_cast<float>((color >> 16) & 0xff) / 255.0f,
+									static_cast<float>((color >> 8) & 0xff) / 255.0f,
+									static_cast<float>(color & 0xff) / 255.0f);
+
+								ImGui::TableNextColumn();
+								ImGui::PushID(i);
+								ImGui::ColorButton("##color", colorValue, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(14.0f, 14.0f));
+								ImGui::SameLine();
+								ImGui::TextUnformatted(setting.legendLabels[i]);
+								ImGui::PopID();
+							}
+							ImGui::EndTable();
+						}
+					}
+
+					if (changed && setting.onChanged)
+					{
+						setting.onChanged(setting.userData);
+					}
+				}
+				ImGui::EndTabItem();
+
+			}
+		}
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }

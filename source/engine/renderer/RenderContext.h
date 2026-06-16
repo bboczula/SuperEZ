@@ -55,6 +55,16 @@ struct SunlightConstants
 	float shadowSlopeBias = 0.002f;
 };
 
+struct DebugSettings
+{
+	float forceMipLevel = 0.0f;
+	int mipMode = 0;
+	float shaderMipBias = 0.0f;
+	int visualizeSelectedMip = 0;
+	float mipVisualizationStrength = 0.75f;
+	float debugSettingsPadding[3] = {};
+};
+
 struct SunlightViewProjection
 {
 	DirectX::SimpleMath::Matrix viewProjection = DirectX::SimpleMath::Matrix::Identity;
