@@ -52,6 +52,10 @@ void RenderPass::Update()
 {
 }
 
+void RenderPass::RegisterSettings(RenderPassSettings& settings)
+{
+}
+
 void RenderPass::PreExecute()
 {
 	if (GetType() == Type::Graphics || GetType() == Type::Compute)

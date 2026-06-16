@@ -1,10 +1,12 @@
 #include "RenderPassSettings.h"
 
+#include <cwchar>
+
 RenderPassSettingsGroup& RenderPassSettings::GetOrCreateGroup(const wchar_t* passName)
 {
 	for (RenderPassSettingsGroup& group : groups)
 	{
-		if (group.passName == passName)
+		if (std::wcscmp(group.passName, passName) == 0)
 		{
 			return group;
 		}

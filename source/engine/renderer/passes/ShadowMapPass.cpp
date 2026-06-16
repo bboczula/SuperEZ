@@ -3,7 +3,6 @@
 #include "../../bind/RootSignatureBuilder.h"
 #include "../../core/DeviceContext.h"
 #include "../../core/InputLayout.h"
-#include "../RenderPassSettings.h"
 
 extern RenderContext renderContext;
 extern DeviceContext deviceContext;
@@ -87,16 +86,4 @@ void ShadowMapPass::PostSubmit()
 
 void ShadowMapPass::Allocate(DeviceContext* deviceContext)
 {
-}
-
-void ShadowMapPass::RegisterSettings(RenderPassSettings& settings)
-{
-	settings.AddFloat(
-		GetName(),
-		"shadow_variable",
-		"Shadow Variable",
-		&shadowVariable,
-		0.0f,
-		0.05f,
-		0.0001f);
 }

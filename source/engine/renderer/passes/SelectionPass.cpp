@@ -171,11 +171,6 @@ void SelectionPass::ApplyReadbackSelection()
 		renderContext.SetSelectedObjectId(UINT32_MAX);
 }
 
-void SelectionPass::RegisterSettings(RenderPassSettings& registry)
-{
-}
-
-
 void SelectionPass::Allocate(DeviceContext* deviceContext)
 {
 }

@@ -19,7 +19,6 @@ public:
 	void Execute() override;
 	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
-	void RegisterSettings(RenderPassSettings& registry) override;
 private:
 	std::string OpenFileDialog_Win32(HWND owner = NULL);
 	void DrawRenderPassSettingsWindow(RenderPassSettings* settings);

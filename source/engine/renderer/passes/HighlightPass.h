@@ -11,7 +11,6 @@ public:
 	void Execute() override;
 	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
-	void RegisterSettings(RenderPassSettings& registry) override;
 private:
 	HTexture outputTexture;
 };

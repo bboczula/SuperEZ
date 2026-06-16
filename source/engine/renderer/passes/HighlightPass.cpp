@@ -135,7 +135,3 @@ void HighlightPass::PostSubmit()
 void HighlightPass::Allocate(DeviceContext* deviceContext)
 {
 }
-
-void HighlightPass::RegisterSettings(RenderPassSettings& registry)
-{
-}
