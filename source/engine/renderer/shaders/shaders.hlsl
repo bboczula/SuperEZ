@@ -27,6 +27,11 @@ cbuffer LightViewProjectionData : register(b3)
     row_major float4x4 lightViewProjection;
 };
 
+cbuffer DebugSettings : register(b4)
+{
+    float forceMipLevel;
+};
+
 struct VSInput
 {
     float4 position : POSITION;
@@ -64,7 +69,8 @@ PSInput VSMain(VSInput input)
 float4 PSMain(PSInput input) : SV_TARGET
 {
     float2 uv = float2(input.texCoord.x, 1.0f - input.texCoord.y);
-    float4 albedo = myTexture.Sample(LinearSampler, uv);
+    //float4 albedo = myTexture.Sample(LinearSampler, uv);
+    float4 albedo = myTexture.SampleLevel(LinearSampler, uv, forceMipLevel);
 
     float3 normal = normalize(input.worldNormal);
     float3 shadowNdc = input.shadowPosition.xyz / input.shadowPosition.w;

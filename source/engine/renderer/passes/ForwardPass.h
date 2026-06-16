@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../RenderPass.h"
+#include "../RenderContext.h"
 
 
 // The forward pass renders the scene from the active camera.
@@ -27,5 +28,6 @@ private:
 	BOOL isPerspectiveCamera = TRUE;
 	HBuffer sunlightBuffer;
 	HBuffer sunlightViewProjectionBuffer;
-	float forwadVariable = 1.0f;
+	HBuffer debugSettingsBuffer;
+	DebugSettings debugSettings;
 };

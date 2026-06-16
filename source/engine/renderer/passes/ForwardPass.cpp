@@ -60,6 +60,7 @@ void ForwardPass::ConfigurePipelineState()
 	builder.AddSamplerTable(0, 1, D3D12_SHADER_VISIBILITY_PIXEL); // Sampler s0
 	builder.AddSRVTable(1, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t1 (shadow map)
 	builder.AddCBV(3, D3D12_SHADER_VISIBILITY_VERTEX); // CBV b3 (light view-projection)
+	builder.AddCBV(4, D3D12_SHADER_VISIBILITY_PIXEL); // CBV b4 (debug settings)
 	rootSignature = renderContext.CreateRootSignature(builder);
 
 	// Menu height seems to be 20 pixels
@@ -76,6 +77,12 @@ void ForwardPass::ConfigurePipelineState()
 	sunlightBuffer = renderContext.CreateConsantBuffer<SunlightConstants>();
 	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
 	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
+
+	debugSettingsBuffer = renderContext.CreateConsantBuffer<DebugSettings>();
+	DebugSettings debugSettings;
+	debugSettings.forceMipLevel = 0.0f;
+	renderContext.UpdateConstantBuffer(debugSettingsBuffer, &debugSettings, sizeof(debugSettings));
+
 	sunlightViewProjectionBuffer = renderContext.CreateConsantBuffer<SunlightViewProjection>();
 	const SunlightViewProjection& sunlightViewProjection = renderContext.GetSunlightViewProjection();
 	renderContext.UpdateConstantBuffer(sunlightViewProjectionBuffer, &sunlightViewProjection, sizeof(sunlightViewProjection));
@@ -152,6 +159,8 @@ void ForwardPass::Execute()
 	const SunlightViewProjection& sunlightViewProjection = renderContext.GetSunlightViewProjection();
 	renderContext.UpdateConstantBuffer(sunlightViewProjectionBuffer, &sunlightViewProjection, sizeof(sunlightViewProjection));
 	renderContext.BindConstantBuffer(commandList, sunlightViewProjectionBuffer, 6);
+	renderContext.UpdateConstantBuffer(debugSettingsBuffer, &debugSettings, sizeof(debugSettings));
+	renderContext.BindConstantBuffer(commandList, debugSettingsBuffer, 7);
 	HTexture shadowMapTexture = renderContext.GetShadowMapTexture();
 	if (shadowMapTexture.IsValid())
 	{
@@ -181,10 +190,10 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 {
 	settings.AddFloat(
 		GetName(),
-		"shadow_bias",
-		"Shadow Bias",
-		&forwadVariable,
+		"force_mip_level",
+		"Force Mip Level",
+		&debugSettings.forceMipLevel,
 		0.0f,
-		0.05f,
-		0.0001f);
+		10.0f,
+		1.0f);
 }
