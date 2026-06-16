@@ -159,6 +159,7 @@ void ForwardPass::Execute()
 	const SunlightViewProjection& sunlightViewProjection = renderContext.GetSunlightViewProjection();
 	renderContext.UpdateConstantBuffer(sunlightViewProjectionBuffer, &sunlightViewProjection, sizeof(sunlightViewProjection));
 	renderContext.BindConstantBuffer(commandList, sunlightViewProjectionBuffer, 6);
+	debugSettings.visualizeSelectedMip = visualizeSelectedMip ? 1 : 0;
 	renderContext.UpdateConstantBuffer(debugSettingsBuffer, &debugSettings, sizeof(debugSettings));
 	renderContext.BindConstantBuffer(commandList, debugSettingsBuffer, 7);
 	HTexture shadowMapTexture = renderContext.GetShadowMapTexture();
@@ -220,4 +221,10 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 		-10.0f,
 		10.0f,
 		0.1f);
+
+	settings.AddBool(
+		GetName(),
+		"visualize_selected_mip",
+		"Visualize selected mip",
+		&visualizeSelectedMip);
 }

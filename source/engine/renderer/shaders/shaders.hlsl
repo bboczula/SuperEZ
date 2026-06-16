@@ -32,6 +32,7 @@ cbuffer DebugSettings : register(b4)
     float forceMipLevel;
     int mipMode;
     float shaderMipBias;
+    int visualizeSelectedMip;
 };
 
 struct VSInput
@@ -83,10 +84,62 @@ float4 SampleDebugTexture(Texture2D textureToSample, SamplerState samplerToUse, 
     return textureToSample.Sample(samplerToUse, uv);
 }
 
+float GetSelectedMipLevel(Texture2D textureToSample, SamplerState samplerToUse, float2 uv)
+{
+    if (mipMode == 2)
+    {
+        return forceMipLevel;
+    }
+
+    float lod = textureToSample.CalculateLevelOfDetail(samplerToUse, uv);
+    if (mipMode == 1)
+    {
+        lod += shaderMipBias;
+    }
+
+    return lod;
+}
+
+float3 GetMipDebugColorByIndex(int mip)
+{
+    if (mip == 0) return float3(1.0f, 0.0f, 0.0f);
+    if (mip == 1) return float3(1.0f, 0.5f, 0.0f);
+    if (mip == 2) return float3(1.0f, 1.0f, 0.0f);
+    if (mip == 3) return float3(0.0f, 1.0f, 0.0f);
+    if (mip == 4) return float3(0.0f, 1.0f, 1.0f);
+    if (mip == 5) return float3(0.0f, 0.25f, 1.0f);
+    if (mip == 6) return float3(0.75f, 0.0f, 1.0f);
+    return float3(1.0f, 0.0f, 1.0f);
+}
+
+float3 GetMipDebugColor(float mipLevel)
+{
+    float clampedMip = clamp(mipLevel, 0.0f, 7.0f);
+    int mip0 = (int)floor(clampedMip);
+    int mip1 = min(mip0 + 1, 7);
+    float mipBlend = frac(clampedMip);
+
+    return lerp(GetMipDebugColorByIndex(mip0), GetMipDebugColorByIndex(mip1), mipBlend);
+}
+
+float3 GetTintedMipDebugColor(float3 albedo, float mipLevel)
+{
+    float3 mipColor = GetMipDebugColor(mipLevel);
+    float luminance = dot(albedo, float3(0.2126f, 0.7152f, 0.0722f));
+    float3 tintedDetail = mipColor * lerp(0.25f, 1.0f, luminance);
+
+    return lerp(albedo, tintedDetail, 0.75f);
+}
+
 float4 PSMain(PSInput input) : SV_TARGET
 {
     float2 uv = float2(input.texCoord.x, 1.0f - input.texCoord.y);
     float4 albedo = SampleDebugTexture(myTexture, LinearSampler, uv);
+
+    if (visualizeSelectedMip != 0)
+    {
+        return float4(GetTintedMipDebugColor(albedo.rgb, GetSelectedMipLevel(myTexture, LinearSampler, uv)), albedo.a);
+    }
 
     float3 normal = normalize(input.worldNormal);
     float3 shadowNdc = input.shadowPosition.xyz / input.shadowPosition.w;
