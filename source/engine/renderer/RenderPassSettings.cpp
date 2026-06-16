@@ -1,7 +1,5 @@
 #include "RenderPassSettings.h"
 
-#include "RenderPassSettings.h"
-
 RenderPassSettingsGroup& RenderPassSettings::GetOrCreateGroup(const wchar_t* passName)
 {
 	for (RenderPassSettingsGroup& group : groups)
@@ -61,6 +59,31 @@ void RenderPassSettings::AddFloat(
 	setting.min = min;
 	setting.max = max;
 	setting.step = step;
+	setting.onChanged = onChanged;
+	setting.userData = userData;
+
+	group.settings.push_back(setting);
+}
+
+void RenderPassSettings::AddCombo(
+	const wchar_t* passName,
+	const char* name,
+	const char* label,
+	int* value,
+	const char* const* items,
+	int itemCount,
+	void (*onChanged)(void*),
+	void* userData)
+{
+	RenderPassSettingsGroup& group = GetOrCreateGroup(passName);
+
+	RenderPassSetting setting;
+	setting.type = RenderPassSettingType::Combo;
+	setting.name = name;
+	setting.label = label;
+	setting.value = value;
+	setting.comboItems = items;
+	setting.comboItemCount = itemCount;
 	setting.onChanged = onChanged;
 	setting.userData = userData;
 

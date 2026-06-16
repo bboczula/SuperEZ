@@ -58,6 +58,8 @@ struct SunlightConstants
 struct DebugSettings
 {
 	float forceMipLevel = 0.0f;
+	int mipMode = 0;
+	float shaderMipBias = 0.0f;
 };
 
 struct SunlightViewProjection

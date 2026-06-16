@@ -30,6 +30,8 @@ cbuffer LightViewProjectionData : register(b3)
 cbuffer DebugSettings : register(b4)
 {
     float forceMipLevel;
+    int mipMode;
+    float shaderMipBias;
 };
 
 struct VSInput
@@ -66,11 +68,25 @@ PSInput VSMain(VSInput input)
     return o;
 }
 
+float4 SampleDebugTexture(Texture2D textureToSample, SamplerState samplerToUse, float2 uv)
+{
+    if (mipMode == 1)
+    {
+        return textureToSample.SampleBias(samplerToUse, uv, shaderMipBias);
+    }
+
+    if (mipMode == 2)
+    {
+        return textureToSample.SampleLevel(samplerToUse, uv, forceMipLevel);
+    }
+
+    return textureToSample.Sample(samplerToUse, uv);
+}
+
 float4 PSMain(PSInput input) : SV_TARGET
 {
     float2 uv = float2(input.texCoord.x, 1.0f - input.texCoord.y);
-    //float4 albedo = myTexture.Sample(LinearSampler, uv);
-    float4 albedo = myTexture.SampleLevel(LinearSampler, uv, forceMipLevel);
+    float4 albedo = SampleDebugTexture(myTexture, LinearSampler, uv);
 
     float3 normal = normalize(input.worldNormal);
     float3 shadowNdc = input.shadowPosition.xyz / input.shadowPosition.w;

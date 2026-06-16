@@ -7,7 +7,8 @@ enum class RenderPassSettingType
 	Bool,
 	Int,
 	UInt,
-	Float
+	Float,
+	Combo
 };
 
 struct RenderPassSetting
@@ -22,6 +23,9 @@ struct RenderPassSetting
 	float min = 0.0f;
 	float max = 0.0f;
 	float step = 1.0f;
+
+	const char* const* comboItems = nullptr;
+	int comboItemCount = 0;
 
 	void (*onChanged)(void* userData) = nullptr;
 	void* userData = nullptr;
@@ -57,6 +61,16 @@ public:
 		float min,
 		float max,
 		float step,
+		void (*onChanged)(void*) = nullptr,
+		void* userData = nullptr);
+
+	void AddCombo(
+		const wchar_t* passName,
+		const char* name,
+		const char* label,
+		int* value,
+		const char* const* items,
+		int itemCount,
 		void (*onChanged)(void*) = nullptr,
 		void* userData = nullptr);
 

@@ -188,6 +188,21 @@ void ForwardPass::Allocate(DeviceContext* deviceContext)
 
 void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 {
+	static const char* const mipModeItems[] =
+	{
+		"Implicit",
+		"Biased",
+		"Forced Level"
+	};
+
+	settings.AddCombo(
+		GetName(),
+		"mip_mode",
+		"Mip Mode",
+		&debugSettings.mipMode,
+		mipModeItems,
+		static_cast<int>(sizeof(mipModeItems) / sizeof(mipModeItems[0])));
+
 	settings.AddFloat(
 		GetName(),
 		"force_mip_level",
@@ -196,4 +211,13 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 		0.0f,
 		10.0f,
 		1.0f);
+
+	settings.AddFloat(
+		GetName(),
+		"shader_mip_bias",
+		"Shader Mip Bias",
+		&debugSettings.shaderMipBias,
+		-10.0f,
+		10.0f,
+		0.1f);
 }

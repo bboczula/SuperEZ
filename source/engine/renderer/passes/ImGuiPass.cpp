@@ -482,13 +482,28 @@ void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
 			{
 				for (const RenderPassSetting& setting : group.settings)
 				{
+					bool changed = false;
+
 					if (setting.type == RenderPassSettingType::Bool)
 					{
-						ImGui::Checkbox(setting.label, static_cast<bool*>(setting.value));
+						changed = ImGui::Checkbox(setting.label, static_cast<bool*>(setting.value));
 					}
 					else if (setting.type == RenderPassSettingType::Float)
 					{
-						ImGui::DragFloat(setting.label, static_cast<float*>(setting.value), setting.step, setting.min, setting.max);
+						changed = ImGui::DragFloat(setting.label, static_cast<float*>(setting.value), setting.step, setting.min, setting.max);
+					}
+					else if (setting.type == RenderPassSettingType::Combo)
+					{
+						changed = ImGui::Combo(
+							setting.label,
+							static_cast<int*>(setting.value),
+							setting.comboItems,
+							setting.comboItemCount);
+					}
+
+					if (changed && setting.onChanged)
+					{
+						setting.onChanged(setting.userData);
 					}
 				}
 				ImGui::EndTabItem();
