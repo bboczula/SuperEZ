@@ -8,7 +8,8 @@ enum class RenderPassSettingType
 	Int,
 	UInt,
 	Float,
-	Combo
+	Combo,
+	ColorLegend
 };
 
 struct RenderPassSetting
@@ -26,6 +27,10 @@ struct RenderPassSetting
 
 	const char* const* comboItems = nullptr;
 	int comboItemCount = 0;
+
+	const char* const* legendLabels = nullptr;
+	const unsigned int* legendColors = nullptr;
+	int legendItemCount = 0;
 
 	void (*onChanged)(void* userData) = nullptr;
 	void* userData = nullptr;
@@ -73,6 +78,14 @@ public:
 		int itemCount,
 		void (*onChanged)(void*) = nullptr,
 		void* userData = nullptr);
+
+	void AddColorLegend(
+		const wchar_t* passName,
+		const char* name,
+		const char* label,
+		const char* const* labels,
+		const unsigned int* colors,
+		int itemCount);
 
 	const std::vector<RenderPassSettingsGroup>& GetGroups() const
 	{

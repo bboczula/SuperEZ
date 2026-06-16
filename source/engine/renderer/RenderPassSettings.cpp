@@ -89,3 +89,24 @@ void RenderPassSettings::AddCombo(
 
 	group.settings.push_back(setting);
 }
+
+void RenderPassSettings::AddColorLegend(
+	const wchar_t* passName,
+	const char* name,
+	const char* label,
+	const char* const* labels,
+	const unsigned int* colors,
+	int itemCount)
+{
+	RenderPassSettingsGroup& group = GetOrCreateGroup(passName);
+
+	RenderPassSetting setting;
+	setting.type = RenderPassSettingType::ColorLegend;
+	setting.name = name;
+	setting.label = label;
+	setting.legendLabels = labels;
+	setting.legendColors = colors;
+	setting.legendItemCount = itemCount;
+
+	group.settings.push_back(setting);
+}

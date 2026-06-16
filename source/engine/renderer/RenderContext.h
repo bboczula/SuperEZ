@@ -61,6 +61,8 @@ struct DebugSettings
 	int mipMode = 0;
 	float shaderMipBias = 0.0f;
 	int visualizeSelectedMip = 0;
+	float mipVisualizationStrength = 0.75f;
+	float debugSettingsPadding[3] = {};
 };
 
 struct SunlightViewProjection

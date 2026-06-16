@@ -195,6 +195,28 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 		"Biased",
 		"Forced Level"
 	};
+	static const char* const mipLegendLabels[] =
+	{
+		"0",
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7+"
+	};
+	static const unsigned int mipLegendColors[] =
+	{
+		0xff0000ff,
+		0xff8000ff,
+		0xffff00ff,
+		0x00ff00ff,
+		0x00ffffff,
+		0x0040ffff,
+		0xbf00ffff,
+		0xff00ffff
+	};
 
 	settings.AddCombo(
 		GetName(),
@@ -227,4 +249,21 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 		"visualize_selected_mip",
 		"Visualize selected mip",
 		&visualizeSelectedMip);
+
+	settings.AddColorLegend(
+		GetName(),
+		"mip_color_scale",
+		"Mip Color Scale",
+		mipLegendLabels,
+		mipLegendColors,
+		static_cast<int>(sizeof(mipLegendLabels) / sizeof(mipLegendLabels[0])));
+
+	settings.AddFloat(
+		GetName(),
+		"mip_visualization_strength",
+		"Mip Visualization Strength",
+		&debugSettings.mipVisualizationStrength,
+		0.0f,
+		1.0f,
+		0.01f);
 }

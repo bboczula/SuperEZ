@@ -33,6 +33,7 @@ cbuffer DebugSettings : register(b4)
     int mipMode;
     float shaderMipBias;
     int visualizeSelectedMip;
+    float mipVisualizationStrength;
 };
 
 struct VSInput
@@ -128,7 +129,7 @@ float3 GetTintedMipDebugColor(float3 albedo, float mipLevel)
     float luminance = dot(albedo, float3(0.2126f, 0.7152f, 0.0722f));
     float3 tintedDetail = mipColor * lerp(0.25f, 1.0f, luminance);
 
-    return lerp(albedo, tintedDetail, 0.75f);
+    return lerp(albedo, tintedDetail, saturate(mipVisualizationStrength));
 }
 
 float4 PSMain(PSInput input) : SV_TARGET

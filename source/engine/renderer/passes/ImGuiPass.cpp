@@ -500,6 +500,30 @@ void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
 							setting.comboItems,
 							setting.comboItemCount);
 					}
+					else if (setting.type == RenderPassSettingType::ColorLegend)
+					{
+						ImGui::TextUnformatted(setting.label);
+						if (ImGui::BeginTable(setting.name, 4))
+						{
+							for (int i = 0; i < setting.legendItemCount; ++i)
+							{
+								const unsigned int color = setting.legendColors[i];
+								const ImVec4 colorValue(
+									static_cast<float>((color >> 24) & 0xff) / 255.0f,
+									static_cast<float>((color >> 16) & 0xff) / 255.0f,
+									static_cast<float>((color >> 8) & 0xff) / 255.0f,
+									static_cast<float>(color & 0xff) / 255.0f);
+
+								ImGui::TableNextColumn();
+								ImGui::PushID(i);
+								ImGui::ColorButton("##color", colorValue, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(14.0f, 14.0f));
+								ImGui::SameLine();
+								ImGui::TextUnformatted(setting.legendLabels[i]);
+								ImGui::PopID();
+							}
+							ImGui::EndTable();
+						}
+					}
 
 					if (changed && setting.onChanged)
 					{
