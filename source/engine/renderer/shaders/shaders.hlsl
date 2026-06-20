@@ -36,6 +36,11 @@ cbuffer DebugSettings : register(b4)
     float mipVisualizationStrength;
 };
 
+cbuffer CameraPositionData : register(b5)
+{
+    float4 cameraPosition;
+};
+
 struct VSInput
 {
     float4 position : POSITION;
@@ -143,6 +148,10 @@ float4 PSMain(PSInput input) : SV_TARGET
     }
 
     float3 normal = normalize(input.worldNormal);
+    float3 lightDir = -normalize(lightDirection.xyz);
+    float3 viewDir = normalize(cameraPosition.xyz - input.worldPosition);
+    float3 halfVector = normalize(lightDir + viewDir);
+
     float3 shadowNdc = input.shadowPosition.xyz / input.shadowPosition.w;
     float2 shadowUv = shadowNdc.xy * float2(0.5f, -0.5f) + 0.5f;
     float pixelLightDepth = shadowNdc.z;
@@ -155,9 +164,15 @@ float4 PSMain(PSInput input) : SV_TARGET
         pixelLightDepth >= 0.0f && pixelLightDepth <= 1.0f;
     float shadowVisibility = (!insideShadowMap || pixelLightDepth <= shadowMapDepth + depthBias) ? 1.0f : 0.0f;
 
+    static const float shininess = 32.0f;
+    static const float specularStrength = 0.65f;
+
     float diffuse = lightFacing * diffuseStrength;
-    float3 ambientLight = lightColor.xyz * ambientStrength;
-    float3 directLight = lightColor.xyz * diffuse * shadowVisibility;
-    float3 lighting = ambientLight + directLight;
-    return float4(albedo.rgb * lighting, albedo.a);
+    float specular = pow(saturate(dot(normal, halfVector)), shininess);
+    specular *= specularStrength * step(0.00001f, lightFacing);
+
+    float3 ambientLight = albedo.rgb * lightColor.xyz * ambientStrength;
+    float3 directLight = albedo.rgb * lightColor.xyz * diffuse * shadowVisibility;
+    float3 specularLight = lightColor.xyz * specular * shadowVisibility;
+    return float4(ambientLight + directLight + specularLight, albedo.a);
 }
