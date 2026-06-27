@@ -30,20 +30,6 @@ namespace
 		return signature.test(coordinator.GetComponentType<T>());
 	}
 
-	ImU32 GetHierarchyIconColor(SceneEntityKind kind)
-	{
-		switch (kind)
-		{
-		case SceneEntityKind::Camera:
-			return IM_COL32(110, 190, 255, 255);
-		case SceneEntityKind::Sunlight:
-			return IM_COL32(255, 220, 90, 255);
-		case SceneEntityKind::Renderable:
-		default:
-			return IM_COL32(255, 180, 90, 255);
-		}
-	}
-
 	SunlightConstants ToSunlightConstants(const SunlightComponent& sunlight)
 	{
 		const float enabled = sunlight.enabled ? 1.0f : 0.0f;
@@ -55,59 +41,6 @@ namespace
 			.shadowBias = sunlight.shadowBias,
 			.shadowSlopeBias = sunlight.shadowSlopeBias
 		};
-	}
-
-	void DrawCameraIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
-	{
-		const ImVec2 bodyMin(topLeft.x + 1.5f, topLeft.y + 4.0f);
-		const ImVec2 bodyMax(topLeft.x + 11.5f, topLeft.y + 11.5f);
-		const ImVec2 lensCenter(topLeft.x + 6.5f, topLeft.y + 7.8f);
-		const ImVec2 viewfinderMin(topLeft.x + 4.0f, topLeft.y + 1.8f);
-		const ImVec2 viewfinderMax(topLeft.x + 7.5f, topLeft.y + 4.3f);
-
-		drawList->AddRect(bodyMin, bodyMax, color, 2.5f, 0, 1.8f);
-		drawList->AddRectFilled(viewfinderMin, viewfinderMax, color, 1.0f);
-		drawList->AddCircle(lensCenter, 2.2f, color, 18, 1.7f);
-		drawList->AddCircleFilled(lensCenter, 0.8f, color);
-
-		const ImVec2 barrelA(topLeft.x + 11.5f, topLeft.y + 5.0f);
-		const ImVec2 barrelB(topLeft.x + 15.2f, topLeft.y + 3.6f);
-		const ImVec2 barrelC(topLeft.x + 15.2f, topLeft.y + 11.9f);
-		const ImVec2 barrelD(topLeft.x + 11.5f, topLeft.y + 10.3f);
-		drawList->AddQuad(barrelA, barrelB, barrelC, barrelD, color, 1.6f);
-	}
-
-	void DrawCubeIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
-	{
-		const ImVec2 frontTL(topLeft.x + 3.0f, topLeft.y + 5.0f);
-		const ImVec2 frontTR(topLeft.x + 9.0f, topLeft.y + 5.0f);
-		const ImVec2 frontBR(topLeft.x + 9.0f, topLeft.y + 11.0f);
-		const ImVec2 frontBL(topLeft.x + 3.0f, topLeft.y + 11.0f);
-
-		const ImVec2 backTL(topLeft.x + 6.0f, topLeft.y + 2.0f);
-		const ImVec2 backTR(topLeft.x + 12.0f, topLeft.y + 2.0f);
-		const ImVec2 backBR(topLeft.x + 12.0f, topLeft.y + 8.0f);
-		const ImVec2 backBL(topLeft.x + 6.0f, topLeft.y + 8.0f);
-
-		drawList->AddQuad(backTL, backTR, backBR, backBL, color, 1.4f);
-		drawList->AddQuad(frontTL, frontTR, frontBR, frontBL, color, 1.6f);
-		drawList->AddLine(backTL, frontTL, color, 1.4f);
-		drawList->AddLine(backTR, frontTR, color, 1.4f);
-		drawList->AddLine(backBR, frontBR, color, 1.4f);
-		drawList->AddLine(backBL, frontBL, color, 1.4f);
-	}
-
-	void DrawSunlightIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
-	{
-		const ImVec2 center(topLeft.x + 8.0f, topLeft.y + 8.0f);
-		drawList->AddCircle(center, 3.0f, color, 18, 1.7f);
-		for (int i = 0; i < 8; ++i)
-		{
-			const float angle = (3.14159265f * 2.0f * static_cast<float>(i)) / 8.0f;
-			const ImVec2 inner(center.x + cosf(angle) * 5.0f, center.y + sinf(angle) * 5.0f);
-			const ImVec2 outer(center.x + cosf(angle) * 7.5f, center.y + sinf(angle) * 7.5f);
-			drawList->AddLine(inner, outer, color, 1.4f);
-		}
 	}
 }
 
@@ -252,39 +185,29 @@ void ImGuiPass::Execute()
 
 	if (ImGui::BeginChild("GameObjectList", ImVec2(0, panelHeight), true))
 	{
-		for (const SceneEntityRecord& entity : renderContext.GetSceneEntities())
+		if (editorCoordinator == nullptr)
 		{
-			bool isSelected = (currentSelection == entity.id);
-
-			ImGui::PushID(static_cast<int>(entity.id));
-			if (ImGui::Selectable("##entity_row", isSelected, ImGuiSelectableFlags_SpanAvailWidth))
+			ImGui::Text("ECS is unavailable.");
+		}
+		else
+		{
+			for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
 			{
-				renderContext.SetSelectedObjectId(entity.id);
-			}
+				if (!HasComponent<InfoComponent>(*editorCoordinator, entity))
+				{
+					continue;
+				}
 
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
-			const ImVec2 itemMin = ImGui::GetItemRectMin();
-			const ImVec2 itemMax = ImGui::GetItemRectMax();
-			const float iconSize = 16.0f;
-			const ImVec2 iconTopLeft(itemMin.x + 6.0f, itemMin.y + ((itemMax.y - itemMin.y) - iconSize) * 0.5f);
-			const ImU32 iconColor = GetHierarchyIconColor(entity.kind);
+				InfoComponent& info = editorCoordinator->GetComponent<InfoComponent>(entity);
+				const bool isSelected = (currentSelection == entity);
 
-			if (entity.kind == SceneEntityKind::Camera)
-			{
-				DrawCameraIcon(drawList, iconTopLeft, iconColor);
+				ImGui::PushID(static_cast<int>(entity));
+				if (ImGui::Selectable(info.name.c_str(), isSelected, ImGuiSelectableFlags_SpanAvailWidth))
+				{
+					renderContext.SetSelectedObjectId(entity);
+				}
+				ImGui::PopID();
 			}
-			else if (entity.kind == SceneEntityKind::Sunlight)
-			{
-				DrawSunlightIcon(drawList, iconTopLeft, iconColor);
-			}
-			else
-			{
-				DrawCubeIcon(drawList, iconTopLeft, iconColor);
-			}
-
-			const ImVec2 textPos(itemMin.x + 28.0f, itemMin.y + ImGui::GetStyle().FramePadding.y);
-			drawList->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), entity.name);
-			ImGui::PopID();
 		}
 	}
 	ImGui::EndChild();
@@ -303,18 +226,14 @@ void ImGuiPass::Execute()
 
 		if (currentSelection != UINT32_MAX)
 		{
-			SceneEntityRecord* entity = renderContext.GetSceneEntityById(currentSelection);
-			if (entity != nullptr)
+			if (editorCoordinator == nullptr)
 			{
-				ImGui::Text("Entity: %u", entity->id);
-				if (editorCoordinator == nullptr)
-				{
-					ImGui::Text("ECS is unavailable.");
-				}
-				else
-				{
-					DrawComponentSections(*editorCoordinator, entity->id);
-				}
+				ImGui::Text("ECS is unavailable.");
+			}
+			else if (HasComponent<InfoComponent>(*editorCoordinator, currentSelection))
+			{
+				ImGui::Text("Entity: %u", currentSelection);
+				DrawComponentSections(*editorCoordinator, currentSelection);
 			}
 			else
 			{

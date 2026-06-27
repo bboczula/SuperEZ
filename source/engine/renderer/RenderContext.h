@@ -28,23 +28,6 @@ enum RenderTargetFormat
 	R32_UINT
 };
 
-enum class SceneEntityKind : unsigned char
-{
-	Renderable,
-	Camera,
-	Sunlight
-};
-
-struct SceneEntityRecord
-{
-	uint32_t id = UINT32_MAX;
-	SceneEntityKind kind = SceneEntityKind::Renderable;
-	char name[32] = {};
-	HMesh mesh;
-	HTexture texture;
-	UINT cameraIndex = UINT32_MAX;
-};
-
 struct SunlightConstants
 {
 	float lightDirection[4] = { -0.4f, -1.0f, -0.3f, 0.0f };
@@ -147,11 +130,6 @@ public:
 	// High Level
 	std::vector<RenderItem>& GetRenderItems();
 	RenderItem* GetRenderItemById(uint32_t id);
-	const std::vector<SceneEntityRecord>& GetSceneEntities() const { return sceneEntities; }
-	SceneEntityRecord* GetSceneEntityById(uint32_t id);
-	void RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture);
-	void RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex);
-	void RegisterSunlightEntity(uint32_t id, const char* name);
 	const SunlightConstants& GetSunlightConstants() const { return sunlightConstants; }
 	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
 	void UpdateSunlightViewProjection();
@@ -272,7 +250,6 @@ private:
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
-	std::vector<SceneEntityRecord> sceneEntities;
 	SunlightConstants sunlightConstants;
 	SunlightViewProjection sunlightViewProjection;
 	HTexture shadowMapTexture;
