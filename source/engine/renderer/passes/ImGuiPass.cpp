@@ -8,8 +8,6 @@
 #include "../../engine/states/EngineCommandQueue.h"
 #include "../../bind/CommandList.h"
 #include "../RenderTarget.h"
-#include "../../engine/Components.h"
-#include "../../engine/Coordinator.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
@@ -25,6 +23,13 @@ extern Coordinator* editorCoordinator;
 
 namespace
 {
+	template<typename T>
+	bool HasComponent(Coordinator& coordinator, Entity entity)
+	{
+		Signature signature = coordinator.GetEntityManager()->GetSignature(entity);
+		return signature.test(coordinator.GetComponentType<T>());
+	}
+
 	ImU32 GetHierarchyIconColor(SceneEntityKind kind)
 	{
 		switch (kind)
@@ -301,70 +306,14 @@ void ImGuiPass::Execute()
 			SceneEntityRecord* entity = renderContext.GetSceneEntityById(currentSelection);
 			if (entity != nullptr)
 			{
-				ImGui::Text("Name: %s", entity->name);
 				ImGui::Text("Entity: %u", entity->id);
-				if (entity->kind == SceneEntityKind::Camera)
+				if (editorCoordinator == nullptr)
 				{
-					Camera* camera = renderContext.GetCamera(entity->cameraIndex);
-					const auto position = camera->GetPosition();
-					const auto rotation = camera->GetRotation();
-					ImGui::Text("Kind: Camera");
-					ImGui::Text("Camera Index: %u", entity->cameraIndex);
-					ImGui::Text("Projection: %s",
-						camera->GetType() == Camera::CameraType::ORTHOGRAPHIC ? "Orthographic" : "Perspective");
-					const bool isActiveCamera = renderContext.GetActiveCameraIndex() == entity->cameraIndex;
-					ImGui::Text("Active: %s", isActiveCamera ? "Yes" : "No");
-					ImGui::Text("Position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
-					ImGui::Text("Rotation: %.2f, %.2f, %.2f", rotation.x, rotation.y, rotation.z);
-					if (!isActiveCamera && ImGui::Button("Make Active Camera"))
-					{
-						renderContext.SetActiveCamera(entity->cameraIndex);
-					}
-				}
-				else if (entity->kind == SceneEntityKind::Sunlight)
-				{
-					ImGui::Text("Kind: Sunlight");
-					if (editorCoordinator == nullptr)
-					{
-						ImGui::Text("ECS is unavailable.");
-					}
-					else
-					{
-						Signature signature = editorCoordinator->GetEntityManager()->GetSignature(entity->id);
-						if (!signature.test(editorCoordinator->GetComponentType<SunlightComponent>()))
-						{
-							ImGui::Text("Sunlight component missing.");
-						}
-						else
-						{
-							SunlightComponent& sunlight = editorCoordinator->GetComponent<SunlightComponent>(entity->id);
-							bool changed = false;
-							changed |= ImGui::Checkbox("Enabled", &sunlight.enabled);
-							changed |= ImGui::DragFloat3("Direction", sunlight.direction, 0.01f, -1.0f, 1.0f);
-							changed |= ImGui::ColorEdit3("Color", sunlight.color);
-							changed |= ImGui::DragFloat("Ambient", &sunlight.ambientStrength, 0.01f, 0.0f, 1.0f);
-							changed |= ImGui::DragFloat("Diffuse", &sunlight.diffuseStrength, 0.01f, 0.0f, 10.0f);
-							changed |= ImGui::DragFloat("Shadow Bias", &sunlight.shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
-							changed |= ImGui::DragFloat("Shadow Slope Bias", &sunlight.shadowSlopeBias, 0.0001f, 0.0f, 0.05f, "%.6f");
-
-							if (changed)
-							{
-								renderContext.SetSunlightConstants(ToSunlightConstants(sunlight));
-							}
-						}
-					}
+					ImGui::Text("ECS is unavailable.");
 				}
 				else
 				{
-					RenderItem* item = renderContext.GetRenderItemById(currentSelection);
-					if (item != nullptr)
-					{
-						const auto mesh = renderContext.GetMesh(item->mesh);
-						ImGui::Text("Kind: Renderable");
-						ImGui::Text("Vertices: %d", mesh->GetVertexCount());
-						ImGui::Text("Mesh Handle: %zu", item->mesh.Index());
-						ImGui::Text("Texture Handle: %zu", item->texture.Index());
-					}
+					DrawComponentSections(*editorCoordinator, entity->id);
 				}
 			}
 			else
@@ -444,6 +393,134 @@ void ImGuiPass::PostSubmit()
 
 void ImGuiPass::Allocate(DeviceContext* deviceContext)
 {
+}
+
+void ImGuiPass::DrawInfoComponent(InfoComponent& info)
+{
+	ImGui::Text("Name: %s", info.name.c_str());
+}
+
+void ImGuiPass::DrawInfoSection(Coordinator& coordinator, Entity entity)
+{
+	InfoComponent& info = coordinator.GetComponent<InfoComponent>(entity);
+	DrawInfoComponent(info);
+}
+
+void ImGuiPass::DrawTransformComponent(TransformComponent& transform)
+{
+	ImGui::Text("Position: %f, %f, %f", transform.position[0], transform.position[1], transform.position[2]);
+	ImGui::Text("Rotation: %f, %f, %f", transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+	ImGui::Text("Scale: %f, %f, %f", transform.scale[0], transform.scale[1], transform.scale[2]);
+}
+
+void ImGuiPass::DrawTransformSection(Coordinator& coordinator, Entity entity)
+{
+	TransformComponent& transform = coordinator.GetComponent<TransformComponent>(entity);
+	DrawTransformComponent(transform);
+}
+
+void ImGuiPass::DrawGeometrySection(Coordinator& coordinator, Entity entity)
+{
+	GeometryComponent& geometry = coordinator.GetComponent<GeometryComponent>(entity);
+
+	ImGui::Text("Mesh Handle: %zu", geometry.meshHandle.Index());
+	if (geometry.meshHandle.IsValid())
+	{
+		const auto mesh = renderContext.GetMesh(geometry.meshHandle);
+		ImGui::Text("Vertices: %d", mesh->GetVertexCount());
+	}
+}
+
+void ImGuiPass::DrawMaterialComponent(MaterialComponent& material)
+{
+	ImGui::Text("Texture Handle: %zu", material.textureHandle.Index());
+	ImGui::Text("Shininess: %f", material.shininess);
+	ImGui::Text("Specular strength: %f", material.specularStrength);
+}
+
+void ImGuiPass::DrawMaterialSection(Coordinator& coordinator, Entity entity)
+{
+	MaterialComponent& material = coordinator.GetComponent<MaterialComponent>(entity);
+	DrawMaterialComponent(material);
+}
+
+void ImGuiPass::DrawCameraSection(Coordinator& coordinator, Entity entity)
+{
+	CameraComponent& cameraComponent = coordinator.GetComponent<CameraComponent>(entity);
+	Camera* camera = renderContext.GetCamera(static_cast<UINT>(cameraComponent.cameraIndex));
+	const auto position = camera->GetPosition();
+	const auto rotation = camera->GetRotation();
+	const bool isActiveCamera = renderContext.GetActiveCameraIndex() == cameraComponent.cameraIndex;
+
+	ImGui::Text("Camera Index: %zu", cameraComponent.cameraIndex);
+	ImGui::Text("Projection: %s",
+		camera->GetType() == Camera::CameraType::ORTHOGRAPHIC ? "Orthographic" : "Perspective");
+	ImGui::Text("Active: %s", isActiveCamera ? "Yes" : "No");
+	ImGui::Text("Position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
+	ImGui::Text("Rotation: %.2f, %.2f, %.2f", rotation.x, rotation.y, rotation.z);
+
+	if (!isActiveCamera && ImGui::Button("Make Active Camera"))
+	{
+		renderContext.SetActiveCamera(static_cast<UINT>(cameraComponent.cameraIndex));
+		for (Entity candidate = 0; candidate < MAX_ENTITIES; ++candidate)
+		{
+			if (HasComponent<CameraComponent>(coordinator, candidate))
+			{
+				coordinator.GetComponent<CameraComponent>(candidate).active = (candidate == entity);
+			}
+		}
+	}
+}
+
+void ImGuiPass::DrawSunlightSection(Coordinator& coordinator, Entity entity)
+{
+	SunlightComponent& sunlight = coordinator.GetComponent<SunlightComponent>(entity);
+	bool changed = false;
+	changed |= ImGui::Checkbox("Enabled", &sunlight.enabled);
+	changed |= ImGui::DragFloat3("Direction", sunlight.direction, 0.01f, -1.0f, 1.0f);
+	changed |= ImGui::ColorEdit3("Color", sunlight.color);
+	changed |= ImGui::DragFloat("Ambient", &sunlight.ambientStrength, 0.01f, 0.0f, 1.0f);
+	changed |= ImGui::DragFloat("Diffuse", &sunlight.diffuseStrength, 0.01f, 0.0f, 10.0f);
+	changed |= ImGui::DragFloat("Shadow Bias", &sunlight.shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
+	changed |= ImGui::DragFloat("Shadow Slope Bias", &sunlight.shadowSlopeBias, 0.0001f, 0.0f, 0.05f, "%.6f");
+
+	if (changed)
+	{
+		renderContext.SetSunlightConstants(ToSunlightConstants(sunlight));
+	}
+}
+
+void ImGuiPass::DrawComponentSections(Coordinator& coordinator, Entity entity)
+{
+	struct ComponentDrawer
+	{
+		const char* label;
+		bool (*has)(Coordinator&, Entity);
+		void (ImGuiPass::*draw)(Coordinator&, Entity);
+	};
+
+	static const ComponentDrawer drawers[] =
+	{
+		{ "Info", HasComponent<InfoComponent>, &ImGuiPass::DrawInfoSection },
+		{ "Transform", HasComponent<TransformComponent>, &ImGuiPass::DrawTransformSection },
+		{ "Geometry", HasComponent<GeometryComponent>, &ImGuiPass::DrawGeometrySection },
+		{ "Material", HasComponent<MaterialComponent>, &ImGuiPass::DrawMaterialSection },
+		{ "Camera", HasComponent<CameraComponent>, &ImGuiPass::DrawCameraSection },
+		{ "Sunlight", HasComponent<SunlightComponent>, &ImGuiPass::DrawSunlightSection },
+	};
+
+	for (const ComponentDrawer& drawer : drawers)
+	{
+		if (!drawer.has(coordinator, entity))
+		{
+			continue;
+		}
+
+		if (ImGui::CollapsingHeader(drawer.label, ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			(this->*drawer.draw)(coordinator, entity);
+		}
+	}
 }
 
 std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
