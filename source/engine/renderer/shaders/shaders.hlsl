@@ -41,6 +41,14 @@ cbuffer CameraPositionData : register(b5)
     float4 cameraPosition;
 };
 
+cbuffer MaterialData : register(b6)
+{
+    float materialDiffuseStrength;
+    float materialSpecularStrength;
+    float materialShininess;
+    float materialPadding;
+};
+
 struct VSInput
 {
     float4 position : POSITION;
@@ -164,12 +172,9 @@ float4 PSMain(PSInput input) : SV_TARGET
         pixelLightDepth >= 0.0f && pixelLightDepth <= 1.0f;
     float shadowVisibility = (!insideShadowMap || pixelLightDepth <= shadowMapDepth + depthBias) ? 1.0f : 0.0f;
 
-    static const float shininess = 32.0f;
-    static const float specularStrength = 0.65f;
-
-    float diffuse = lightFacing * diffuseStrength;
-    float specular = pow(saturate(dot(normal, halfVector)), shininess);
-    specular *= specularStrength * step(0.00001f, lightFacing);
+    float diffuse = lightFacing * diffuseStrength * materialDiffuseStrength;
+    float specular = pow(saturate(dot(normal, halfVector)), materialShininess);
+    specular *= materialSpecularStrength * step(0.00001f, lightFacing);
 
     float3 ambientLight = albedo.rgb * lightColor.xyz * ambientStrength;
     float3 directLight = albedo.rgb * lightColor.xyz * diffuse * shadowVisibility;

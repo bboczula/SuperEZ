@@ -11,6 +11,9 @@ struct RenderItem
 	DirectX::SimpleMath::Vector3 scale = { 1.0f, 1.0f, 1.0f };
 	HMesh mesh;
 	HTexture texture;
+	float diffuseStrength = 1.0f;
+	float specularStrength = 0.65f;
+	float shininess = 32.0f;
 	char name[32];
 	DirectX::SimpleMath::Matrix World() const
 	{

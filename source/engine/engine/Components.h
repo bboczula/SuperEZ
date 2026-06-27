@@ -23,6 +23,7 @@ struct GeometryComponent
 struct MaterialComponent
 {
 	HTexture textureHandle;
+	float diffuseStrength = 1.0f;
 	float shininess = 32.0f;
 	float specularStrength = 0.65f;
 };

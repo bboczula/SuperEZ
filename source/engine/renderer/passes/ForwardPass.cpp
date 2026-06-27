@@ -62,6 +62,7 @@ void ForwardPass::ConfigurePipelineState()
 	builder.AddCBV(3, D3D12_SHADER_VISIBILITY_VERTEX); // CBV b3 (light view-projection)
 	builder.AddCBV(4, D3D12_SHADER_VISIBILITY_PIXEL); // CBV b4 (debug settings)
 	builder.AddConstants(4, 5, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Root Constants @ b5 (camera position)
+	builder.AddConstants(4, 6, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Root Constants @ b6 (material)
 	rootSignature = renderContext.CreateRootSignature(builder);
 
 	// Menu height seems to be 20 pixels
@@ -175,7 +176,13 @@ void ForwardPass::Execute()
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)
 	{
+		const DirectX::SimpleMath::Vector4 materialConstants(
+			item.diffuseStrength,
+			item.specularStrength,
+			item.shininess,
+			0.0f);
 		renderContext.SetInlineConstants(commandList, item.World(), 1);
+		renderContext.SetInlineConstants(commandList, materialConstants, 9);
 		renderContext.BindGeometry(commandList, item.mesh);
 		renderContext.BindTexture(commandList, item.texture, 3);
 		renderContext.DrawMesh(commandList, item.mesh);

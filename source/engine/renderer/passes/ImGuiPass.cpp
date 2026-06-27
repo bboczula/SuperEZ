@@ -353,8 +353,9 @@ void ImGuiPass::DrawGeometrySection(Coordinator& coordinator, Entity entity)
 void ImGuiPass::DrawMaterialComponent(MaterialComponent& material)
 {
 	ImGui::Text("Texture Handle: %zu", material.textureHandle.Index());
-	ImGui::Text("Shininess: %f", material.shininess);
-	ImGui::Text("Specular strength: %f", material.specularStrength);
+	ImGui::DragFloat("Diffuse Strength", &material.diffuseStrength, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Specular Strength", &material.specularStrength, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Shininess", &material.shininess, 0.1f, 1.0f, 256.0f);
 }
 
 void ImGuiPass::DrawMaterialSection(Coordinator& coordinator, Entity entity)
