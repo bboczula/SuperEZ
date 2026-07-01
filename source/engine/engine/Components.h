@@ -23,7 +23,9 @@ struct GeometryComponent
 struct MaterialComponent
 {
 	HTexture textureHandle;
-	// later we can add color, reflectivity, etc.
+	float diffuseStrength = 1.0f;
+	float shininess = 32.0f;
+	float specularStrength = 0.65f;
 };
 
 // Material to store generic info about entity, like name

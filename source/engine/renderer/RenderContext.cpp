@@ -114,7 +114,6 @@ void RenderContext::UnloadAssets()
 	}
 
 	renderItems.clear();
-	sceneEntities.clear();
 	currentSelectedObjectID = ~0u;
 	wasObjectSeleced = false;
 	activeCameraIndex = 0;
@@ -140,48 +139,6 @@ RenderItem* RenderContext::GetRenderItemById(uint32_t id)
 		}
 	}
 	return nullptr;
-}
-
-SceneEntityRecord* RenderContext::GetSceneEntityById(uint32_t id)
-{
-	for (auto& item : sceneEntities)
-	{
-		if (item.id == id)
-		{
-			return &item;
-		}
-	}
-	return nullptr;
-}
-
-void RenderContext::RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture)
-{
-	SceneEntityRecord record{};
-	record.id = id;
-	record.kind = SceneEntityKind::Renderable;
-	record.mesh = mesh;
-	record.texture = texture;
-	strncpy_s(record.name, name, _TRUNCATE);
-	sceneEntities.push_back(record);
-}
-
-void RenderContext::RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex)
-{
-	SceneEntityRecord record{};
-	record.id = id;
-	record.kind = SceneEntityKind::Camera;
-	record.cameraIndex = cameraIndex;
-	strncpy_s(record.name, name, _TRUNCATE);
-	sceneEntities.push_back(record);
-}
-
-void RenderContext::RegisterSunlightEntity(uint32_t id, const char* name)
-{
-	SceneEntityRecord record{};
-	record.id = id;
-	record.kind = SceneEntityKind::Sunlight;
-	strncpy_s(record.name, name, _TRUNCATE);
-	sceneEntities.push_back(record);
 }
 
 void RenderContext::UpdateSunlightViewProjection()

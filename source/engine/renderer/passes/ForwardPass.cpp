@@ -61,6 +61,8 @@ void ForwardPass::ConfigurePipelineState()
 	builder.AddSRVTable(1, 1, D3D12_SHADER_VISIBILITY_PIXEL); // SRV t1 (shadow map)
 	builder.AddCBV(3, D3D12_SHADER_VISIBILITY_VERTEX); // CBV b3 (light view-projection)
 	builder.AddCBV(4, D3D12_SHADER_VISIBILITY_PIXEL); // CBV b4 (debug settings)
+	builder.AddConstants(4, 5, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Root Constants @ b5 (camera position)
+	builder.AddConstants(4, 6, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Root Constants @ b6 (material)
 	rootSignature = renderContext.CreateRootSignature(builder);
 
 	// Menu height seems to be 20 pixels
@@ -153,6 +155,9 @@ void ForwardPass::Execute()
 	auto type = isPerspectiveCamera ? Camera::CameraType::PERSPECTIVE : Camera::CameraType::ORTHOGRAPHIC;
 	renderContext.GetActiveCamera()->SetType(type);
 	renderContext.SetInlineConstants(commandList, renderContext.GetActiveCamera()->ViewProjecttion(), 0);
+	const DirectX::SimpleMath::Vector3 cameraPosition = renderContext.GetActiveCamera()->GetPosition();
+	const DirectX::SimpleMath::Vector4 cameraPositionConstants(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1.0f);
+	renderContext.SetInlineConstants(commandList, cameraPositionConstants, 8);
 	const SunlightConstants& sunlightConstants = renderContext.GetSunlightConstants();
 	renderContext.UpdateConstantBuffer(sunlightBuffer, &sunlightConstants, sizeof(sunlightConstants));
 	renderContext.BindConstantBuffer(commandList, sunlightBuffer, 2);
@@ -171,7 +176,13 @@ void ForwardPass::Execute()
 	const auto& items = renderContext.GetRenderItems();
 	for (const RenderItem& item : items)
 	{
+		const DirectX::SimpleMath::Vector4 materialConstants(
+			item.diffuseStrength,
+			item.specularStrength,
+			item.shininess,
+			0.0f);
 		renderContext.SetInlineConstants(commandList, item.World(), 1);
+		renderContext.SetInlineConstants(commandList, materialConstants, 9);
 		renderContext.BindGeometry(commandList, item.mesh);
 		renderContext.BindTexture(commandList, item.texture, 3);
 		renderContext.DrawMesh(commandList, item.mesh);
