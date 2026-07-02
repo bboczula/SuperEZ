@@ -125,7 +125,13 @@ void ForwardPass::Update()
 		freeCamera->Rotate(dy * sensitivity, -dx * sensitivity, 0.0f); // match your sign convention
 	}
 
-	const float cameraSpeed = 0.025f;
+	// Scale movement to the loaded scene so large imported scenes stay navigable
+	const float sceneRadius = renderContext.GetSceneBoundsRadius();
+	float cameraSpeed = max(0.01f, sceneRadius * 0.0015f);
+	if (rawInput.IsKeyDown(VK_SHIFT))
+	{
+		cameraSpeed *= 8.0f;
+	}
 	if(rawInput.IsKeyDown('W'))
 	{
 		freeCamera->MoveForward(cameraSpeed);

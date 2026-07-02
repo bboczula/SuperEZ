@@ -160,6 +160,14 @@ void ImGuiPass::Execute()
 
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Debug")) {
+			if (ImGui::MenuItem("Render Pass Settings")) {
+				ImGui::SetWindowFocus("Render Pass Settings");
+			}
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 
