@@ -887,6 +887,25 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
+float RenderContext::GetSceneBoundsRadius() const
+{
+	if (meshes.empty())
+	{
+		return 0.0f;
+	}
+
+	using DirectX::SimpleMath::Vector3;
+	Vector3 sceneMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 sceneMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (const Mesh* mesh : meshes)
+	{
+		sceneMin = Vector3::Min(sceneMin, mesh->GetLocalMin());
+		sceneMax = Vector3::Max(sceneMax, mesh->GetLocalMax());
+	}
+
+	return (sceneMax - sceneMin).Length() * 0.5f;
+}
+
 void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");

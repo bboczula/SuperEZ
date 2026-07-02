@@ -6,8 +6,11 @@
 
 class DeviceContext;
 
-constexpr uint32_t MAX_NUM_OF_DESCRIPTORS = 90;
-constexpr uint32_t MAX_NUM_OF_STATIC_DESCRIPTORS = 20;
+// Sized for large imported scenes: each GameObject consumes one dynamic SRV
+// (per-object texture), plus dynamic CBVs. Keep total under the D3D12
+// shader-visible sampler heap limit (2048), since all heap types share these.
+constexpr uint32_t MAX_NUM_OF_DESCRIPTORS = 1024;
+constexpr uint32_t MAX_NUM_OF_STATIC_DESCRIPTORS = 64;
 
 class DescriptorHeap
 {
