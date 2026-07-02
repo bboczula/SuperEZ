@@ -133,10 +133,18 @@ void BlitPass::RegisterSettings(RenderPassSettings& settings)
 			continue;
 		}
 
+		const DXGI_FORMAT format = target->GetFormat();
+		if (format == DXGI_FORMAT_R32G32_UINT)
+		{
+			// debug_blit.hlsl declares SourceUint as a scalar Texture2D<uint>;
+			// an R32G32_UINT SRV has two 32-bit channels and doesn't match
+			// that declaration, so there's no safe way to visualize it yet.
+			continue;
+		}
+
 		DebugSource source;
 		source.texture = renderContext.GetTexture(HRenderTarget(i));
-		const DXGI_FORMAT format = target->GetFormat();
-		if (format == DXGI_FORMAT_R32_UINT || format == DXGI_FORMAT_R32G32_UINT)
+		if (format == DXGI_FORMAT_R32_UINT)
 		{
 			source.mode = VisualizationMode::UintId;
 		}
@@ -238,7 +246,9 @@ void BlitPass::Execute()
 
 	renderContext.TransitionTo(commandList, sourceTexture, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	renderContext.TransitionTo(commandList, backBuffer, D3D12_RESOURCE_STATE_COPY_DEST);
-	renderContext.CopyTexture(commandList, sourceTexture, backBuffer);
+	// DebugBlitTexture is a fixed 1920x1080 regardless of the actual back
+	// buffer size, so clamp the copy region instead of assuming a match.
+	renderContext.CopyTextureClamped(commandList, sourceTexture, backBuffer);
 
 	renderContext.TransitionBack(commandList, sourceTexture);
 	renderContext.TransitionTo(commandList, backBuffer, D3D12_RESOURCE_STATE_PRESENT);
