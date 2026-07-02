@@ -92,6 +92,23 @@ void RenderPassSettings::AddCombo(
 	group.settings.push_back(setting);
 }
 
+void RenderPassSettings::AddText(
+	const wchar_t* passName,
+	const char* name,
+	const char* label,
+	const char* text)
+{
+	RenderPassSettingsGroup& group = GetOrCreateGroup(passName);
+
+	RenderPassSetting setting;
+	setting.type = RenderPassSettingType::Text;
+	setting.name = name;
+	setting.label = label;
+	setting.value = const_cast<char*>(text); // Read-only; UI never writes through this
+
+	group.settings.push_back(setting);
+}
+
 void RenderPassSettings::AddColorLegend(
 	const wchar_t* passName,
 	const char* name,
