@@ -696,6 +696,35 @@ void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HText
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
+void RenderContext::CopyTextureClamped(HCommandList commandList, HTexture source, HTexture destination)
+{
+	// Like CopyTexture, but clamps the copied region to the smaller of the two
+	// textures so differently sized textures can be copied without tripping the
+	// debug layer. The region is copied to the top-left corner of the destination.
+	const D3D12_RESOURCE_DESC srcDesc = textures[source.Index()]->GetResource()->GetDesc();
+	const D3D12_RESOURCE_DESC dstDesc = textures[destination.Index()]->GetResource()->GetDesc();
+
+	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
+	destLocation.pResource = textures[destination.Index()]->GetResource();
+	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	destLocation.SubresourceIndex = 0;
+
+	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+	srcLocation.pResource = textures[source.Index()]->GetResource();
+	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	srcLocation.SubresourceIndex = 0;
+
+	D3D12_BOX srcBox = {};
+	srcBox.left = 0;
+	srcBox.top = 0;
+	srcBox.front = 0;
+	srcBox.right = static_cast<UINT>(srcDesc.Width < dstDesc.Width ? srcDesc.Width : dstDesc.Width);
+	srcBox.bottom = srcDesc.Height < dstDesc.Height ? srcDesc.Height : dstDesc.Height;
+	srcBox.back = 1;
+
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, &srcBox);
+}
+
 HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize)
 {
 	OutputDebugString(L"CreateTextureUploadBuffer\n");

@@ -256,13 +256,41 @@ void ImGuiPass::Execute()
 	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
 	ImGui::Begin("Viewport");
 
-	HTexture finalSceneTexture = renderContext.GetTexture("CompositionTexture");
+	// When the debug RT viewer is active (Render Pass Settings -> Blit -> Source),
+	// show the visualized texture in the viewport instead of the scene.
+	HTexture finalSceneTexture = renderContext.IsDebugViewActive()
+		? renderContext.GetTexture("DebugBlitTexture")
+		: renderContext.GetTexture("CompositionTexture");
 	auto finalScene = renderContext.GetTexture(finalSceneTexture);
 	renderContext.TransitionTo(commandList, finalSceneTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalScene->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
-	ImGui::Image(textureID, size);
+	if (renderContext.IsDebugViewActive())
+	{
+		// DebugBlitTexture is 16:9; stretching it to the viewport region would
+		// distort it, so fit it by aspect ratio and center it instead.
+		const float textureAspect = 1920.0f / 1080.0f;
+		ImVec2 fitted = size;
+		if (fitted.x / fitted.y > textureAspect)
+		{
+			fitted.x = fitted.y * textureAspect;
+		}
+		else
+		{
+			fitted.y = fitted.x / textureAspect;
+		}
+
+		ImVec2 cursor = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(ImVec2(
+			cursor.x + (size.x - fitted.x) * 0.5f,
+			cursor.y + (size.y - fitted.y) * 0.5f));
+		ImGui::Image(textureID, fitted);
+	}
+	else
+	{
+		ImGui::Image(textureID, size);
+	}
 	ImGui::End();
 
 	if (settings != nullptr)
@@ -492,6 +520,12 @@ void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
 							static_cast<int*>(setting.value),
 							setting.comboItems,
 							setting.comboItemCount);
+					}
+					else if (setting.type == RenderPassSettingType::Text)
+					{
+						ImGui::Spacing();
+						ImGui::SeparatorText(setting.label);
+						ImGui::TextUnformatted(static_cast<const char*>(setting.value));
 					}
 					else if (setting.type == RenderPassSettingType::ColorLegend)
 					{

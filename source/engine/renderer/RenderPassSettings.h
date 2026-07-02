@@ -9,7 +9,8 @@ enum class RenderPassSettingType
 	UInt,
 	Float,
 	Combo,
-	ColorLegend
+	ColorLegend,
+	Text
 };
 
 struct RenderPassSetting
@@ -86,6 +87,14 @@ public:
 		const char* const* labels,
 		const unsigned int* colors,
 		int itemCount);
+
+	// Read-only text block. 'text' must point to a buffer owned by the pass
+	// that stays alive and can be rewritten every frame (e.g. a member char array).
+	void AddText(
+		const wchar_t* passName,
+		const char* name,
+		const char* label,
+		const char* text);
 
 	const std::vector<RenderPassSettingsGroup>& GetGroups() const
 	{

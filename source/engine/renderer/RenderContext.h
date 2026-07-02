@@ -157,16 +157,22 @@ public:
 	HTexture GetTexture(const char* name);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
+	// Debug RT viewer (BlitPass writes, ImGuiPass reads)
+	void SetDebugViewActive(bool active) { debugViewActive = active; }
+	bool IsDebugViewActive() const { return debugViewActive; }
 	bool WasObjectSelected() { return wasObjectSeleced; }
 	void SetWasObjectSelected(bool value) { wasObjectSeleced = value; }
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
+	const std::vector<RenderTarget*>& GetRenderTargets() const { return renderTargets; }
+	const std::vector<DepthBuffer*>& GetDepthBuffers() const { return depthBuffers; }
 	// Textures
 	HTexture CreateTextureResource(const TextureCreateDesc& desc);
 	HTexture CreateEmptyTexture(TextureCreateDesc desc);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
+	void CopyTextureClamped(HCommandList commandList, HTexture source, HTexture destination);
 	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
@@ -256,6 +262,7 @@ private:
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;
+	bool debugViewActive = false;
 	UINT activeCameraIndex = 0;
 };
 
