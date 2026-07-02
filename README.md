@@ -9,6 +9,7 @@ https://github.com/user-attachments/assets/df78cf13-c617-4c57-89d9-d10f806dc1aa
 - MIP Mapping support
 - Simple Materials
 - Simple Render Target Viewer
+- Scene Import Script
 
 ## Build
 This repository uses the submodules, therefore you need to remember to clone them too.
