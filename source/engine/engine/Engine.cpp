@@ -190,7 +190,6 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			.height = cameraData.height,
 			.active = cameraData.active
 			});
-		renderContext.RegisterCameraEntity(cameraEntity, cameraData.name.c_str(), cameraIndex);
 
 		if (cameraData.active || !hasActiveCamera)
 		{
@@ -213,7 +212,6 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			.shadowBias = sunlightData.shadowBias,
 			.shadowSlopeBias = sunlightData.shadowSlopeBias
 			});
-		renderContext.RegisterSunlightEntity(sunlightEntity, sunlightData.name.c_str());
 
 		if (sunlightData.enabled && !boundFirstEnabledSunlight)
 		{
@@ -266,7 +264,15 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data)
 		{
 			std::string name = "TEX_" + meshName;
-			renderContext.CreateTexture(desc.width, desc.height, data.data(), name.c_str());
+
+			TextureCreateDesc textureDesc;
+			textureDesc.width = desc.width;
+			textureDesc.height = desc.height;
+			textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			textureDesc.name = name.c_str();
+			textureDesc.UseFullMipChain();
+
+			renderContext.CreateTexture(textureDesc, data.data());
 		};
 
 		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))
@@ -316,7 +322,6 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		const Entity entity = renderService->CreateEntity(mCoordinator, item);
 		item.id = entity;
 		renderContext.CreateRenderItem(item);
-		renderContext.RegisterRenderableEntity(entity, item.name, item.mesh, item.texture);
 	}
 
 	EngineServices services

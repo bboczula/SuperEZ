@@ -25,7 +25,17 @@ void HighlightPass::ConfigurePipelineState()
 	viewportWidth -= 400; // Assuming the menu takes 400 pixels
 	viewportHeight -= menuHeight - 25; // Assuming the status bar takes 25 pixels
 #endif
-	outputTexture = renderContext.CreateEmptyTexture(viewportWidth, viewportHeight, DXGI_FORMAT_R32_UINT, "HighlightOutputTexture", true);
+	TextureCreateDesc textureDesc;
+	textureDesc.width = viewportWidth;
+	textureDesc.height = viewportHeight;
+	textureDesc.format = DXGI_FORMAT_R32_UINT;
+	textureDesc.name = "HighlightOutputTexture";
+	textureDesc.createUav = true;
+	textureDesc.createRtv = true;
+	textureDesc.staticSrv = true;
+	textureDesc.staticUav = true;
+	textureDesc.lifeSpan = APP;
+	outputTexture = renderContext.CreateEmptyTexture(textureDesc);
 }
 
 void HighlightPass::PostAssetLoad()

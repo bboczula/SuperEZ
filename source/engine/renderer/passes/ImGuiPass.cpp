@@ -8,8 +8,6 @@
 #include "../../engine/states/EngineCommandQueue.h"
 #include "../../bind/CommandList.h"
 #include "../RenderTarget.h"
-#include "../../engine/Components.h"
-#include "../../engine/Coordinator.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx12.h>
@@ -25,18 +23,11 @@ extern Coordinator* editorCoordinator;
 
 namespace
 {
-	ImU32 GetHierarchyIconColor(SceneEntityKind kind)
+	template<typename T>
+	bool HasComponent(Coordinator& coordinator, Entity entity)
 	{
-		switch (kind)
-		{
-		case SceneEntityKind::Camera:
-			return IM_COL32(110, 190, 255, 255);
-		case SceneEntityKind::Sunlight:
-			return IM_COL32(255, 220, 90, 255);
-		case SceneEntityKind::Renderable:
-		default:
-			return IM_COL32(255, 180, 90, 255);
-		}
+		Signature signature = coordinator.GetEntityManager()->GetSignature(entity);
+		return signature.test(coordinator.GetComponentType<T>());
 	}
 
 	SunlightConstants ToSunlightConstants(const SunlightComponent& sunlight)
@@ -51,62 +42,9 @@ namespace
 			.shadowSlopeBias = sunlight.shadowSlopeBias
 		};
 	}
-
-	void DrawCameraIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
-	{
-		const ImVec2 bodyMin(topLeft.x + 1.5f, topLeft.y + 4.0f);
-		const ImVec2 bodyMax(topLeft.x + 11.5f, topLeft.y + 11.5f);
-		const ImVec2 lensCenter(topLeft.x + 6.5f, topLeft.y + 7.8f);
-		const ImVec2 viewfinderMin(topLeft.x + 4.0f, topLeft.y + 1.8f);
-		const ImVec2 viewfinderMax(topLeft.x + 7.5f, topLeft.y + 4.3f);
-
-		drawList->AddRect(bodyMin, bodyMax, color, 2.5f, 0, 1.8f);
-		drawList->AddRectFilled(viewfinderMin, viewfinderMax, color, 1.0f);
-		drawList->AddCircle(lensCenter, 2.2f, color, 18, 1.7f);
-		drawList->AddCircleFilled(lensCenter, 0.8f, color);
-
-		const ImVec2 barrelA(topLeft.x + 11.5f, topLeft.y + 5.0f);
-		const ImVec2 barrelB(topLeft.x + 15.2f, topLeft.y + 3.6f);
-		const ImVec2 barrelC(topLeft.x + 15.2f, topLeft.y + 11.9f);
-		const ImVec2 barrelD(topLeft.x + 11.5f, topLeft.y + 10.3f);
-		drawList->AddQuad(barrelA, barrelB, barrelC, barrelD, color, 1.6f);
-	}
-
-	void DrawCubeIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
-	{
-		const ImVec2 frontTL(topLeft.x + 3.0f, topLeft.y + 5.0f);
-		const ImVec2 frontTR(topLeft.x + 9.0f, topLeft.y + 5.0f);
-		const ImVec2 frontBR(topLeft.x + 9.0f, topLeft.y + 11.0f);
-		const ImVec2 frontBL(topLeft.x + 3.0f, topLeft.y + 11.0f);
-
-		const ImVec2 backTL(topLeft.x + 6.0f, topLeft.y + 2.0f);
-		const ImVec2 backTR(topLeft.x + 12.0f, topLeft.y + 2.0f);
-		const ImVec2 backBR(topLeft.x + 12.0f, topLeft.y + 8.0f);
-		const ImVec2 backBL(topLeft.x + 6.0f, topLeft.y + 8.0f);
-
-		drawList->AddQuad(backTL, backTR, backBR, backBL, color, 1.4f);
-		drawList->AddQuad(frontTL, frontTR, frontBR, frontBL, color, 1.6f);
-		drawList->AddLine(backTL, frontTL, color, 1.4f);
-		drawList->AddLine(backTR, frontTR, color, 1.4f);
-		drawList->AddLine(backBR, frontBR, color, 1.4f);
-		drawList->AddLine(backBL, frontBL, color, 1.4f);
-	}
-
-	void DrawSunlightIcon(ImDrawList* drawList, const ImVec2& topLeft, ImU32 color)
-	{
-		const ImVec2 center(topLeft.x + 8.0f, topLeft.y + 8.0f);
-		drawList->AddCircle(center, 3.0f, color, 18, 1.7f);
-		for (int i = 0; i < 8; ++i)
-		{
-			const float angle = (3.14159265f * 2.0f * static_cast<float>(i)) / 8.0f;
-			const ImVec2 inner(center.x + cosf(angle) * 5.0f, center.y + sinf(angle) * 5.0f);
-			const ImVec2 outer(center.x + cosf(angle) * 7.5f, center.y + sinf(angle) * 7.5f);
-			drawList->AddLine(inner, outer, color, 1.4f);
-		}
-	}
 }
 
-ImGuiPass::ImGuiPass() : RenderPass(L"ImGui", L"", Type::Drawless)
+ImGuiPass::ImGuiPass(RenderPassSettings* settings) : RenderPass(L"ImGui", L"", Type::Drawless), settings(settings)
 {
 }
 
@@ -160,7 +98,12 @@ void ImGuiPass::Initialize()
 	ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\CascadiaMono.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
 
 	// Create a texture for the color
-	colorCopyTexture = renderContext.CreateEmptyTexture(1920, 1080, DXGI_FORMAT_R8G8B8A8_UNORM, "Color_Copy");
+	TextureCreateDesc textureDesc;
+	textureDesc.width = 1920;
+	textureDesc.height = 1080;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.name = "Color_Copy";
+	colorCopyTexture = renderContext.CreateEmptyTexture(textureDesc);
 }
 
 void ImGuiPass::Update()
@@ -217,6 +160,14 @@ void ImGuiPass::Execute()
 
 			ImGui::EndMenu();
 		}
+
+		if (ImGui::BeginMenu("Debug")) {
+			if (ImGui::MenuItem("Render Pass Settings")) {
+				ImGui::SetWindowFocus("Render Pass Settings");
+			}
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 
@@ -242,39 +193,29 @@ void ImGuiPass::Execute()
 
 	if (ImGui::BeginChild("GameObjectList", ImVec2(0, panelHeight), true))
 	{
-		for (const SceneEntityRecord& entity : renderContext.GetSceneEntities())
+		if (editorCoordinator == nullptr)
 		{
-			bool isSelected = (currentSelection == entity.id);
-
-			ImGui::PushID(static_cast<int>(entity.id));
-			if (ImGui::Selectable("##entity_row", isSelected, ImGuiSelectableFlags_SpanAvailWidth))
+			ImGui::Text("ECS is unavailable.");
+		}
+		else
+		{
+			for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
 			{
-				renderContext.SetSelectedObjectId(entity.id);
-			}
+				if (!HasComponent<InfoComponent>(*editorCoordinator, entity))
+				{
+					continue;
+				}
 
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
-			const ImVec2 itemMin = ImGui::GetItemRectMin();
-			const ImVec2 itemMax = ImGui::GetItemRectMax();
-			const float iconSize = 16.0f;
-			const ImVec2 iconTopLeft(itemMin.x + 6.0f, itemMin.y + ((itemMax.y - itemMin.y) - iconSize) * 0.5f);
-			const ImU32 iconColor = GetHierarchyIconColor(entity.kind);
+				InfoComponent& info = editorCoordinator->GetComponent<InfoComponent>(entity);
+				const bool isSelected = (currentSelection == entity);
 
-			if (entity.kind == SceneEntityKind::Camera)
-			{
-				DrawCameraIcon(drawList, iconTopLeft, iconColor);
+				ImGui::PushID(static_cast<int>(entity));
+				if (ImGui::Selectable(info.name.c_str(), isSelected, ImGuiSelectableFlags_SpanAvailWidth))
+				{
+					renderContext.SetSelectedObjectId(entity);
+				}
+				ImGui::PopID();
 			}
-			else if (entity.kind == SceneEntityKind::Sunlight)
-			{
-				DrawSunlightIcon(drawList, iconTopLeft, iconColor);
-			}
-			else
-			{
-				DrawCubeIcon(drawList, iconTopLeft, iconColor);
-			}
-
-			const ImVec2 textPos(itemMin.x + 28.0f, itemMin.y + ImGui::GetStyle().FramePadding.y);
-			drawList->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), entity.name);
-			ImGui::PopID();
 		}
 	}
 	ImGui::EndChild();
@@ -293,74 +234,14 @@ void ImGuiPass::Execute()
 
 		if (currentSelection != UINT32_MAX)
 		{
-			SceneEntityRecord* entity = renderContext.GetSceneEntityById(currentSelection);
-			if (entity != nullptr)
+			if (editorCoordinator == nullptr)
 			{
-				ImGui::Text("Name: %s", entity->name);
-				ImGui::Text("Entity: %u", entity->id);
-				if (entity->kind == SceneEntityKind::Camera)
-				{
-					Camera* camera = renderContext.GetCamera(entity->cameraIndex);
-					const auto position = camera->GetPosition();
-					const auto rotation = camera->GetRotation();
-					ImGui::Text("Kind: Camera");
-					ImGui::Text("Camera Index: %u", entity->cameraIndex);
-					ImGui::Text("Projection: %s",
-						camera->GetType() == Camera::CameraType::ORTHOGRAPHIC ? "Orthographic" : "Perspective");
-					const bool isActiveCamera = renderContext.GetActiveCameraIndex() == entity->cameraIndex;
-					ImGui::Text("Active: %s", isActiveCamera ? "Yes" : "No");
-					ImGui::Text("Position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
-					ImGui::Text("Rotation: %.2f, %.2f, %.2f", rotation.x, rotation.y, rotation.z);
-					if (!isActiveCamera && ImGui::Button("Make Active Camera"))
-					{
-						renderContext.SetActiveCamera(entity->cameraIndex);
-					}
-				}
-				else if (entity->kind == SceneEntityKind::Sunlight)
-				{
-					ImGui::Text("Kind: Sunlight");
-					if (editorCoordinator == nullptr)
-					{
-						ImGui::Text("ECS is unavailable.");
-					}
-					else
-					{
-						Signature signature = editorCoordinator->GetEntityManager()->GetSignature(entity->id);
-						if (!signature.test(editorCoordinator->GetComponentType<SunlightComponent>()))
-						{
-							ImGui::Text("Sunlight component missing.");
-						}
-						else
-						{
-							SunlightComponent& sunlight = editorCoordinator->GetComponent<SunlightComponent>(entity->id);
-							bool changed = false;
-							changed |= ImGui::Checkbox("Enabled", &sunlight.enabled);
-							changed |= ImGui::DragFloat3("Direction", sunlight.direction, 0.01f, -1.0f, 1.0f);
-							changed |= ImGui::ColorEdit3("Color", sunlight.color);
-							changed |= ImGui::DragFloat("Ambient", &sunlight.ambientStrength, 0.01f, 0.0f, 1.0f);
-							changed |= ImGui::DragFloat("Diffuse", &sunlight.diffuseStrength, 0.01f, 0.0f, 10.0f);
-							changed |= ImGui::DragFloat("Shadow Bias", &sunlight.shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
-							changed |= ImGui::DragFloat("Shadow Slope Bias", &sunlight.shadowSlopeBias, 0.0001f, 0.0f, 0.05f, "%.6f");
-
-							if (changed)
-							{
-								renderContext.SetSunlightConstants(ToSunlightConstants(sunlight));
-							}
-						}
-					}
-				}
-				else
-				{
-					RenderItem* item = renderContext.GetRenderItemById(currentSelection);
-					if (item != nullptr)
-					{
-						const auto mesh = renderContext.GetMesh(item->mesh);
-						ImGui::Text("Kind: Renderable");
-						ImGui::Text("Vertices: %d", mesh->GetVertexCount());
-						ImGui::Text("Mesh Handle: %zu", item->mesh.Index());
-						ImGui::Text("Texture Handle: %zu", item->texture.Index());
-					}
-				}
+				ImGui::Text("ECS is unavailable.");
+			}
+			else if (HasComponent<InfoComponent>(*editorCoordinator, currentSelection))
+			{
+				ImGui::Text("Entity: %u", currentSelection);
+				DrawComponentSections(*editorCoordinator, currentSelection);
 			}
 			else
 			{
@@ -383,14 +264,47 @@ void ImGuiPass::Execute()
 	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
 	ImGui::Begin("Viewport");
 
-	HTexture finalSceneTexture = renderContext.GetTexture("CompositionTexture");
+	// When the debug RT viewer is active (Render Pass Settings -> Blit -> Source),
+	// show the visualized texture in the viewport instead of the scene.
+	HTexture finalSceneTexture = renderContext.IsDebugViewActive()
+		? renderContext.GetTexture("DebugBlitTexture")
+		: renderContext.GetTexture("CompositionTexture");
 	auto finalScene = renderContext.GetTexture(finalSceneTexture);
 	renderContext.TransitionTo(commandList, finalSceneTexture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalScene->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
-	ImGui::Image(textureID, size);
+	if (renderContext.IsDebugViewActive())
+	{
+		// DebugBlitTexture is 16:9; stretching it to the viewport region would
+		// distort it, so fit it by aspect ratio and center it instead.
+		const float textureAspect = 1920.0f / 1080.0f;
+		ImVec2 fitted = size;
+		if (fitted.x / fitted.y > textureAspect)
+		{
+			fitted.x = fitted.y * textureAspect;
+		}
+		else
+		{
+			fitted.y = fitted.x / textureAspect;
+		}
+
+		ImVec2 cursor = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(ImVec2(
+			cursor.x + (size.x - fitted.x) * 0.5f,
+			cursor.y + (size.y - fitted.y) * 0.5f));
+		ImGui::Image(textureID, fitted);
+	}
+	else
+	{
+		ImGui::Image(textureID, size);
+	}
 	ImGui::End();
+
+	if (settings != nullptr)
+	{
+		DrawRenderPassSettingsWindow(settings);
+	}
 
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 25));
 	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 25));
@@ -436,6 +350,135 @@ void ImGuiPass::Allocate(DeviceContext* deviceContext)
 {
 }
 
+void ImGuiPass::DrawInfoComponent(InfoComponent& info)
+{
+	ImGui::Text("Name: %s", info.name.c_str());
+}
+
+void ImGuiPass::DrawInfoSection(Coordinator& coordinator, Entity entity)
+{
+	InfoComponent& info = coordinator.GetComponent<InfoComponent>(entity);
+	DrawInfoComponent(info);
+}
+
+void ImGuiPass::DrawTransformComponent(TransformComponent& transform)
+{
+	ImGui::Text("Position: %f, %f, %f", transform.position[0], transform.position[1], transform.position[2]);
+	ImGui::Text("Rotation: %f, %f, %f", transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+	ImGui::Text("Scale: %f, %f, %f", transform.scale[0], transform.scale[1], transform.scale[2]);
+}
+
+void ImGuiPass::DrawTransformSection(Coordinator& coordinator, Entity entity)
+{
+	TransformComponent& transform = coordinator.GetComponent<TransformComponent>(entity);
+	DrawTransformComponent(transform);
+}
+
+void ImGuiPass::DrawGeometrySection(Coordinator& coordinator, Entity entity)
+{
+	GeometryComponent& geometry = coordinator.GetComponent<GeometryComponent>(entity);
+
+	ImGui::Text("Mesh Handle: %zu", geometry.meshHandle.Index());
+	if (geometry.meshHandle.IsValid())
+	{
+		const auto mesh = renderContext.GetMesh(geometry.meshHandle);
+		ImGui::Text("Vertices: %d", mesh->GetVertexCount());
+	}
+}
+
+void ImGuiPass::DrawMaterialComponent(MaterialComponent& material)
+{
+	ImGui::Text("Texture Handle: %zu", material.textureHandle.Index());
+	ImGui::DragFloat("Diffuse Strength", &material.diffuseStrength, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Specular Strength", &material.specularStrength, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Shininess", &material.shininess, 0.1f, 1.0f, 256.0f);
+}
+
+void ImGuiPass::DrawMaterialSection(Coordinator& coordinator, Entity entity)
+{
+	MaterialComponent& material = coordinator.GetComponent<MaterialComponent>(entity);
+	DrawMaterialComponent(material);
+}
+
+void ImGuiPass::DrawCameraSection(Coordinator& coordinator, Entity entity)
+{
+	CameraComponent& cameraComponent = coordinator.GetComponent<CameraComponent>(entity);
+	Camera* camera = renderContext.GetCamera(static_cast<UINT>(cameraComponent.cameraIndex));
+	const auto position = camera->GetPosition();
+	const auto rotation = camera->GetRotation();
+	const bool isActiveCamera = renderContext.GetActiveCameraIndex() == cameraComponent.cameraIndex;
+
+	ImGui::Text("Camera Index: %zu", cameraComponent.cameraIndex);
+	ImGui::Text("Projection: %s",
+		camera->GetType() == Camera::CameraType::ORTHOGRAPHIC ? "Orthographic" : "Perspective");
+	ImGui::Text("Active: %s", isActiveCamera ? "Yes" : "No");
+	ImGui::Text("Position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
+	ImGui::Text("Rotation: %.2f, %.2f, %.2f", rotation.x, rotation.y, rotation.z);
+
+	if (!isActiveCamera && ImGui::Button("Make Active Camera"))
+	{
+		renderContext.SetActiveCamera(static_cast<UINT>(cameraComponent.cameraIndex));
+		for (Entity candidate = 0; candidate < MAX_ENTITIES; ++candidate)
+		{
+			if (HasComponent<CameraComponent>(coordinator, candidate))
+			{
+				coordinator.GetComponent<CameraComponent>(candidate).active = (candidate == entity);
+			}
+		}
+	}
+}
+
+void ImGuiPass::DrawSunlightSection(Coordinator& coordinator, Entity entity)
+{
+	SunlightComponent& sunlight = coordinator.GetComponent<SunlightComponent>(entity);
+	bool changed = false;
+	changed |= ImGui::Checkbox("Enabled", &sunlight.enabled);
+	changed |= ImGui::DragFloat3("Direction", sunlight.direction, 0.01f, -1.0f, 1.0f);
+	changed |= ImGui::ColorEdit3("Color", sunlight.color);
+	changed |= ImGui::DragFloat("Ambient", &sunlight.ambientStrength, 0.01f, 0.0f, 1.0f);
+	changed |= ImGui::DragFloat("Diffuse", &sunlight.diffuseStrength, 0.01f, 0.0f, 10.0f);
+	changed |= ImGui::DragFloat("Shadow Bias", &sunlight.shadowBias, 0.0001f, 0.0f, 0.05f, "%.6f");
+	changed |= ImGui::DragFloat("Shadow Slope Bias", &sunlight.shadowSlopeBias, 0.0001f, 0.0f, 0.05f, "%.6f");
+
+	if (changed)
+	{
+		renderContext.SetSunlightConstants(ToSunlightConstants(sunlight));
+	}
+}
+
+void ImGuiPass::DrawComponentSections(Coordinator& coordinator, Entity entity)
+{
+	struct ComponentDrawer
+	{
+		const char* label;
+		bool (*has)(Coordinator&, Entity);
+		void (ImGuiPass::*draw)(Coordinator&, Entity);
+	};
+
+	static const ComponentDrawer drawers[] =
+	{
+		{ "Info", HasComponent<InfoComponent>, &ImGuiPass::DrawInfoSection },
+		{ "Transform", HasComponent<TransformComponent>, &ImGuiPass::DrawTransformSection },
+		{ "Geometry", HasComponent<GeometryComponent>, &ImGuiPass::DrawGeometrySection },
+		{ "Material", HasComponent<MaterialComponent>, &ImGuiPass::DrawMaterialSection },
+		{ "Camera", HasComponent<CameraComponent>, &ImGuiPass::DrawCameraSection },
+		{ "Sunlight", HasComponent<SunlightComponent>, &ImGuiPass::DrawSunlightSection },
+	};
+
+	for (const ComponentDrawer& drawer : drawers)
+	{
+		if (!drawer.has(coordinator, entity))
+		{
+			continue;
+		}
+
+		if (ImGui::CollapsingHeader(drawer.label, ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			(this->*drawer.draw)(coordinator, entity);
+		}
+	}
+}
+
 std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
 {
 	char filename[MAX_PATH] = { 0 };
@@ -451,4 +494,83 @@ std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
 		return std::string(filename);
 	}
 	return "";
+}
+
+void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)
+{
+	ImGui::Begin("Render Pass Settings");
+
+	if (ImGui::BeginTabBar("RenderPassSettingsTabs"))
+	{
+		for (const RenderPassSettingsGroup& group : settings->GetGroups())
+		{
+			char passName[128] = {};
+			wcstombs_s(nullptr, passName, group.passName, _TRUNCATE);
+
+			if (ImGui::BeginTabItem(passName))
+			{
+				for (const RenderPassSetting& setting : group.settings)
+				{
+					bool changed = false;
+
+					if (setting.type == RenderPassSettingType::Bool)
+					{
+						changed = ImGui::Checkbox(setting.label, static_cast<bool*>(setting.value));
+					}
+					else if (setting.type == RenderPassSettingType::Float)
+					{
+						changed = ImGui::DragFloat(setting.label, static_cast<float*>(setting.value), setting.step, setting.min, setting.max);
+					}
+					else if (setting.type == RenderPassSettingType::Combo)
+					{
+						changed = ImGui::Combo(
+							setting.label,
+							static_cast<int*>(setting.value),
+							setting.comboItems,
+							setting.comboItemCount);
+					}
+					else if (setting.type == RenderPassSettingType::Text)
+					{
+						ImGui::Spacing();
+						ImGui::SeparatorText(setting.label);
+						ImGui::TextUnformatted(static_cast<const char*>(setting.value));
+					}
+					else if (setting.type == RenderPassSettingType::ColorLegend)
+					{
+						ImGui::TextUnformatted(setting.label);
+						if (ImGui::BeginTable(setting.name, 4))
+						{
+							for (int i = 0; i < setting.legendItemCount; ++i)
+							{
+								const unsigned int color = setting.legendColors[i];
+								const ImVec4 colorValue(
+									static_cast<float>((color >> 24) & 0xff) / 255.0f,
+									static_cast<float>((color >> 16) & 0xff) / 255.0f,
+									static_cast<float>((color >> 8) & 0xff) / 255.0f,
+									static_cast<float>(color & 0xff) / 255.0f);
+
+								ImGui::TableNextColumn();
+								ImGui::PushID(i);
+								ImGui::ColorButton("##color", colorValue, ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(14.0f, 14.0f));
+								ImGui::SameLine();
+								ImGui::TextUnformatted(setting.legendLabels[i]);
+								ImGui::PopID();
+							}
+							ImGui::EndTable();
+						}
+					}
+
+					if (changed && setting.onChanged)
+					{
+						setting.onChanged(setting.userData);
+					}
+				}
+				ImGui::EndTabItem();
+
+			}
+		}
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }

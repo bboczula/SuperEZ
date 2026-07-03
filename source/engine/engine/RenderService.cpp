@@ -52,12 +52,15 @@ void RenderService::Update(Coordinator& coordinator)
             item.scale = DirectX::SimpleMath::Vector3(transform.scale);
             item.mesh = geo.meshHandle;
             item.texture = mat.textureHandle;
+		item.diffuseStrength = mat.diffuseStrength;
+		item.specularStrength = mat.specularStrength;
+		item.shininess = mat.shininess;
 		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
 
 		// Update the RenderItem in the RenderContext (not create)
-		size_t renderItemIndex = geo.meshHandle.Index();
-		assert(renderItemIndex < renderContext.renderItems.size() && "RenderItem index out of bounds");
-		renderContext.renderItems[renderItemIndex] = item;
+		RenderItem* renderItem = renderContext.GetRenderItemById(entity);
+		assert(renderItem != nullptr && "RenderItem not found for ECS entity.");
+		*renderItem = item;
 
 		// Here, we can further bridge ECS with Renderer Context as needed
 		// For example, we might want to set additional flags or update other systems

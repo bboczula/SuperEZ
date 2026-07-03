@@ -5,13 +5,13 @@
 #include "../asset/Handle.h"
 #include "RenderItem.h"
 #include "../bind/CommandList.h"
+#include "../core/Texture.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
 class DeviceContext;
 class RenderTarget;
 class DepthBuffer;
-class Texture;
 class Buffer;
 class VertexBuffer;
 class Mesh;
@@ -28,23 +28,6 @@ enum RenderTargetFormat
 	R32_UINT
 };
 
-enum class SceneEntityKind : unsigned char
-{
-	Renderable,
-	Camera,
-	Sunlight
-};
-
-struct SceneEntityRecord
-{
-	uint32_t id = UINT32_MAX;
-	SceneEntityKind kind = SceneEntityKind::Renderable;
-	char name[32] = {};
-	HMesh mesh;
-	HTexture texture;
-	UINT cameraIndex = UINT32_MAX;
-};
-
 struct SunlightConstants
 {
 	float lightDirection[4] = { -0.4f, -1.0f, -0.3f, 0.0f };
@@ -55,9 +38,67 @@ struct SunlightConstants
 	float shadowSlopeBias = 0.002f;
 };
 
+struct DebugSettings
+{
+	float forceMipLevel = 0.0f;
+	int mipMode = 0;
+	float shaderMipBias = 0.0f;
+	int visualizeSelectedMip = 0;
+	float mipVisualizationStrength = 0.75f;
+	float debugSettingsPadding[3] = {};
+};
+
 struct SunlightViewProjection
 {
 	DirectX::SimpleMath::Matrix viewProjection = DirectX::SimpleMath::Matrix::Identity;
+};
+
+struct TextureCreateDesc
+{
+public:
+	UINT width = 1;
+	UINT height = 1;
+	UINT mipLevels = 1;
+	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN;
+	const CHAR* name = "Texture";
+
+	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+
+	bool createSrv = true;
+	bool createUav = false;
+	bool createRtv = false;
+	bool createDsv = false;
+	bool staticSrv = false;
+	bool staticUav = false;
+
+	TextuureLifeSpan lifeSpan = SCENE;
+
+	void UseSingleMip()
+	{
+		mipLevels = 1;
+	}
+
+	void UseFullMipChain()
+	{
+		mipLevels = CalculateFullMipChainLevels();
+	}
+private:
+	UINT CalculateFullMipChainLevels() const
+	{
+		UINT maxDimension = width > height ? width : height;
+		maxDimension = maxDimension > 1 ? maxDimension : 1;
+
+		UINT fullMipChainLevels = 1;
+		while (maxDimension > 1)
+		{
+			maxDimension /= 2;
+			++fullMipChainLevels;
+		}
+
+		return fullMipChainLevels;
+	}
 };
 
 class RenderContext
@@ -84,16 +125,12 @@ public:
 	HCommandList CreateCommandList();
 	CommandList* GetCommandList(HCommandList commandList) { return commandLists[commandList.Index()]; }
 	UINT GetNumOfMeshes() { return static_cast<UINT>(meshes.size()); }
+	float GetSceneBoundsRadius() const;
 	DescriptorHeap& GetSrvHeap() { return cbvSrvUavHeap; }
 	void UnloadAssets();
 	// High Level
 	std::vector<RenderItem>& GetRenderItems();
 	RenderItem* GetRenderItemById(uint32_t id);
-	const std::vector<SceneEntityRecord>& GetSceneEntities() const { return sceneEntities; }
-	SceneEntityRecord* GetSceneEntityById(uint32_t id);
-	void RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture);
-	void RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex);
-	void RegisterSunlightEntity(uint32_t id, const char* name);
 	const SunlightConstants& GetSunlightConstants() const { return sunlightConstants; }
 	void SetSunlightConstants(const SunlightConstants& constants) { sunlightConstants = constants; }
 	void UpdateSunlightViewProjection();
@@ -107,7 +144,9 @@ public:
 	HDepthBuffer CreateDepthBuffer();
 	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
-	void CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name);
+	void CreateTexture(const TextureCreateDesc& desc, BYTE* data);
+	void PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data);
+	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
@@ -119,29 +158,36 @@ public:
 	HTexture GetTexture(const char* name);
 	std::vector<uint8_t> ReadbackBufferData(HBuffer handle, size_t size);
 	void SetSelectedObjectId(uint32_t id) { currentSelectedObjectID = id; }
+	// Debug RT viewer (BlitPass writes, ImGuiPass reads)
+	void SetDebugViewActive(bool active) { debugViewActive = active; }
+	bool IsDebugViewActive() const { return debugViewActive; }
 	bool WasObjectSelected() { return wasObjectSeleced; }
 	void SetWasObjectSelected(bool value) { wasObjectSeleced = value; }
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
 	RenderTarget* GetRenderTarget(HRenderTarget renderTarget) { return renderTargets[renderTarget.Index()]; }
+	const std::vector<RenderTarget*>& GetRenderTargets() const { return renderTargets; }
+	const std::vector<DepthBuffer*>& GetDepthBuffers() const { return depthBuffers; }
 	// Textures
-	HTexture CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav = false);
+	HTexture CreateTextureResource(const TextureCreateDesc& desc);
+	HTexture CreateEmptyTexture(TextureCreateDesc desc);
 	HTexture CreateDepthTexture(UINT width, UINT height, const CHAR* name);
 	HTexture CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format);
 	void CopyTexture(HCommandList commandList, HTexture source, HTexture destination);
-	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture);
+	void CopyTextureClamped(HCommandList commandList, HTexture source, HTexture destination);
+	void CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex);
 	void CopyTextureToBuffer(HCommandList commandList, HTexture texture, HBuffer buffer, LONG mouseX, LONG mouseY);
 	void CreateDefaultSamplers();
 	UINT CreateShaderResourceView(HTexture& textureHandle);
-	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
-	void UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle);
-	void FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle);
-	void LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle);
+	UINT CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels = 1);
+	void UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout);
+	void GenerateTextureForUpload(std::vector<UINT32>& pixels, UINT mipIndex);
+	void LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle);
 	Texture* GetTexture(HTexture texture) { return textures[texture.Index()]; }
 	// Buffers
 	HBuffer CreateReadbackBuffer();
 	template<typename T>
 	HBuffer CreateConsantBuffer();
-	HBuffer CreateTextureUploadBuffer(HTexture textureHandle);
+	HBuffer CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize);
 	// Geometry
 	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
@@ -211,13 +257,13 @@ private:
 	std::vector<PipelineState*> pipelineStates;
 	std::vector<InputLayout*> inputLayouts;
 	std::vector<Camera*> cameras;
-	std::vector<SceneEntityRecord> sceneEntities;
 	SunlightConstants sunlightConstants;
 	SunlightViewProjection sunlightViewProjection;
 	HTexture shadowMapTexture;
 private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;
+	bool debugViewActive = false;
 	UINT activeCameraIndex = 0;
 };
 

@@ -114,7 +114,6 @@ void RenderContext::UnloadAssets()
 	}
 
 	renderItems.clear();
-	sceneEntities.clear();
 	currentSelectedObjectID = ~0u;
 	wasObjectSeleced = false;
 	activeCameraIndex = 0;
@@ -140,48 +139,6 @@ RenderItem* RenderContext::GetRenderItemById(uint32_t id)
 		}
 	}
 	return nullptr;
-}
-
-SceneEntityRecord* RenderContext::GetSceneEntityById(uint32_t id)
-{
-	for (auto& item : sceneEntities)
-	{
-		if (item.id == id)
-		{
-			return &item;
-		}
-	}
-	return nullptr;
-}
-
-void RenderContext::RegisterRenderableEntity(uint32_t id, const char* name, HMesh mesh, HTexture texture)
-{
-	SceneEntityRecord record{};
-	record.id = id;
-	record.kind = SceneEntityKind::Renderable;
-	record.mesh = mesh;
-	record.texture = texture;
-	strncpy_s(record.name, name, _TRUNCATE);
-	sceneEntities.push_back(record);
-}
-
-void RenderContext::RegisterCameraEntity(uint32_t id, const char* name, UINT cameraIndex)
-{
-	SceneEntityRecord record{};
-	record.id = id;
-	record.kind = SceneEntityKind::Camera;
-	record.cameraIndex = cameraIndex;
-	strncpy_s(record.name, name, _TRUNCATE);
-	sceneEntities.push_back(record);
-}
-
-void RenderContext::RegisterSunlightEntity(uint32_t id, const char* name)
-{
-	SceneEntityRecord record{};
-	record.id = id;
-	record.kind = SceneEntityKind::Sunlight;
-	strncpy_s(record.name, name, _TRUNCATE);
-	sceneEntities.push_back(record);
 }
 
 void RenderContext::UpdateSunlightViewProjection()
@@ -376,7 +333,7 @@ void RenderContext::CreateRenderTargetFromBackBuffer(DeviceContext* deviceContex
 		ExitIfFailed(swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer[i])));
 		backBuffer[i]->SetName(L"Render Context Back Buffer");
 		CHAR name[] = "BackBuffer";
-		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), backBuffer[i], &name[0], 0));
+		textures.push_back(new Texture(windowContext.GetWidth(), windowContext.GetHeight(), 1, backBuffer[i], &name[0], 0));
 
 		deviceContext->GetDevice()->CreateRenderTargetView(backBuffer[i], nullptr, rtvHeap.Allocate(DescriptorHeap::HeapPartition::STATIC));
 		renderTargets.push_back(new RenderTarget(windowContext.GetWidth(), windowContext.GetHeight(), textures.size() - 1,
@@ -618,104 +575,111 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	return vertexBuffer;
 }
 
-HTexture RenderContext::CreateEmptyTexture(UINT width, UINT height, DXGI_FORMAT format, const CHAR* name, bool isUav)
+HTexture RenderContext::CreateTextureResource(const TextureCreateDesc& textureDesc)
 {
-	OutputDebugString(L"CreateEmptyTexture\n");
-
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	OutputDebugString(L"CreateTextureResource\n");
 
 	D3D12_RESOURCE_FLAGS resourceFlags = D3D12_RESOURCE_FLAG_NONE;
-	if(isUav)
+	if (textureDesc.createUav)
 	{
 		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		// This is a hack, but let's roll with it for now
+	}
+	if (textureDesc.createRtv)
+	{
 		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
-		width, height, 1, 0, 1, 0, resourceFlags);
+	if (textureDesc.createDsv)
+	{
+		resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
 
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_COMMON;
+	const UINT mipLevels = textureDesc.mipLevels > 0 ? textureDesc.mipLevels : 1;
+	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(
+		textureDesc.format,
+		textureDesc.width,
+		textureDesc.height,
+		1,
+		mipLevels,
+		1,
+		0,
+		resourceFlags);
 
-	ID3D12Resource* resource;
-	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-	resource->SetName(L"Empty Texture");
-
-	bool isStatic = isUav ? true : false;
-	TextuureLifeSpan span = isUav ? APP : SCENE;
+	ID3D12Resource* resource = nullptr;
+	deviceContext.CreateGpuResource(textureDesc.heapFlags, &desc, textureDesc.initialState, IID_PPV_ARGS(&resource));
 
 	size_t textureHandleIndex = textures.size();
-	auto descHandleOffset = CreateShaderResourceView(resource, format, isStatic);
+	size_t srvDescriptorIndex = 0;
+	if (textureDesc.createSrv)
+	{
+		const DXGI_FORMAT srvFormat = textureDesc.srvFormat == DXGI_FORMAT_UNKNOWN ? textureDesc.format : textureDesc.srvFormat;
+		srvDescriptorIndex = CreateShaderResourceView(resource, srvFormat, textureDesc.staticSrv, mipLevels);
+	}
 	
 	CHAR tempName[32];
-	strcpy_s(tempName, name);
+	strncpy_s(tempName, textureDesc.name ? textureDesc.name : "Texture", _TRUNCATE);
 	WCHAR wName[32];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
 	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], static_cast<size_t>(descHandleOffset), D3D12_RESOURCE_STATE_COMMON, span));
+	textures.push_back(new Texture(
+		textureDesc.width,
+		textureDesc.height,
+		mipLevels,
+		resource,
+		&tempName[0],
+		srvDescriptorIndex,
+		textureDesc.initialState,
+		textureDesc.lifeSpan));
 
-	if (isUav)
+	if (textureDesc.createUav)
 	{
-		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, format, true);
+		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, textureDesc.format, textureDesc.staticUav);
 		textures[textureHandleIndex]->SetUavDescriptorIndex(uavDescHandleOffset);
 	}
 
 	return HTexture(textureHandleIndex);
 }
 
+HTexture RenderContext::CreateEmptyTexture(TextureCreateDesc desc)
+{
+	OutputDebugString(L"CreateEmptyTexture\n");
+
+	return CreateTextureResource(desc);
+}
+
 HTexture RenderContext::CreateDepthTexture(UINT width, UINT height, const CHAR* name)
 {
 	OutputDebugString(L"CreateDepthTexture\n");
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS,
-		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	TextureCreateDesc desc;
+	desc.width = width;
+	desc.height = height;
+	desc.format = DXGI_FORMAT_R32_TYPELESS;
+	desc.srvFormat = DXGI_FORMAT_R32_FLOAT;
+	desc.name = name;
+	desc.createDsv = true;
+	desc.initialState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	desc.staticSrv = true;
+	desc.lifeSpan = APP;
 
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-
-	ID3D12Resource* resource;
-	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-	resource->SetName(L"Depth Texture");
-
-	auto descHandleOffset = CreateShaderResourceView(resource, DXGI_FORMAT_R32_FLOAT, true);
-
-	CHAR tempName[32];
-	strcpy_s(tempName, name);
-	WCHAR wName[32];
-	size_t numOfCharsConverted;;
-	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
-	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0],
-		static_cast<size_t>(descHandleOffset), initResourceState));
-
-	return HTexture(textures.size() - 1);
+	return CreateTextureResource(desc);
 }
 
 HTexture RenderContext::CreateRenderTargetTexture(UINT width, UINT height, const CHAR* name, DXGI_FORMAT format)
 {
 	OutputDebugString(L"CreateRenderTargetTexture\n");
 
-	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
+	TextureCreateDesc desc;
+	desc.width = width;
+	desc.height = height;
+	desc.format = format;
+	desc.name = name;
+	desc.createRtv = true;
+	desc.initialState = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	desc.staticSrv = true;
+	desc.lifeSpan = APP;
 
-	CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format,
-		width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-
-	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-	ID3D12Resource* resource;
-	deviceContext.CreateGpuResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&resource));
-
-	UINT descHandleOffset = CreateShaderResourceView(resource, format, true);
-
-	CHAR tempName[32];
-	strcpy_s(tempName, name);
-	WCHAR wName[32];
-	size_t numOfCharsConverted;;
-	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
-	resource->SetName(wName);
-	textures.push_back(new Texture(width, height, resource, &tempName[0], descHandleOffset, initResourceState));
-
-	return HTexture(textures.size() - 1);
+	return CreateTextureResource(desc);
 }
 
 void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HTexture destination)
@@ -732,14 +696,41 @@ void RenderContext::CopyTexture(HCommandList commandList, HTexture source, HText
 	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
 }
 
-HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
+void RenderContext::CopyTextureClamped(HCommandList commandList, HTexture source, HTexture destination)
+{
+	// Like CopyTexture, but clamps the copied region to the smaller of the two
+	// textures so differently sized textures can be copied without tripping the
+	// debug layer. The region is copied to the top-left corner of the destination.
+	const D3D12_RESOURCE_DESC srcDesc = textures[source.Index()]->GetResource()->GetDesc();
+	const D3D12_RESOURCE_DESC dstDesc = textures[destination.Index()]->GetResource()->GetDesc();
+
+	D3D12_TEXTURE_COPY_LOCATION destLocation = {};
+	destLocation.pResource = textures[destination.Index()]->GetResource();
+	destLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	destLocation.SubresourceIndex = 0;
+
+	D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+	srcLocation.pResource = textures[source.Index()]->GetResource();
+	srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	srcLocation.SubresourceIndex = 0;
+
+	D3D12_BOX srcBox = {};
+	srcBox.left = 0;
+	srcBox.top = 0;
+	srcBox.front = 0;
+	srcBox.right = static_cast<UINT>(srcDesc.Width < dstDesc.Width ? srcDesc.Width : dstDesc.Width);
+	srcBox.bottom = srcDesc.Height < dstDesc.Height ? srcDesc.Height : dstDesc.Height;
+	srcBox.back = 1;
+
+	commandLists[commandList.Index()]->GetCommandList()->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, &srcBox);
+}
+
+HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize)
 {
 	OutputDebugString(L"CreateTextureUploadBuffer\n");
 
 	auto texture = textures[textureHandle.Index()]->GetResource();
 	auto textureDesc = texture->GetDesc();
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
-	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
 
 	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -749,7 +740,7 @@ HBuffer RenderContext::CreateTextureUploadBuffer(HTexture textureHandle)
 	deviceContext.CreateUploadResource(heapFlags, &desc, initResourceState, IID_PPV_ARGS(&textureUploadBuffer));
 
 	CHAR name[] = "TextureUploadBuffer";
-	buffers.push_back(new Buffer(textureUploadBuffer, layout, name, BufferKind::TextureUpload,
+	buffers.push_back(new Buffer(textureUploadBuffer, name, BufferKind::TextureUpload,
 		static_cast<UINT>(uploadBufferSize), nullptr, Buffer::InvalidDescriptorIndex,
 		D3D12_RESOURCE_STATE_GENERIC_READ));
 
@@ -775,7 +766,7 @@ std::vector<uint8_t> RenderContext::ReadbackBufferData(HBuffer handle, size_t si
 	return data;
 }
 
-void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture)
+void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer, HTexture texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout, UINT subresourceIndex)
 {
 	OutputDebugString(L"CopyBufferToTexture\n");
 	
@@ -783,10 +774,9 @@ void RenderContext::CopyBufferToTexture(HCommandList commandList, HBuffer buffer
 	D3D12_TEXTURE_COPY_LOCATION dst = {};
 	dst.pResource = gpuTexture;
 	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-	dst.SubresourceIndex = 0;
+	dst.SubresourceIndex = subresourceIndex;
 
 	auto uploadBuffer = buffers[buffer.Index()]->GetResource();
-	auto layout = buffers[buffer.Index()]->GetLayout();
 	D3D12_TEXTURE_COPY_LOCATION src = {};
 	src.pResource = uploadBuffer;
 	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
@@ -829,14 +819,14 @@ void RenderContext::CopyTextureToBuffer(HCommandList commandList, HTexture textu
 void RenderContext::CreateDefaultSamplers()
 {
 	D3D12_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.Filter = D3D12_FILTER_ANISOTROPIC;
+	samplerDesc.MaxAnisotropy = 16;
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	samplerDesc.MinLOD = 0;
+	samplerDesc.MinLOD = 0.0f;
 	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
 	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	samplerDesc.BorderColor[0] = 0.0f;
 	samplerDesc.BorderColor[1] = 0.0f;
@@ -864,7 +854,7 @@ HBuffer RenderContext::CreateReadbackBuffer()
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(readbackBuffer, layout, name, BufferKind::Readback,
+	buffers.push_back(new Buffer(readbackBuffer, name, BufferKind::Readback,
 		readbackBufferSize, nullptr, Buffer::InvalidDescriptorIndex,
 		D3D12_RESOURCE_STATE_COPY_DEST));
 
@@ -897,37 +887,159 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
-void RenderContext::CreateTexture(UINT width, UINT height, BYTE* data, const CHAR* name)
+float RenderContext::GetSceneBoundsRadius() const
+{
+	if (meshes.empty())
+	{
+		return 0.0f;
+	}
+
+	using DirectX::SimpleMath::Vector3;
+	Vector3 sceneMin(FLT_MAX, FLT_MAX, FLT_MAX);
+	Vector3 sceneMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (const Mesh* mesh : meshes)
+	{
+		sceneMin = Vector3::Min(sceneMin, mesh->GetLocalMin());
+		sceneMax = Vector3::Max(sceneMax, mesh->GetLocalMax());
+	}
+
+	return (sceneMax - sceneMin).Length() * 0.5f;
+}
+
+void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");
+
+	assert(desc.mipLevels > 0 && "Mip levels must be greater than 0");
 	
-	auto textureHandle = CreateEmptyTexture(width, height, DXGI_FORMAT_R8G8B8A8_UNORM, name);
-	auto bufferHandle = CreateTextureUploadBuffer(textureHandle);
+	auto textureHandle = CreateEmptyTexture(desc);
 
-	if (data == nullptr)
+	std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layout(desc.mipLevels);
+	auto textureDesc = GetTexture(textureHandle)->GetResource()->GetDesc();
+	UINT64 uploadBufferSize = deviceContext.GetCopyableFootprintsSize(textureDesc, layout);
+
+	auto bufferHandle = CreateTextureUploadBuffer(textureHandle, uploadBufferSize);
+
+	std::vector<UINT32> previousPixels;
+	UINT previousWidth = 0;
+	UINT previousHeight = 0;
+
+	// Here is where I need to do the MIP loop
+	for (int i = 0; i < desc.mipLevels; ++i)
 	{
-		FillTextureUploadBuffer(width, height, bufferHandle);
+		auto width = layout[i].Footprint.Width;
+		auto height = layout[i].Footprint.Height;
+		std::vector<UINT32> pixels(width * height);
+		if (data != nullptr)
+		{
+			if (i == 0)
+			{
+				PrepareTextureForUpload(pixels, width, height, data);
+			}
+			else
+			{
+				PrepareAndDonwsampleTexture(previousPixels, previousWidth, previousHeight, pixels, width, height);
+			}
+		}
+		else
+		{
+			// Generate Texture For Upload
+			GenerateTextureForUpload(pixels, i);
+		}
+
+		UploadTextureToBuffer(pixels, width, height, bufferHandle, layout[i]);
+
+		auto uploadCommandList = CreateCommandList();
+
+		ResetCommandList(uploadCommandList);
+
+		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
+
+		CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle, layout[i], i);
+
+		TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+		CloseCommandList(uploadCommandList);
+
+		ExecuteCommandList(uploadCommandList);
+
+		previousPixels = std::move(pixels);
+		previousWidth = width;
+		previousHeight = height;
 	}
-	else
-	{
-		UploadTextureToBuffer(width, height, data, bufferHandle);
-	}
-
-	auto uploadCommandList = CreateCommandList();
-	ResetCommandList(uploadCommandList);
-
-	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_COPY_DEST);
-
-	CopyBufferToTexture(uploadCommandList, bufferHandle, textureHandle);
-
-	TransitionTo(uploadCommandList, textureHandle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-	CloseCommandList(uploadCommandList);
-
-	ExecuteCommandList(uploadCommandList);
 
 	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
-	materials.push_back(new Material(textureHandle, descHandleOffset, name));
+	materials.push_back(new Material(textureHandle, descHandleOffset, desc.name));
+}
+
+void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data)
+{
+	unsigned int index = 0;
+	for (UINT y = 0; y < height; ++y)
+	{
+		for (UINT x = 0; x < width; ++x)
+		{
+			//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
+			UINT r = data[index++];
+			UINT g = data[index++];
+			UINT b = data[index++];
+			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
+			pixels[y * width + x] = packed;
+		}
+	}
+}
+
+void RenderContext::PrepareAndDonwsampleTexture(
+	const std::vector<UINT32>& srcPixels,
+	UINT srcWidth,
+	UINT srcHeight,
+	std::vector<UINT32>& dstPixels,
+	UINT dstWidth,
+	UINT dstHeight)
+{
+	dstPixels.resize(static_cast<size_t>(dstWidth) * dstHeight);
+
+	for (UINT y = 0; y < dstHeight; ++y)
+	{
+		for (UINT x = 0; x < dstWidth; ++x)
+		{
+			const UINT srcX0 = static_cast<UINT>((static_cast<UINT64>(x) * srcWidth) / dstWidth);
+			const UINT srcX1 = static_cast<UINT>((static_cast<UINT64>(x + 1) * srcWidth) / dstWidth);
+			const UINT srcY0 = static_cast<UINT>((static_cast<UINT64>(y) * srcHeight) / dstHeight);
+			const UINT srcY1 = static_cast<UINT>((static_cast<UINT64>(y + 1) * srcHeight) / dstHeight);
+
+			UINT r = 0;
+			UINT g = 0;
+			UINT b = 0;
+			UINT a = 0;
+			UINT sampleCount = 0;
+
+			for (UINT srcY = srcY0; srcY < srcY1; ++srcY)
+			{
+				for (UINT srcX = srcX0; srcX < srcX1; ++srcX)
+				{
+					const UINT32 pixel = srcPixels[static_cast<size_t>(srcY) * srcWidth + srcX];
+
+					r += (pixel >> 0) & 0xFF;
+					g += (pixel >> 8) & 0xFF;
+					b += (pixel >> 16) & 0xFF;
+					a += (pixel >> 24) & 0xFF;
+					++sampleCount;
+				}
+			}
+
+			r = (r + sampleCount / 2) / sampleCount;
+			g = (g + sampleCount / 2) / sampleCount;
+			b = (b + sampleCount / 2) / sampleCount;
+			a = (a + sampleCount / 2) / sampleCount;
+
+			dstPixels[static_cast<size_t>(y) * dstWidth + x] =
+				(a << 24) |
+				(b << 16) |
+				(g << 8) |
+				(r << 0);
+		}
+	}
 }
 
 UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
@@ -949,13 +1061,13 @@ UINT RenderContext::CreateShaderResourceView(HTexture& textureHandle)
 	return offset;
 }
 
-UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic)
+UINT RenderContext::CreateShaderResourceView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic, UINT mipLevels)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MipLevels = mipLevels > 0 ? mipLevels : 1;
 
 	auto heapType = isStatic ? DescriptorHeap::HeapPartition::STATIC : DescriptorHeap::HeapPartition::DYNAMIC;
 	auto descriptorHandle = cbvSrvUavHeap.Allocate(heapType);
@@ -999,26 +1111,10 @@ UINT RenderContext::CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3
 	return static_cast<UINT>(cameras.size() - 1);
 }
 
-void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, HBuffer& bufferHandle)
+void RenderContext::UploadTextureToBuffer(const std::vector<UINT32>& pixels, unsigned int width, unsigned int height, HBuffer& bufferHandle, D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout)
 {
-	unsigned int index = 0;
-	std::vector<UINT32> pixels(width * height);
-	for (UINT y = 0; y < height; ++y)
-	{
-		for (UINT x = 0; x < width; ++x)
-		{
-			//data[index++] = x % 3 ? 255 : 0; // Fill with some pattern
-			UINT r = data[index++];
-			UINT g = data[index++];
-			UINT b = data[index++];
-			UINT32 packed = (0xFF << 24) | (b << 16) | (g << 8) | r;
-			pixels[y * width + x] = packed;
-		}
-	}
-
 	UINT8* mappedData = nullptr;
 	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
-	auto layout = buffers[bufferHandle.Index()]->GetLayout();
 
 	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 
@@ -1031,71 +1127,33 @@ void RenderContext::UploadTextureToBuffer(UINT width, UINT height, BYTE* data, H
 	uploadBuffer->Unmap(0, nullptr);
 }
 
-void RenderContext::FillTextureUploadBuffer(UINT width, UINT height, HBuffer& bufferHandle)
+void RenderContext::GenerateTextureForUpload(std::vector<UINT32>& pixels, UINT mipIndex)
 {
-	// Fill the pixel buffer however you like (checkerboard, gradient, noise, etc.)
-	std::vector<UINT32> pixels(width * height);
-	for (UINT y = 0; y < height; ++y)
+	static constexpr UINT32 mipColors[16] =
 	{
-		for (UINT x = 0; x < width; ++x)
-		{
-			// Normalized coords
-			float fx = static_cast<float>(x) / width;
-			float fy = static_cast<float>(y) / height;
+		0xFFFF0000, // Red
+		0xFF00FF00, // Green
+		0xFF0000FF, // Blue
+		0xFFFFFF00, // Yellow
+		0xFFFF00FF, // Magenta
+		0xFF00FFFF, // Cyan
+		0xFFFF8000, // Orange
+		0xFF8000FF, // Purple
+		0xFF00FF80, // Spring green
+		0xFF0080FF, // Azure
+		0xFFFF0080, // Rose
+		0xFF80FF00, // Lime
+		0xFFFFFFFF, // White
+		0xFFB0B0B0, // Light gray
+		0xFF606060, // Dark gray
+		0xFF000000  // Black
+	};
 
-			// HSV-based hue gradient across X
-			float hue = fx; // 0 to 1
-			float brightness = 0.3f + 0.7f * (1.0f - fy); // dark at bottom, bright at top
-			float saturation = 1.0f;
-
-			// Convert HSV to RGB
-			float h = hue * 6.0f;
-			int i = static_cast<int>(floor(h));
-			float f = h - i;
-			float p = brightness * (1.0f - saturation);
-			float q = brightness * (1.0f - saturation * f);
-			float t = brightness * (1.0f - saturation * (1.0f - f));
-
-			float r, g, b;
-			switch (i % 6)
-			{
-			case 0: r = brightness; g = t;         b = p;        break;
-			case 1: r = q;         g = brightness; b = p;        break;
-			case 2: r = p;         g = brightness; b = t;        break;
-			case 3: r = p;         g = q;         b = brightness; break;
-			case 4: r = t;         g = p;         b = brightness; break;
-			case 5: r = brightness; g = p;         b = q;        break;
-			}
-
-			// Checker overlay
-			int checkerSize = 16;
-			bool checker = ((x / checkerSize) % 2) ^ ((y / checkerSize) % 2);
-			float checkerMix = checker ? 1.0f : 0.8f;
-
-			UINT ir = static_cast<UINT>(r * checkerMix * 255.0f);
-			UINT ig = static_cast<UINT>(g * checkerMix * 255.0f);
-			UINT ib = static_cast<UINT>(b * checkerMix * 255.0f);
-
-			pixels[y * width + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
-		}
-	}
-
-	UINT8* mappedData = nullptr;
-	auto uploadBuffer = buffers[bufferHandle.Index()]->GetResource();
-	auto layout = buffers[bufferHandle.Index()]->GetLayout();
-
-	uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-
-	for (UINT y = 0; y < height; ++y) {
-		memcpy(mappedData + layout.Offset + y * layout.Footprint.RowPitch,
-			&pixels[y * width],
-			width * sizeof(UINT32));
-	}
-
-	uploadBuffer->Unmap(0, nullptr);
+	const UINT32 color = mipColors[mipIndex % 16];
+	std::fill(pixels.begin(), pixels.end(), color);
 }
 
-void RenderContext::LoadTextureFromFile(UINT width, UINT height, HBuffer& bufferHandle)
+void RenderContext::LoadTextureFromFile(const TextureCreateDesc& desc, HBuffer& bufferHandle)
 {
 }
 
@@ -1411,7 +1469,7 @@ HBuffer RenderContext::CreateConstantBufferInternal(UINT bufferSizeInBytes)
 
 	// The layout is not used for readback buffers, but we need to create it to match the Buffer constructor
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout = {};
-	buffers.push_back(new Buffer(constantBuffer, layout, tempName, BufferKind::Constant,
+	buffers.push_back(new Buffer(constantBuffer, tempName, BufferKind::Constant,
 		bufferSizeInBytes, nullptr, cbvDescriptorIndex, D3D12_RESOURCE_STATE_GENERIC_READ));
 	return HBuffer(buffers.size() - 1);
 }

@@ -1,31 +1,23 @@
-# SuperEZ 1.6
+# SuperEZ 1.7
  A super-easy DirectX12 game engine.
 
 ## Demo
 
-https://github.com/user-attachments/assets/df78cf13-c617-4c57-89d9-d10f806dc1aa
+https://github.com/user-attachments/assets/8c5c7f4a-9713-4019-b3f9-e112971c820b
 
 ## Release Notes
-- Simple Tween Animations
-  - Added a tweening API to the Scene Service
-  - Game code can now transition entity positions over time
-  - This makes interactions like the Slider Puzzle movement smoother and easier to author
-- Camera Entities and Editor Hierarchy
-  - Added camera entities to the engine/editor flow
-  - Improved the editor hierarchy around scene entities
-  - Added cleaner ECS reset and cleanup when working with scenes
-- Single Sunlight Support
-  - Added a Sunlight component for scenes
-  - Sunlight direction, color, ambient strength and diffuse strength can be configured
-  - Added constant buffer support for sending sunlight data to shaders
-  - Added vertex normals support for simple lighting
-  - Sunlight settings can be edited from the ImGui editor panel
-- Shadow Mapping
-  - Added a dedicated Shadow Map render pass and shader
-  - Added depth-only pipeline support and typeless depth buffer handling
-  - The Forward Pass now samples the shadow map to shade the scene
-  - Added configurable shadow bias and slope bias for tuning shadow artifacts
-  - Improved sunlight shadow projection using local scene bounds for tighter shadows
+- MIP Mapping support
+  - MIP Levels are generated on the CPU during asset loading and uploaded to the GPU
+  - Added a whole bunch of debug settings for testing (MIP heatmap, bias, force level, etc.)
+  - Enabled by default
+- Simple Materials
+  - Each material has additional specular properties
+  - This still uses Blinn-Phong lighting model
+- Simple Render Target Viewer
+  - Each Render Target can now be viewed in the Viewport
+  - There are some transformation taking place to help visualize
+- Scene Import Script
+  - The script can make it much, much easier to import assets and scenes
 
 ## Build
 This repository uses the submodules, therefore you need to remember to clone them too.
