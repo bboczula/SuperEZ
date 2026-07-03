@@ -3,7 +3,7 @@
 
 ## Demo
 
-https://github.com/user-attachments/assets/df78cf13-c617-4c57-89d9-d10f806dc1aa
+https://github.com/user-attachments/assets/8c5c7f4a-9713-4019-b3f9-e112971c820b
 
 ## Release Notes
 - MIP Mapping support
