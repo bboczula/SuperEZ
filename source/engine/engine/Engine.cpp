@@ -41,6 +41,7 @@ RawInput rawInput;
 CursorInput cursorInput;
 ImGuiHandler imGuiHandler;
 Coordinator* editorCoordinator = nullptr;
+Engine* editorEngine = nullptr;
 
 std::vector<float> NormalizeNormalStream(const std::vector<float>& rawNormals, UINT vertexCount)
 {
@@ -95,6 +96,7 @@ void Engine::Initialize()
 	mCoordinator.RegisterComponent<CameraComponent>();
 	mCoordinator.RegisterComponent<SunlightComponent>();
 	editorCoordinator = &mCoordinator;
+	editorEngine = this;
 
 	rawInput.Initialize();
 	imGuiHandler.Initialize();
@@ -322,6 +324,7 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		const Entity entity = renderService->CreateEntity(mCoordinator, item);
 		item.id = entity;
 		renderContext.CreateRenderItem(item);
+		mCoordinator.GetComponent<MaterialComponent>(entity).textureFileName = textureName;
 	}
 
 	EngineServices services
@@ -352,6 +355,7 @@ void Engine::ProcessScene(GameObjects& gameObjects, Cameras& cameras, Sunlights&
 
 	const char* geometryLibraryFile = geometryLibrary->Attribute("file");
 	assert(geometryLibraryFile != nullptr, "GeometryLibrary 'file' attribute not found in the scene XML file!");
+	currentMeshLibraryFile = geometryLibraryFile;
 	sceneData.currentPath.append(geometryLibraryFile);
 
 	ProcessGameObjects(scene, gameObjects);
@@ -462,9 +466,11 @@ void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameOb
 
 		tinyxml2::XMLElement* rotation = go->FirstChildElement("Rotation");
 		assert(rotation != nullptr, "GameObject rotation element not found in scene XML file!");
-		gameObject.rotation.x = rotation->FloatAttribute("pitch", 0.0f);
-		gameObject.rotation.y = rotation->FloatAttribute("yaw", 0.0f);
-		gameObject.rotation.z = rotation->FloatAttribute("roll", 0.0f);
+		// GameObjects author rotation as x/y/z (unlike Camera's pitch/yaw/roll); fall back
+		// to pitch/yaw/roll for older files that may have used that naming by mistake.
+		gameObject.rotation.x = rotation->FloatAttribute("x", rotation->FloatAttribute("pitch", 0.0f));
+		gameObject.rotation.y = rotation->FloatAttribute("y", rotation->FloatAttribute("yaw", 0.0f));
+		gameObject.rotation.z = rotation->FloatAttribute("z", rotation->FloatAttribute("roll", 0.0f));
 
 		tinyxml2::XMLElement* scale = go->FirstChildElement("Scale");
 		assert(scale != nullptr, "GameObject scale element not found in scene XML file!");
@@ -528,6 +534,7 @@ void Engine::ProcessSingleFrame()
 
 void Engine::LoadSceneAssets(std::string sceneName)
 {
+	currentSceneName = sceneName;
 	GameObjects gameObjects;
 	Cameras cameras;
 	Sunlights sunlights;

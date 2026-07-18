@@ -702,6 +702,17 @@ def main():
                 baked += 1
             elif info["map_kd"]:
                 source = source_dir / info["map_kd"]
+                already_in_place = (
+                    source.exists()
+                    and source.suffix.lower() == ".bmp"
+                    and source.resolve().parent == scene_dir.resolve())
+                if already_in_place:
+                    # source OBJ already lives in scene_dir (in-place
+                    # conversion) and its texture is already a BMP there -
+                    # reuse it instead of duplicating potentially huge files
+                    group_textures[material] = source.name
+                    converted += 1
+                    continue
                 if source.exists() and convert_texture(
                         source, scene_dir / filename, report):
                     converted += 1

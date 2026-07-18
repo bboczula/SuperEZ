@@ -80,6 +80,8 @@ public:
 	void ProcessGlobalCommands();
 	void PostLoadAssets();
 	std::string GetStartupSceneName() const { return startupSceneName; }
+	std::string GetCurrentSceneName() const { return currentSceneName; }
+	std::string GetCurrentMeshLibraryFile() const { return currentMeshLibraryFile; }
 private:
 	// Handle scene XML processing
 	void ProcessScene(GameObjects& gameObjects, Cameras& cameras, Sunlights& sunlights, SceneData& sceneData);
@@ -90,6 +92,8 @@ private:
 	IGame* game = nullptr;
 	IEngineState* currentState = nullptr;
 	std::string startupSceneName;
+	std::string currentSceneName;
+	std::string currentMeshLibraryFile;
 	RawInputService* rawInputService = nullptr;
 	SceneService* sceneService = nullptr;
 	TimeSystem* timeSystem = nullptr;

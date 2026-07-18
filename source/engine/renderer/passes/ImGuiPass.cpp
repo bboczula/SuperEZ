@@ -5,6 +5,7 @@
 #include "../../bind/DescriptorHeap.h"
 #include "../../asset/Mesh.h"
 #include "../../engine/camera/Camera.h"
+#include "../../engine/Engine.h"
 #include "../../engine/states/EngineCommandQueue.h"
 #include "../../bind/CommandList.h"
 #include "../RenderTarget.h"
@@ -14,12 +15,14 @@
 #include <imgui_impl_win32.h>
 #include <imgui_internal.h> // For ImGuiDockNodeFlags_DockSpace
 #include <filesystem>
+#include <fstream>
 #include <cmath>
 
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 extern RenderContext renderContext;
 extern Coordinator* editorCoordinator;
+extern Engine* editorEngine;
 
 namespace
 {
@@ -143,10 +146,32 @@ void ImGuiPass::Execute()
 				//GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::GameLoop });
 			}
 
-			// Save with shortcut
+			// Save with shortcut - overwrites the currently loaded scene file,
+			// or the last "Save As..." target if one was chosen this session.
 			if (ImGui::MenuItem("Save", "Ctrl+S") ||
 				(io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))) {
-				//SaveScene();
+				std::filesystem::path targetPath = saveAsPath;
+				if (targetPath.empty() && editorEngine != nullptr)
+				{
+					const std::string sceneName = editorEngine->GetCurrentSceneName();
+					if (!sceneName.empty())
+					{
+						targetPath = std::filesystem::current_path() / "assets" / sceneName / (sceneName + ".xml");
+					}
+				}
+				if (!targetPath.empty())
+				{
+					SaveSceneToXml(targetPath);
+				}
+			}
+
+			if (ImGui::MenuItem("Save As...")) {
+				const std::string path = SaveFileDialog_Win32(windowContext.GetWindowHandle());
+				if (!path.empty())
+				{
+					saveAsPath = path;
+					SaveSceneToXml(saveAsPath);
+				}
 			}
 
 			ImGui::Separator();
@@ -363,9 +388,22 @@ void ImGuiPass::DrawInfoSection(Coordinator& coordinator, Entity entity)
 
 void ImGuiPass::DrawTransformComponent(TransformComponent& transform)
 {
-	ImGui::Text("Position: %f, %f, %f", transform.position[0], transform.position[1], transform.position[2]);
-	ImGui::Text("Rotation: %f, %f, %f", transform.rotation[0], transform.rotation[1], transform.rotation[2]);
-	ImGui::Text("Scale: %f, %f, %f", transform.scale[0], transform.scale[1], transform.scale[2]);
+	ImGui::DragFloat3("Position", transform.position, 0.01f);
+
+	// Rotation is stored in radians, but degrees are easier to reason about in the UI.
+	float rotationDegrees[3] = {
+		DirectX::XMConvertToDegrees(transform.rotation[0]),
+		DirectX::XMConvertToDegrees(transform.rotation[1]),
+		DirectX::XMConvertToDegrees(transform.rotation[2])
+	};
+	if (ImGui::DragFloat3("Rotation", rotationDegrees, 1.0f))
+	{
+		transform.rotation[0] = DirectX::XMConvertToRadians(rotationDegrees[0]);
+		transform.rotation[1] = DirectX::XMConvertToRadians(rotationDegrees[1]);
+		transform.rotation[2] = DirectX::XMConvertToRadians(rotationDegrees[2]);
+	}
+
+	ImGui::DragFloat3("Scale", transform.scale, 0.01f, 0.0001f, 100.0f);
 }
 
 void ImGuiPass::DrawTransformSection(Coordinator& coordinator, Entity entity)
@@ -494,6 +532,183 @@ std::string ImGuiPass::OpenFileDialog_Win32(HWND owner)
 		return std::string(filename);
 	}
 	return "";
+}
+
+std::string ImGuiPass::SaveFileDialog_Win32(HWND owner)
+{
+	char filename[MAX_PATH] = { 0 };
+
+	// Default to the current scene's own folder so relative mesh/texture
+	// references in the saved XML still resolve correctly.
+	std::string initialDir;
+	if (editorEngine != nullptr)
+	{
+		const std::string sceneName = editorEngine->GetCurrentSceneName();
+		if (!sceneName.empty())
+		{
+			initialDir = (std::filesystem::current_path() / "assets" / sceneName).string();
+			strncpy_s(filename, (sceneName + ".xml").c_str(), _TRUNCATE);
+		}
+	}
+
+	OPENFILENAMEA ofn = {};
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = owner;
+	ofn.lpstrFilter = "XML Scene Files\0*.xml\0All Files\0*.*\0";
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.lpstrDefExt = "xml";
+	ofn.lpstrInitialDir = initialDir.empty() ? nullptr : initialDir.c_str();
+	ofn.Flags = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+
+	if (GetSaveFileNameA(&ofn)) {
+		return std::string(filename);
+	}
+	return "";
+}
+
+namespace
+{
+	void WritePositionElement(tinyxml2::XMLPrinter& printer, const float (&values)[3])
+	{
+		printer.OpenElement("Position");
+		printer.PushAttribute("x", values[0]);
+		printer.PushAttribute("y", values[1]);
+		printer.PushAttribute("z", values[2]);
+		printer.CloseElement();
+	}
+
+	void WriteScaleElement(tinyxml2::XMLPrinter& printer, const float (&values)[3])
+	{
+		printer.OpenElement("Scale");
+		printer.PushAttribute("x", values[0]);
+		printer.PushAttribute("y", values[1]);
+		printer.PushAttribute("z", values[2]);
+		printer.CloseElement();
+	}
+
+	void WriteObjectRotationElement(tinyxml2::XMLPrinter& printer, const float (&values)[3])
+	{
+		printer.OpenElement("Rotation");
+		printer.PushAttribute("x", values[0]);
+		printer.PushAttribute("y", values[1]);
+		printer.PushAttribute("z", values[2]);
+		printer.CloseElement();
+	}
+
+	void WriteCameraRotationElement(tinyxml2::XMLPrinter& printer, const DirectX::SimpleMath::Vector3& rotation)
+	{
+		printer.OpenElement("Rotation");
+		printer.PushAttribute("pitch", rotation.x);
+		printer.PushAttribute("yaw", rotation.y);
+		printer.PushAttribute("roll", rotation.z);
+		printer.CloseElement();
+	}
+}
+
+void ImGuiPass::SaveSceneToXml(const std::filesystem::path& path)
+{
+	if (editorCoordinator == nullptr)
+	{
+		return;
+	}
+
+	tinyxml2::XMLPrinter printer;
+	printer.OpenElement("Scene");
+
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+	{
+		if (!HasComponent<CameraComponent>(*editorCoordinator, entity) || !HasComponent<InfoComponent>(*editorCoordinator, entity))
+		{
+			continue;
+		}
+
+		InfoComponent& info = editorCoordinator->GetComponent<InfoComponent>(entity);
+		CameraComponent& cameraComponent = editorCoordinator->GetComponent<CameraComponent>(entity);
+		Camera* camera = renderContext.GetCamera(static_cast<UINT>(cameraComponent.cameraIndex));
+
+		printer.OpenElement("Camera");
+		printer.PushAttribute("name", info.name.c_str());
+		const auto position = camera->GetPosition();
+		printer.OpenElement("Position");
+		printer.PushAttribute("x", position.x);
+		printer.PushAttribute("y", position.y);
+		printer.PushAttribute("z", position.z);
+		printer.CloseElement();
+		WriteCameraRotationElement(printer, camera->GetRotation());
+		printer.CloseElement(); // Camera
+	}
+
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+	{
+		if (!HasComponent<SunlightComponent>(*editorCoordinator, entity) || !HasComponent<InfoComponent>(*editorCoordinator, entity))
+		{
+			continue;
+		}
+
+		InfoComponent& info = editorCoordinator->GetComponent<InfoComponent>(entity);
+		SunlightComponent& sunlight = editorCoordinator->GetComponent<SunlightComponent>(entity);
+
+		printer.OpenElement("Sunlight");
+		printer.PushAttribute("name", info.name.c_str());
+		printer.PushAttribute("enabled", sunlight.enabled);
+		printer.OpenElement("Direction");
+		printer.PushAttribute("x", sunlight.direction[0]);
+		printer.PushAttribute("y", sunlight.direction[1]);
+		printer.PushAttribute("z", sunlight.direction[2]);
+		printer.CloseElement();
+		printer.OpenElement("Color");
+		printer.PushAttribute("r", sunlight.color[0]);
+		printer.PushAttribute("g", sunlight.color[1]);
+		printer.PushAttribute("b", sunlight.color[2]);
+		printer.CloseElement();
+		printer.OpenElement("Lighting");
+		printer.PushAttribute("ambient", sunlight.ambientStrength);
+		printer.PushAttribute("diffuse", sunlight.diffuseStrength);
+		printer.PushAttribute("shadowBias", sunlight.shadowBias);
+		printer.PushAttribute("shadowSlopeBias", sunlight.shadowSlopeBias);
+		printer.CloseElement();
+		printer.CloseElement(); // Sunlight
+	}
+
+	const std::string meshLibraryFile = editorEngine != nullptr ? editorEngine->GetCurrentMeshLibraryFile() : "";
+	printer.OpenElement("MeshLibrary");
+	printer.PushAttribute("file", meshLibraryFile.c_str());
+	printer.CloseElement();
+
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+	{
+		if (!HasComponent<TransformComponent>(*editorCoordinator, entity) ||
+			!HasComponent<GeometryComponent>(*editorCoordinator, entity) ||
+			!HasComponent<MaterialComponent>(*editorCoordinator, entity) ||
+			!HasComponent<InfoComponent>(*editorCoordinator, entity))
+		{
+			continue;
+		}
+
+		InfoComponent& info = editorCoordinator->GetComponent<InfoComponent>(entity);
+		TransformComponent& transform = editorCoordinator->GetComponent<TransformComponent>(entity);
+		GeometryComponent& geometry = editorCoordinator->GetComponent<GeometryComponent>(entity);
+		MaterialComponent& material = editorCoordinator->GetComponent<MaterialComponent>(entity);
+		Mesh* mesh = renderContext.GetMesh(geometry.meshHandle);
+
+		printer.OpenElement("GameObject");
+		printer.PushAttribute("name", info.name.c_str());
+		printer.PushAttribute("mesh", mesh->GetName());
+		printer.PushAttribute("texture", material.textureFileName.c_str());
+		WritePositionElement(printer, transform.position);
+		WriteObjectRotationElement(printer, transform.rotation);
+		WriteScaleElement(printer, transform.scale);
+		printer.CloseElement(); // GameObject
+	}
+
+	printer.CloseElement(); // Scene
+
+	std::error_code errorCode;
+	std::filesystem::create_directories(path.parent_path(), errorCode);
+
+	std::ofstream out(path, std::ios::binary);
+	out << printer.CStr();
 }
 
 void ImGuiPass::DrawRenderPassSettingsWindow(RenderPassSettings* settings)

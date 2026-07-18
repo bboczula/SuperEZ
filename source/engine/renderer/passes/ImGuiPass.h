@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 #include <Windows.h>
 #include <commdlg.h>
 
@@ -33,7 +34,10 @@ private:
 	void DrawSunlightSection(Coordinator& coordinator, Entity entity);
 	void DrawComponentSections(Coordinator& coordinator, Entity entity);
 	std::string OpenFileDialog_Win32(HWND owner = NULL);
+	std::string SaveFileDialog_Win32(HWND owner = NULL);
+	void SaveSceneToXml(const std::filesystem::path& path);
 	void DrawRenderPassSettingsWindow(RenderPassSettings* settings);
 	HTexture colorCopyTexture; // Texture to copy color data for ImGui rendering
 	RenderPassSettings* settings = nullptr;
+	std::filesystem::path saveAsPath; // Overrides the default save target once "Save As..." has been used
 };

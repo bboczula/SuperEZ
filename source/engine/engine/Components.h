@@ -26,6 +26,7 @@ struct MaterialComponent
 	float diffuseStrength = 1.0f;
 	float shininess = 32.0f;
 	float specularStrength = 0.65f;
+	std::string textureFileName; // Original texture filename, relative to the scene folder (for saving back to XML)
 };
 
 // Material to store generic info about entity, like name
