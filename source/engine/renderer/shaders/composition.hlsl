@@ -1,7 +1,9 @@
 static const uint INF = 0xFFFFFFFFu;
 
 Texture2D<float4> InColor : register(t0);
+#if IS_EDITOR
 Texture2D<uint> InDist : register(t1);
+#endif
 RWTexture2D<float4> OutColor : register(u0);
 
 cbuffer WidthCB : register(b0)
@@ -33,12 +35,13 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
         return;
 
     float4 base = InColor.Load(int3(p, 0));
-    uint d = InDist.Load(int3(p, 0));
 
     // Default: unchanged
     float3 outRgb = base.rgb;
 
+#if IS_EDITOR
     // Only affect pixels that are in the propagated bands (d>0 and not INF)
+    uint d = InDist.Load(int3(p, 0));
     if (d != INF && d > 0)
     {
         float MaxD = 8.0; // max distance for blending
@@ -47,6 +50,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
         float a = AlphaFromD(d, MaxD, MinAlpha); // distance-driven blend strength
         outRgb = lerp(base.rgb, HighlightColor, a);
     }
+#endif
 
     OutColor[p] = float4(outRgb, base.a);
 }

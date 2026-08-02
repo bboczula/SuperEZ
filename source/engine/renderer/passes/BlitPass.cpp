@@ -194,7 +194,7 @@ HTexture BlitPass::GetDefaultSourceTexture() const
 #if IS_EDITOR
 		renderContext.GetTexture("RT_ImGui");
 #else
-		renderContext.GetTexture("RT_ForwardPass");
+		renderContext.GetTexture("CompositionTexture");
 #endif
 }
 

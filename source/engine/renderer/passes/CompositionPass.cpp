@@ -57,7 +57,9 @@ void CompositionPass::Update()
 void CompositionPass::Execute()
 {
 	HTexture sceneColorTexture = renderContext.GetTexture("RT_ForwardPass");
+#if IS_EDITOR
 	HTexture highlightTexture = renderContext.GetTexture("HighlightOutputTexture");
+#endif
 	// The input texture needs to be 4, previous ones don't have valid SRV offset
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeapCompute(commandList);
@@ -68,14 +70,20 @@ void CompositionPass::Execute()
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	renderContext.TransitionTo(commandList, sceneColorTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+#if IS_EDITOR
 	renderContext.TransitionTo(commandList, highlightTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+#endif
 	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
 	renderContext.BindTextureOnlySRV(commandList, sceneColorTexture, 3);
+#if IS_EDITOR
 	renderContext.BindTextureOnlySRV(commandList, highlightTexture, 4);
+#endif
 	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
 	renderContext.TransitionBack(commandList, sceneColorTexture);
+#if IS_EDITOR
 	renderContext.TransitionBack(commandList, highlightTexture);
+#endif
 }
 
 void CompositionPass::PostSubmit()
