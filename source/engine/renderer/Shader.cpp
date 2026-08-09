@@ -18,7 +18,7 @@ void Shader::Compile(LPCWSTR shaderName, LPCSTR entryPoint, LPCSTR shaderModel)
 	D3D_SHADER_MACRO defines[] =
 	{
 #if IS_EDITOR
-		{ "isEditor", "IS_EDITOR"},
+		{ "IS_EDITOR", "1" },
 #endif
 		{ NULL, NULL }
 	};

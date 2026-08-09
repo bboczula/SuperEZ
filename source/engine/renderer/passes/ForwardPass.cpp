@@ -97,6 +97,8 @@ void ForwardPass::Initialize()
 
 void ForwardPass::Update()
 {
+	renderContext.SetLinearColorEnabled(useLinearColor);
+
 	if (rawInput.IsKeyDown(VK_NUMPAD1) || rawInput.IsKeyDown(VK_NUMPAD3) || rawInput.IsKeyDown(VK_NUMPAD7))
 	{
 		// There is a crash, somehow we keep entering this condition, even though we don't press any key
@@ -234,6 +236,14 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 		0xbf00ffff,
 		0xff00ffff
 	};
+
+#if ENABLE_COLOR_PIPELINE_DEBUG
+	settings.AddBool(
+		GetName(),
+		"use_linear_color",
+		"Use Linear Color",
+		&useLinearColor);
+#endif
 
 	settings.AddCombo(
 		GetName(),

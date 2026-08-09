@@ -7,11 +7,12 @@
 class Material
 {
 public:
-	Material(HTexture texIndex, UINT handleOffset, const CHAR* name);
-	UINT GetHandleOffset() const { return handleOffset; }
+	Material(HTexture texIndex, UINT rawHandleOffset, UINT srgbHandleOffset, const CHAR* name);
+	UINT GetHandleOffset(bool useSrgb) const { return useSrgb ? srgbHandleOffset : rawHandleOffset; }
 	~Material();
 private:
 	HTexture texIndex;
-	UINT handleOffset;
+	UINT rawHandleOffset;
+	UINT srgbHandleOffset;
 	CHAR name[32];
 };

@@ -30,5 +30,6 @@ private:
 	HBuffer sunlightViewProjectionBuffer;
 	HBuffer debugSettingsBuffer;
 	DebugSettings debugSettings;
+	bool useLinearColor = true;
 	bool visualizeSelectedMip = false;
 };

@@ -22,9 +22,6 @@ RenderGraph::RenderGraph()
 	RenderPass* forwardPass = new ForwardPass();
 	renderPasses.push_back(forwardPass);
 
-	RenderPass* compositionPass = new CompositionPass();
-	renderPasses.push_back(compositionPass);
-
 #if IS_EDITOR
 	RenderPass* highlightClearPass = new HighlightClearPass();
 	renderPasses.push_back(highlightClearPass);
@@ -37,7 +34,12 @@ RenderGraph::RenderGraph()
 
 	RenderPass* grayscalePass = new GrayscalePass();
 	renderPasses.push_back(grayscalePass);
+#endif
 
+	RenderPass* compositionPass = new CompositionPass();
+	renderPasses.push_back(compositionPass);
+
+#if IS_EDITOR
 	RenderPass* imguiPass = new ImGuiPass(&settings);
 	renderPasses.push_back(imguiPass);
 #endif

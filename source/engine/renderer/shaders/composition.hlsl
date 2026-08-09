@@ -16,6 +16,11 @@ cbuffer HeightCB : register(b1)
     uint Height;
 };
 
+cbuffer ColorPipelineCB : register(b2)
+{
+    uint UseLinearColor;
+};
+
 float AlphaFromD(uint d, uint maxD, float minAlpha)
 {
     // d==1 -> 1.0
@@ -25,6 +30,16 @@ float AlphaFromD(uint d, uint maxD, float minAlpha)
 
     // Linear interpolation between minAlpha and 1.0
     return lerp(minAlpha, 1.0, t);
+}
+
+float3 LinearToSRGB(float3 c)
+{
+    c = saturate(c);
+
+    float3 lo = c * 12.92;
+    float3 hi = 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+
+    return lerp(hi, lo, c <= 0.0031308);
 }
 
 [numthreads(8, 8, 1)]
@@ -52,5 +67,7 @@ void CSMain(uint3 dtid : SV_DispatchThreadID)
     }
 #endif
 
-    OutColor[p] = float4(outRgb, base.a);
+    OutColor[p] = float4(
+        UseLinearColor != 0 ? LinearToSRGB(outRgb) : outRgb,
+        base.a);
 }
