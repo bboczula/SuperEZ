@@ -30,6 +30,7 @@ private:
 	HBuffer sunlightViewProjectionBuffer;
 	HBuffer debugSettingsBuffer;
 	DebugSettings debugSettings;
-	bool useLinearColor = true;
+	// Debug comparison only. sRGB mip generation remains enabled in both modes.
+	bool useLinearLighting = true;
 	bool visualizeSelectedMip = false;
 };

@@ -97,7 +97,7 @@ void ForwardPass::Initialize()
 
 void ForwardPass::Update()
 {
-	renderContext.SetLinearColorEnabled(useLinearColor);
+	renderContext.SetLinearColorEnabled(useLinearLighting);
 
 	if (rawInput.IsKeyDown(VK_NUMPAD1) || rawInput.IsKeyDown(VK_NUMPAD3) || rawInput.IsKeyDown(VK_NUMPAD7))
 	{
@@ -240,9 +240,9 @@ void ForwardPass::RegisterSettings(RenderPassSettings& settings)
 #if ENABLE_COLOR_PIPELINE_DEBUG
 	settings.AddBool(
 		GetName(),
-		"use_linear_color",
-		"Use Linear Color",
-		&useLinearColor);
+		"use_linear_lighting",
+		"Use Linear Lighting (mips always linear)",
+		&useLinearLighting);
 #endif
 
 	settings.AddCombo(
