@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-Material::Material(HTexture texIndex, UINT handleOffset, const CHAR* name)
-	: texIndex(texIndex), handleOffset(handleOffset) 
+Material::Material(HTexture texIndex, UINT rawHandleOffset, UINT srgbHandleOffset, const CHAR* name)
+	: texIndex(texIndex), rawHandleOffset(rawHandleOffset), srgbHandleOffset(srgbHandleOffset)
 {
 	strcpy_s(this->name, name);
 }

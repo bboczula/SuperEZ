@@ -7,6 +7,7 @@
 #include "states/IEngineState.h"
 #include "Coordinator.h"
 #include "camera/Camera.h"
+#include "../renderer/ColorPipeline.h"
 #include "../../externals/TinyXML2/tinyxml2.h"
 #include "../../externals/SimpleMath/SimpleMath.h"
 

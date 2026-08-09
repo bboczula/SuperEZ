@@ -34,10 +34,12 @@ RenderGraph::RenderGraph()
 
 	RenderPass* grayscalePass = new GrayscalePass();
 	renderPasses.push_back(grayscalePass);
+#endif
 
 	RenderPass* compositionPass = new CompositionPass();
 	renderPasses.push_back(compositionPass);
 
+#if IS_EDITOR
 	RenderPass* imguiPass = new ImGuiPass(&settings);
 	renderPasses.push_back(imguiPass);
 #endif

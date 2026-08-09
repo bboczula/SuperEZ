@@ -15,9 +15,17 @@ void Shader::Compile(LPCWSTR shaderName, LPCSTR entryPoint, LPCSTR shaderModel)
 	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
+	D3D_SHADER_MACRO defines[] =
+	{
+#if IS_EDITOR
+		{ "IS_EDITOR", "1" },
+#endif
+		{ NULL, NULL }
+	};
+
 	// In final we will copy shaders to the bin directory
 	ID3DBlob* errorBlob = nullptr;
-	HRESULT result = D3DCompileFromFile(shaderName, nullptr, nullptr, entryPoint, shaderModel, compileFlags, 0, &blob, &errorBlob);
+	HRESULT result = D3DCompileFromFile(shaderName, defines, nullptr, entryPoint, shaderModel, compileFlags, 0, &blob, &errorBlob);
 
 	if (FAILED(result))
 	{

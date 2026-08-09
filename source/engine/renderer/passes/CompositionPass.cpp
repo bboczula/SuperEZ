@@ -17,9 +17,12 @@ void CompositionPass::ConfigurePipelineState()
 	RootSignatureBuilder builder;
 	builder.AddConstants(1, 0, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b0
 	builder.AddConstants(1, 1, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b1
+	builder.AddConstants(1, 2, 0, D3D12_SHADER_VISIBILITY_ALL); // Root Constants @ b2
 	builder.AddUAVTable(0, 1, D3D12_SHADER_VISIBILITY_ALL); // UAV u0
 	builder.AddSRVTable(0, 1, D3D12_SHADER_VISIBILITY_ALL); // SRV t0
-	builder.AddSRVTable(1, 1, D3D12_SHADER_VISIBILITY_ALL); // SRV t0
+#if IS_EDITOR
+	builder.AddSRVTable(1, 1, D3D12_SHADER_VISIBILITY_ALL); // SRV t1
+#endif
 	rootSignature = renderContext.CreateRootSignature(builder);
 
 	int viewportWidth = 1920;
@@ -57,25 +60,36 @@ void CompositionPass::Update()
 void CompositionPass::Execute()
 {
 	HTexture sceneColorTexture = renderContext.GetTexture("RT_ForwardPass");
+#if IS_EDITOR
 	HTexture highlightTexture = renderContext.GetTexture("HighlightOutputTexture");
+#endif
 	// The input texture needs to be 4, previous ones don't have valid SRV offset
 	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
 	renderContext.SetDescriptorHeapCompute(commandList);
-	unsigned int width = 1920;
-	renderContext.SetInlineConstantsUAV(commandList, 1, &width, 0); // INVALID value
-	unsigned int height = 1080;
-	renderContext.SetInlineConstantsUAV(commandList, 1, &height, 1); // INVALID value
+	const D3D12_RESOURCE_DESC outputDesc = renderContext.GetTexture(outputTexture)->GetResource()->GetDesc();
+	unsigned int width = static_cast<unsigned int>(outputDesc.Width);
+	renderContext.SetInlineConstantsUAV(commandList, 1, &width, 0);
+	unsigned int height = outputDesc.Height;
+	renderContext.SetInlineConstantsUAV(commandList, 1, &height, 1);
+	unsigned int useLinearColor = renderContext.IsLinearColorEnabled() ? 1u : 0u;
+	renderContext.SetInlineConstantsUAV(commandList, 1, &useLinearColor, 2);
 
 	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	renderContext.TransitionTo(commandList, sceneColorTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+#if IS_EDITOR
 	renderContext.TransitionTo(commandList, highlightTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 2); // Output Texture
-	renderContext.BindTextureOnlySRV(commandList, sceneColorTexture, 3);
-	renderContext.BindTextureOnlySRV(commandList, highlightTexture, 4);
-	renderContext.Dispatch(commandList, 1920 / 8, 1080 / 8, 1);
+#endif
+	renderContext.BindTextureOnlyUAV(commandList, outputTexture, 3); // Output Texture
+	renderContext.BindTextureOnlySRV(commandList, sceneColorTexture, 4);
+#if IS_EDITOR
+	renderContext.BindTextureOnlySRV(commandList, highlightTexture, 5);
+#endif
+	renderContext.Dispatch(commandList, (width + 7) / 8, (height + 7) / 8, 1);
 	renderContext.TransitionBack(commandList, outputTexture);
 	renderContext.TransitionBack(commandList, sceneColorTexture);
+#if IS_EDITOR
 	renderContext.TransitionBack(commandList, highlightTexture);
+#endif
 }
 
 void CompositionPass::PostSubmit()

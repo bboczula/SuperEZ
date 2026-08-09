@@ -29,6 +29,26 @@
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
 
+namespace
+{
+	float SrgbToLinear(UINT channel)
+	{
+		const float srgb = static_cast<float>(channel) / 255.0f;
+		return srgb <= 0.04045f
+			? srgb / 12.92f
+			: std::pow((srgb + 0.055f) / 1.055f, 2.4f);
+	}
+
+	UINT LinearToSrgbByte(float linear)
+	{
+		linear = std::clamp(linear, 0.0f, 1.0f);
+		const float srgb = linear <= 0.0031308f
+			? linear * 12.92f
+			: 1.055f * std::pow(linear, 1.0f / 2.4f) - 0.055f;
+		return static_cast<UINT>(std::round(srgb * 255.0f));
+	}
+}
+
 RenderContext::RenderContext()
 {
 	OutputDebugString(L"RenderContext Constructor\n");
@@ -631,6 +651,16 @@ HTexture RenderContext::CreateTextureResource(const TextureCreateDesc& textureDe
 		textureDesc.initialState,
 		textureDesc.lifeSpan));
 
+	if (textureDesc.srgbSrvFormat != DXGI_FORMAT_UNKNOWN)
+	{
+		const size_t srgbDescriptorIndex = CreateShaderResourceView(
+			resource,
+			textureDesc.srgbSrvFormat,
+			textureDesc.staticSrv,
+			mipLevels);
+		textures[textureHandleIndex]->SetSrgbSrvDescriptorIndex(srgbDescriptorIndex);
+	}
+
 	if (textureDesc.createUav)
 	{
 		size_t uavDescHandleOffset = CreateUnorderedAccessView(resource, textureDesc.format, textureDesc.staticUav);
@@ -923,6 +953,8 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 	std::vector<UINT32> previousPixels;
 	UINT previousWidth = 0;
 	UINT previousHeight = 0;
+	const bool isSrgb = desc.srgbSrvFormat == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+		|| desc.srvFormat == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
 	// Here is where I need to do the MIP loop
 	for (int i = 0; i < desc.mipLevels; ++i)
@@ -938,7 +970,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 			}
 			else
 			{
-				PrepareAndDonwsampleTexture(previousPixels, previousWidth, previousHeight, pixels, width, height);
+				PrepareAndDonwsampleTexture(previousPixels, previousWidth, previousHeight, pixels, width, height, isSrgb);
 			}
 		}
 		else
@@ -968,8 +1000,10 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 		previousHeight = height;
 	}
 
-	auto descHandleOffset = textures[textureHandle.Index()]->GetSrvDescriptorIndex();
-	materials.push_back(new Material(textureHandle, descHandleOffset, desc.name));
+	Texture* texture = textures[textureHandle.Index()];
+	const UINT rawDescriptorIndex = static_cast<UINT>(texture->GetSrvDescriptorIndex());
+	const UINT srgbDescriptorIndex = static_cast<UINT>(texture->GetColorSrvDescriptorIndex(true));
+	materials.push_back(new Material(textureHandle, rawDescriptorIndex, srgbDescriptorIndex, desc.name));
 }
 
 void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data)
@@ -995,7 +1029,8 @@ void RenderContext::PrepareAndDonwsampleTexture(
 	UINT srcHeight,
 	std::vector<UINT32>& dstPixels,
 	UINT dstWidth,
-	UINT dstHeight)
+	UINT dstHeight,
+	bool isSrgb)
 {
 	dstPixels.resize(static_cast<size_t>(dstWidth) * dstHeight);
 
@@ -1008,9 +1043,9 @@ void RenderContext::PrepareAndDonwsampleTexture(
 			const UINT srcY0 = static_cast<UINT>((static_cast<UINT64>(y) * srcHeight) / dstHeight);
 			const UINT srcY1 = static_cast<UINT>((static_cast<UINT64>(y + 1) * srcHeight) / dstHeight);
 
-			UINT r = 0;
-			UINT g = 0;
-			UINT b = 0;
+			float r = 0.0f;
+			float g = 0.0f;
+			float b = 0.0f;
 			UINT a = 0;
 			UINT sampleCount = 0;
 
@@ -1020,24 +1055,31 @@ void RenderContext::PrepareAndDonwsampleTexture(
 				{
 					const UINT32 pixel = srcPixels[static_cast<size_t>(srcY) * srcWidth + srcX];
 
-					r += (pixel >> 0) & 0xFF;
-					g += (pixel >> 8) & 0xFF;
-					b += (pixel >> 16) & 0xFF;
+					const UINT sourceR = (pixel >> 0) & 0xFF;
+					const UINT sourceG = (pixel >> 8) & 0xFF;
+					const UINT sourceB = (pixel >> 16) & 0xFF;
+					r += isSrgb ? SrgbToLinear(sourceR) : static_cast<float>(sourceR);
+					g += isSrgb ? SrgbToLinear(sourceG) : static_cast<float>(sourceG);
+					b += isSrgb ? SrgbToLinear(sourceB) : static_cast<float>(sourceB);
 					a += (pixel >> 24) & 0xFF;
 					++sampleCount;
 				}
 			}
 
-			r = (r + sampleCount / 2) / sampleCount;
-			g = (g + sampleCount / 2) / sampleCount;
-			b = (b + sampleCount / 2) / sampleCount;
+			r /= sampleCount;
+			g /= sampleCount;
+			b /= sampleCount;
 			a = (a + sampleCount / 2) / sampleCount;
+
+			const UINT outputR = isSrgb ? LinearToSrgbByte(r) : static_cast<UINT>(std::round(r));
+			const UINT outputG = isSrgb ? LinearToSrgbByte(g) : static_cast<UINT>(std::round(g));
+			const UINT outputB = isSrgb ? LinearToSrgbByte(b) : static_cast<UINT>(std::round(b));
 
 			dstPixels[static_cast<size_t>(y) * dstWidth + x] =
 				(a << 24) |
-				(b << 16) |
-				(g << 8) |
-				(r << 0);
+				(outputB << 16) |
+				(outputG << 8) |
+				(outputR << 0);
 		}
 	}
 }
@@ -1243,7 +1285,7 @@ void RenderContext::BindDepthBuffer(HCommandList commandList, HDepthBuffer depth
 void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
 	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
-		materials[texture.Index()]->GetHandleOffset(), cbvSrvUavHeap.GetDescriptorSize());
+		materials[texture.Index()]->GetHandleOffset(linearColorEnabled), cbvSrvUavHeap.GetDescriptorSize());
 
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot + 1, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);

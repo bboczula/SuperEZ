@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+    </marker>
+    <marker id="arrowDebug" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a16207"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 800 52px Arial, sans-serif; fill: #0f172a; }
+      .lane-title { font: 800 25px Arial, sans-serif; fill: white; }
+      .label { font: 700 20px Arial, sans-serif; fill: #111827; }
+      .small { font: 600 16px Arial, sans-serif; fill: #475569; }
+      .tiny { font: 700 13px Arial, sans-serif; fill: #334155; }
+      .pass { fill: #2563eb; stroke: #1e40af; stroke-width: 3; }
+      .pass-editor { fill: #7c3aed; stroke: #5b21b6; stroke-width: 3; stroke-dasharray: 8 6; }
+      .pass-debug { fill: #f59e0b; stroke: #b45309; stroke-width: 3; }
+      .target { fill: #dcfce7; stroke: #15803d; stroke-width: 3; }
+      .target-shadow { fill: #e0f2fe; stroke: #0369a1; stroke-width: 3; }
+      .target-id { fill: #fef9c3; stroke: #ca8a04; stroke-width: 3; }
+      .target-debug { fill: #fef3c7; stroke: #d97706; stroke-width: 3; }
+      .pass-text { font: 800 19px Arial, sans-serif; fill: white; }
+      .target-text { font: 800 17px Arial, sans-serif; fill: #14532d; }
+      .lane-always { fill: #eff6ff; stroke: #60a5fa; stroke-width: 2; }
+      .lane-editor { fill: #faf5ff; stroke: #a855f7; stroke-width: 2; stroke-dasharray: 10 8; }
+      .lane-debug { fill: #fffbeb; stroke: #f59e0b; stroke-width: 2; }
+      .flow { fill: none; stroke: #1f2937; stroke-width: 4; marker-end: url(#arrow); }
+      .flow-thin { fill: none; stroke: #1f2937; stroke-width: 3; marker-end: url(#arrow); }
+      .flow-debug { fill: none; stroke: #a16207; stroke-width: 3; stroke-dasharray: 8 8; marker-end: url(#arrowDebug); }
+      .tag-editor { fill: #ede9fe; stroke: #7c3aed; stroke-width: 2; }
+      .tag-debug { fill: #fef3c7; stroke: #d97706; stroke-width: 2; }
+      .tag-text-editor { font: 800 12px Arial, sans-serif; fill: #5b21b6; }
+      .tag-text-debug { font: 800 12px Arial, sans-serif; fill: #92400e; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1100"/>
+  <text class="title" x="44" y="72">SuperEZ Render Graph</text>
+
+  <!-- Legend -->
+  <rect x="1020" y="28" width="720" height="78" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <rect class="pass" x="1044" y="45" width="54" height="44" rx="10"/>
+  <text class="pass-text" x="1060" y="75">P</text>
+  <text class="label" x="1114" y="74">Render Pass = work</text>
+  <rect class="target" x="1364" y="45" width="70" height="44" rx="10"/>
+  <text class="target-text" x="1382" y="74">RT</text>
+  <text class="label" x="1452" y="74">Render Target / Texture = data</text>
+
+  <!-- Lanes -->
+  <rect class="lane-always" x="28" y="136" width="1744" height="318" rx="18"/>
+  <rect x="28" y="136" width="260" height="42" rx="10" fill="#2563eb"/>
+  <text class="lane-title" x="52" y="166">ALWAYS PASSES</text>
+
+  <rect class="lane-editor" x="28" y="488" width="1744" height="350" rx="18"/>
+  <rect x="28" y="488" width="286" height="42" rx="10" fill="#7c3aed"/>
+  <text class="lane-title" x="52" y="518">EDITOR ONLY PASSES</text>
+
+  <rect class="lane-debug" x="28" y="872" width="1744" height="172" rx="18"/>
+  <rect x="28" y="872" width="312" height="42" rx="10" fill="#f59e0b"/>
+  <text class="lane-title" x="52" y="902">DEBUG / SIDE OUTPUTS</text>
+
+  <!-- Scene data -->
+  <rect x="56" y="246" width="164" height="96" rx="14" fill="#ffffff" stroke="#64748b" stroke-width="3"/>
+  <text class="label" x="88" y="300">Scene Data</text>
+  <text class="small" x="78" y="326">meshes, lights</text>
+
+  <!-- Always passes -->
+  <rect class="pass" x="370" y="184" width="210" height="74" rx="12"/>
+  <text class="pass-text" x="404" y="230">SelectionPass</text>
+  <rect class="target-id" x="650" y="184" width="194" height="74" rx="12"/>
+  <text class="target-text" x="678" y="224">RT_Selection</text>
+  <text class="small" x="706" y="250">picking</text>
+
+  <rect class="pass" x="370" y="300" width="210" height="74" rx="12"/>
+  <text class="pass-text" x="398" y="346">ShadowMapPass</text>
+  <rect class="target-shadow" x="650" y="300" width="194" height="74" rx="12"/>
+  <text class="target-text" x="678" y="340" fill="#075985">DB_ShadowMap</text>
+  <text class="small" x="700" y="366">shadow depth</text>
+
+  <rect class="pass" x="950" y="244" width="210" height="74" rx="12"/>
+  <text class="pass-text" x="990" y="290">ForwardPass</text>
+  <rect class="target" x="1224" y="244" width="206" height="74" rx="12"/>
+  <text class="target-text" x="1250" y="284">RT_ForwardPass</text>
+  <text class="small" x="1260" y="310">main scene color</text>
+
+  <rect class="pass" x="1480" y="244" width="154" height="74" rx="12"/>
+  <text class="pass-text" x="1518" y="290">BlitPass</text>
+  <rect class="target" x="1606" y="342" width="138" height="74" rx="12"/>
+  <text class="target-text" x="1630" y="382">BackBuffer</text>
+  <text class="small" x="1618" y="410">copy to present</text>
+
+  <!-- Always arrows -->
+  <path class="flow" d="M 220 294 C 286 294, 286 221, 370 221"/>
+  <path class="flow" d="M 220 294 C 286 294, 286 337, 370 337"/>
+  <path class="flow" d="M 220 294 C 286 294, 286 281, 950 281"/>
+  <path class="flow" d="M 580 221 L 650 221"/>
+  <path class="flow" d="M 580 337 L 650 337"/>
+  <path class="flow" d="M 844 337 C 898 337, 898 281, 950 281"/>
+  <path class="flow" d="M 1160 281 L 1224 281"/>
+  <path class="flow" d="M 1430 281 L 1480 281"/>
+  <path class="flow" d="M 1634 281 C 1682 281, 1682 330, 1675 342"/>
+
+  <!-- Editor highlight path -->
+  <rect class="pass-editor" x="96" y="572" width="232" height="74" rx="12"/>
+  <text class="pass-text" x="122" y="618">HighlightClearPass</text>
+  <rect class="tag-editor" x="172" y="628" width="78" height="20" rx="5"/>
+  <text class="tag-text-editor" x="184" y="643">EDITOR</text>
+
+  <rect class="target" x="372" y="572" width="236" height="74" rx="12"/>
+  <text class="target-text" x="390" y="613">HighlightClearTexture</text>
+
+  <rect x="86" y="694" width="184" height="58" rx="12" fill="#ffffff" stroke="#64748b" stroke-width="3"/>
+  <text class="label" x="112" y="730">Selected Object</text>
+
+  <rect class="pass-editor" x="338" y="690" width="232" height="74" rx="12"/>
+  <text class="pass-text" x="364" y="736">HighlightInputPass</text>
+  <rect class="tag-editor" x="416" y="746" width="78" height="20" rx="5"/>
+  <text class="tag-text-editor" x="428" y="761">EDITOR</text>
+
+  <rect class="pass-editor" x="650" y="690" width="184" height="74" rx="12"/>
+  <text class="pass-text" x="684" y="736">HighlightPass</text>
+  <rect class="tag-editor" x="704" y="746" width="78" height="20" rx="5"/>
+  <text class="tag-text-editor" x="716" y="761">EDITOR</text>
+
+  <rect class="target" x="880" y="690" width="244" height="74" rx="12"/>
+  <text class="target-text" x="904" y="731">HighlightOutputTexture</text>
+
+  <rect class="pass-editor" x="1224" y="574" width="210" height="74" rx="12"/>
+  <text class="pass-text" x="1252" y="620">CompositionPass</text>
+  <rect class="tag-editor" x="1288" y="630" width="78" height="20" rx="5"/>
+  <text class="tag-text-editor" x="1300" y="645">EDITOR</text>
+
+  <rect class="target" x="1478" y="574" width="210" height="74" rx="12"/>
+  <text class="target-text" x="1502" y="614">CompositionTexture</text>
+  <text class="small" x="1518" y="640">scene + highlight</text>
+
+  <rect class="pass-editor" x="1224" y="716" width="160" height="74" rx="12"/>
+  <text class="pass-text" x="1268" y="762">ImGuiPass</text>
+  <rect class="tag-editor" x="1266" y="772" width="78" height="20" rx="5"/>
+  <text class="tag-text-editor" x="1278" y="787">EDITOR</text>
+
+  <rect class="target" x="1478" y="716" width="148" height="74" rx="12"/>
+  <text class="target-text" x="1510" y="756">RT_ImGui</text>
+  <text class="small" x="1512" y="782">editor UI</text>
+
+  <!-- Editor arrows -->
+  <path class="flow" d="M 328 609 L 372 609"/>
+  <path class="flow-thin" d="M 490 646 C 490 668, 454 668, 454 690"/>
+  <path class="flow" d="M 270 723 L 338 723"/>
+  <path class="flow" d="M 570 723 L 650 723"/>
+  <path class="flow" d="M 834 723 L 880 723"/>
+  <path class="flow" d="M 1124 723 C 1184 723, 1184 611, 1224 611"/>
+  <path class="flow" d="M 1327 318 C 1327 430, 1327 492, 1327 574"/>
+  <path class="flow" d="M 1434 611 L 1478 611"/>
+  <path class="flow" d="M 1583 648 C 1583 676, 1304 676, 1304 716"/>
+  <path class="flow" d="M 1384 753 L 1478 753"/>
+  <path class="flow" d="M 1626 753 C 1718 753, 1718 448, 1557 318"/>
+
+  <!-- Debug lane -->
+  <rect class="pass-debug" x="576" y="932" width="188" height="70" rx="12"/>
+  <text class="pass-text" x="604" y="974">GrayscalePass</text>
+  <rect class="tag-debug" x="626" y="986" width="90" height="22" rx="5"/>
+  <text class="tag-text-debug" x="640" y="1001">SIDE DEBUG</text>
+
+  <rect class="target-debug" x="824" y="932" width="246" height="70" rx="12"/>
+  <text class="target-text" x="844" y="972" fill="#92400e">GrayscaleInputTexture</text>
+
+  <rect class="target-debug" x="1350" y="932" width="212" height="70" rx="12"/>
+  <text class="target-text" x="1378" y="972" fill="#92400e">DebugBlitTexture</text>
+  <text class="small" x="1404" y="998">debug viewer</text>
+
+  <path class="flow-debug" d="M 1327 318 C 1327 870, 670 870, 670 932"/>
+  <path class="flow-debug" d="M 764 967 L 824 967"/>
+  <path class="flow-debug" d="M 1557 318 C 1557 746, 1456 746, 1456 932"/>
+
+  <!-- Current architecture note -->
+  <rect x="1048" y="1028" width="686" height="42" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text class="tiny" x="1068" y="1054">Current branch: CompositionPass is editor-only; non-editor BlitPass copies RT_ForwardPass directly to BackBuffer.</text>
+</svg>

@@ -6,6 +6,7 @@
 #include "RenderItem.h"
 #include "../bind/CommandList.h"
 #include "../core/Texture.h"
+#include "ColorPipeline.h"
 
 #pragma comment(lib, "D3DCompiler.lib")
 
@@ -61,6 +62,7 @@ public:
 	UINT mipLevels = 1;
 	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT srgbSrvFormat = DXGI_FORMAT_UNKNOWN;
 	const CHAR* name = "Texture";
 
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
@@ -146,7 +148,7 @@ public:
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
 	void CreateTexture(const TextureCreateDesc& desc, BYTE* data);
 	void PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data);
-	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight);
+	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight, bool isSrgb);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
 	UINT CreateCamera(float aspectRatio, DirectX::SimpleMath::Vector3 position, DirectX::SimpleMath::Vector3 rotation);
 	Camera* GetCamera(UINT index) { return cameras[index]; }
@@ -161,6 +163,8 @@ public:
 	// Debug RT viewer (BlitPass writes, ImGuiPass reads)
 	void SetDebugViewActive(bool active) { debugViewActive = active; }
 	bool IsDebugViewActive() const { return debugViewActive; }
+	void SetLinearColorEnabled(bool enabled) { linearColorEnabled = enabled; }
+	bool IsLinearColorEnabled() const { return linearColorEnabled; }
 	bool WasObjectSelected() { return wasObjectSeleced; }
 	void SetWasObjectSelected(bool value) { wasObjectSeleced = value; }
 	uint32_t GetSelectedObjectId() const { return currentSelectedObjectID; }
@@ -264,6 +268,7 @@ private:
 	uint32_t currentSelectedObjectID = ~0u; // ~0u == invalid ID (aka nothing selected)
 	bool wasObjectSeleced = false;
 	bool debugViewActive = false;
+	bool linearColorEnabled = true;
 	UINT activeCameraIndex = 0;
 };
 

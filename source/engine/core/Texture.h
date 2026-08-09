@@ -47,6 +47,15 @@ public:
 	{
 		return srvDescriptorIndex;
 	}
+	void SetSrgbSrvDescriptorIndex(size_t index)
+	{
+		srgbSrvDescriptorIndex = index;
+		hasSrgbSrv = true;
+	}
+	size_t GetColorSrvDescriptorIndex(bool useSrgb) const
+	{
+		return useSrgb && hasSrgbSrv ? srgbSrvDescriptorIndex : srvDescriptorIndex;
+	}
 	void SetUavDescriptorIndex(size_t index)
 	{
 		uavDescriptorIndex = index;
@@ -73,5 +82,7 @@ private:
 	UINT height;
 	UINT mipLevels;
 	size_t srvDescriptorIndex;
+	size_t srgbSrvDescriptorIndex = 0;
+	bool hasSrgbSrv = false;
 	size_t uavDescriptorIndex;
 };

@@ -270,7 +270,13 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			TextureCreateDesc textureDesc;
 			textureDesc.width = desc.width;
 			textureDesc.height = desc.height;
-			textureDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			textureDesc.format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+			textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if ENABLE_COLOR_PIPELINE_DEBUG
+			textureDesc.srgbSrvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#else
+			textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#endif
 			textureDesc.name = name.c_str();
 			textureDesc.UseFullMipChain();
 
