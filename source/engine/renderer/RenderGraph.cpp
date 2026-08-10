@@ -10,6 +10,7 @@
 #include "passes/GrayscalePass.h"
 #include "passes/CompositionPass.h"
 #include "passes/ShadowMapPass.h"
+#include "passes/UserInterfacePass.h"
 
 RenderGraph::RenderGraph()
 {
@@ -38,6 +39,9 @@ RenderGraph::RenderGraph()
 
 	RenderPass* compositionPass = new CompositionPass();
 	renderPasses.push_back(compositionPass);
+
+	RenderPass* userInterface = new UserInterfacePass();
+	renderPasses.push_back(userInterface);
 
 #if IS_EDITOR
 	RenderPass* imguiPass = new ImGuiPass(&settings);
