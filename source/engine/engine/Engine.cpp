@@ -14,7 +14,6 @@
 #include "IGame.h"
 #include "RawInputService.h"
 #include "SceneService.h"
-#include "RenderService.h"
 #include "IInput.h"
 #include "IScene.h"
 #include "TimeSystem.h"
@@ -111,7 +110,6 @@ void Engine::Initialize()
 	// Prepare GameServices
 	rawInputService = new RawInputService(rawInput);
 	sceneService = new SceneService(renderContext, &mCoordinator);
-	renderService = new RenderService();
 
 	timeSystem = new TimeSystem();
 	timeSystem->SetMaxDeltaSeconds(0.1);
@@ -327,7 +325,7 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		item.texture = HTexture(renderContext.GetNumOfMeshes() - 1);
 		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
 
-		const Entity entity = renderService->CreateEntity(mCoordinator, item);
+		const Entity entity = CreateEntity(item);
 		item.id = entity;
 		renderContext.CreateRenderItem(item);
 		mCoordinator.GetComponent<MaterialComponent>(entity).textureFileName = textureName;
@@ -339,7 +337,6 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		.input = rawInputService,
 		.camera = renderContext.GetActiveCamera(),
 		.picker = nullptr,
-		.render = renderService
 	};
 	game->OnInit(services);
 }
@@ -488,6 +485,69 @@ void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameOb
 	}
 }
 
+Entity Engine::CreateEntity(RenderItem& renderItem)
+{
+	// --- NEW ECS CODE ---
+		// 1. Create the Entity representation of this object
+	Entity newEntity = mCoordinator.CreateEntity();
+	renderItem.id = newEntity;
+
+	// 2. Add Transform (Default to 0,0,0 for now)
+	mCoordinator.AddComponent(newEntity, TransformComponent{
+	    {renderItem.position.x, renderItem.position.y, renderItem.position.z},
+	    {renderItem.rotation.x, renderItem.rotation.y, renderItem.rotation.z},
+	    {renderItem.scale.x, renderItem.scale.y, renderItem.scale.z}
+		});
+
+	// 3. Add Geometry Component
+	mCoordinator.AddComponent(newEntity, GeometryComponent{ renderItem.mesh });
+	mCoordinator.AddComponent(newEntity, MaterialComponent{ renderItem.texture });
+	mCoordinator.AddComponent(newEntity, InfoComponent{ renderItem.name });
+	return newEntity;
+}
+
+void Engine::SynchronizeRenderWorld()
+{
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+	{
+		Signature sig = mCoordinator.GetEntityManager()->GetSignature(entity);
+		bool hasTransform = sig.test(mCoordinator.GetComponentType<TransformComponent>());
+		bool hasGeometry = sig.test(mCoordinator.GetComponentType<GeometryComponent>());
+		bool hasMaterial = sig.test(mCoordinator.GetComponentType<MaterialComponent>());
+		bool hasInfo = sig.test(mCoordinator.GetComponentType<InfoComponent>());
+
+		if (!hasTransform || !hasGeometry || !hasMaterial || !hasInfo)
+			continue;
+
+		//assert(entity != 0 && "Entity 0 is usually reserved/not used.");
+		auto& transform = mCoordinator.GetComponent<TransformComponent>(entity);
+		auto& geo = mCoordinator.GetComponent<GeometryComponent>(entity);
+		auto& mat = mCoordinator.GetComponent<MaterialComponent>(entity);
+		auto& info = mCoordinator.GetComponent<InfoComponent>(entity);
+
+		// Create the item
+		RenderItem item;
+		item.id = entity;
+		item.position = DirectX::SimpleMath::Vector3(transform.position); // assuming vector math matches
+		item.rotation = DirectX::SimpleMath::Vector3(transform.rotation);
+		item.scale = DirectX::SimpleMath::Vector3(transform.scale);
+		item.mesh = geo.meshHandle;
+		item.texture = mat.textureHandle;
+		item.diffuseStrength = mat.diffuseStrength;
+		item.specularStrength = mat.specularStrength;
+		item.shininess = mat.shininess;
+		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
+
+		// Update the RenderItem in the RenderContext (not create)
+		RenderItem* renderItem = renderContext.GetRenderItemById(entity);
+		assert(renderItem != nullptr && "RenderItem not found for ECS entity.");
+		*renderItem = item;
+
+		// Here, we can further bridge ECS with Renderer Context as needed
+		// For example, we might want to set additional flags or update other systems
+	}
+}
+
 void Engine::Tick()
 {
 	if (rawInput.IsKeyDown(VK_ESCAPE))
@@ -531,8 +591,8 @@ void Engine::ProcessSingleFrame()
 	const FrameTime& frameTime = timeSystem->Tick();
 	game->OnUpdate(frameTime);
 	sceneService->Update(frameTime.dt);
-	renderService->Update(mCoordinator);
-
+	
+	SynchronizeRenderWorld();
 	Tick();
 
 	winMessageSubject.RunPostFrame();
