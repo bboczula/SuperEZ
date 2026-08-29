@@ -891,7 +891,7 @@ HBuffer RenderContext::CreateReadbackBuffer()
 	return HBuffer(buffers.size() - 1);
 }
 
-void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name)
+void RenderContext::CreateMesh(HVertexBuffer position, HVertexBuffer color, HVertexBuffer texture, HVertexBuffer normals, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
 
@@ -905,16 +905,17 @@ void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIn
 		return vbv;
 	};
 
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 2 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(position, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(color, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(texture, 2 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(normals, 4 * sizeof(float));
 
-	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
-	const auto localMin = vertexBuffers[vbIndexPosition.Index()]->GetLocalMin();
-	const auto localMax = vertexBuffers[vbIndexPosition.Index()]->GetLocalMax();
-	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
-		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
+	size_t vbPositionIndex = position.Index();
+	UINT vertexCount = vertexBuffers[vbPositionIndex]->GetNumOfVertices();
+	const auto localMin = vertexBuffers[vbPositionIndex]->GetLocalMin();
+	const auto localMax = vertexBuffers[vbPositionIndex]->GetLocalMax();
+	meshes.push_back(new Mesh(position.Index(), vbvPosition, color.Index(), vbvColor, texture.Index(), vbvTexture,
+		normals.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
 float RenderContext::GetSceneBoundsRadius() const

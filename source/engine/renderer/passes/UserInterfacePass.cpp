@@ -32,6 +32,8 @@ void UserInterfacePass::PostAssetLoad()
 
 void UserInterfacePass::Initialize()
 {
+	float quad[] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+	renderContext.CreateVertexBuffer(4, 2, quad, "UI_Letter");
 }
 
 void UserInterfacePass::Update()

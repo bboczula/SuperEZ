@@ -20,13 +20,9 @@ public:
 	DirectX::SimpleMath::Vector3 GetLocalMin() const { return localMin; }
 	DirectX::SimpleMath::Vector3 GetLocalMax() const { return localMax; }
 private:
-	size_t vbIndexPosition;
 	D3D12_VERTEX_BUFFER_VIEW vbvPosition;
-	size_t vbIndexColor;
 	D3D12_VERTEX_BUFFER_VIEW vbvColor;
-	size_t vbIndexTexture;
 	D3D12_VERTEX_BUFFER_VIEW vbvTexture;
-	size_t vbIndexNormals;
 	D3D12_VERTEX_BUFFER_VIEW vbvNormals;
 	CHAR name[32];
 	UINT vertexCount;
