@@ -891,14 +891,22 @@ HBuffer RenderContext::CreateReadbackBuffer()
 	return HBuffer(buffers.size() - 1);
 }
 
-void RenderContext::CreateMesh(HVertexBuffer position, HVertexBuffer color, HVertexBuffer texture, HVertexBuffer normals, const CHAR* name)
+HMesh RenderContext::CreateMesh(HVertexBuffer position, HVertexBuffer color, HVertexBuffer texture, HVertexBuffer normals, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
+	assert(position.IsValid() && "A mesh requires a position vertex buffer.");
+	assert(position.Index() < vertexBuffers.size() && "Position vertex buffer handle is out of range.");
 
 	auto createVBV = [&](HVertexBuffer handle, UINT stride) -> D3D12_VERTEX_BUFFER_VIEW
 	{
+		D3D12_VERTEX_BUFFER_VIEW vbv{};
+		if (!handle.IsValid())
+		{
+			return vbv;
+		}
+
+		assert(handle.Index() < vertexBuffers.size() && "Vertex buffer handle is out of range.");
 		auto& vb = vertexBuffers[handle.Index()];
-		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = vb->GetResource()->GetGPUVirtualAddress();
 		vbv.StrideInBytes = stride;
 		vbv.SizeInBytes = vb->GetSizeInBytes();
@@ -916,6 +924,8 @@ void RenderContext::CreateMesh(HVertexBuffer position, HVertexBuffer color, HVer
 	const auto localMax = vertexBuffers[vbPositionIndex]->GetLocalMax();
 	meshes.push_back(new Mesh(position, vbvPosition, color, vbvColor, texture, vbvTexture,
 		normals, vbvNormalsTexture, vertexCount, localMin, localMax, name));
+
+	return HMesh(meshes.size() - 1);
 }
 
 float RenderContext::GetSceneBoundsRadius() const
@@ -937,7 +947,7 @@ float RenderContext::GetSceneBoundsRadius() const
 	return (sceneMax - sceneMin).Length() * 0.5f;
 }
 
-void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
+HTexture RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");
 
@@ -1005,6 +1015,10 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 	const UINT rawDescriptorIndex = static_cast<UINT>(texture->GetSrvDescriptorIndex());
 	const UINT srgbDescriptorIndex = static_cast<UINT>(texture->GetColorSrvDescriptorIndex(true));
 	materials.push_back(new Material(textureHandle, rawDescriptorIndex, srgbDescriptorIndex, desc.name));
+
+	// BindTexture currently uses HTexture as a material-table handle. Return that
+	// table index explicitly instead of relying on it matching a mesh index.
+	return HTexture(materials.size() - 1);
 }
 
 void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data)
@@ -1285,6 +1299,8 @@ void RenderContext::BindDepthBuffer(HCommandList commandList, HDepthBuffer depth
 
 void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
+	assert(texture.IsValid() && "Invalid material handle.");
+	assert(texture.Index() < materials.size() && "Material handle is out of range.");
 	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
 		materials[texture.Index()]->GetHandleOffset(linearColorEnabled), cbvSrvUavHeap.GetDescriptorSize());
 
@@ -1318,29 +1334,34 @@ void RenderContext::BindTextureOnlySRV(HCommandList commandList, HTexture textur
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 {
+	assert(mesh.IsValid() && "Invalid mesh handle.");
+	assert(mesh.Index() < meshes.size() && "Mesh handle is out of range.");
 	auto theMesh = meshes[mesh.Index()];
 	assert(theMesh->HasPosition());
 
-	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	std::vector< D3D12_VERTEX_BUFFER_VIEW> vertexBufferViews;
-	vertexBufferViews.push_back(theMesh->GetPositionVertexBufferView());
+	auto d3dCommandList = commandLists[commandList.Index()]->GetCommandList();
+	d3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	auto positionView = theMesh->GetPositionVertexBufferView();
+	d3dCommandList->IASetVertexBuffers(0, 1, &positionView);
 
 	if (theMesh->HasColor())
 	{
-		vertexBufferViews.push_back(theMesh->GetColorVertexBufferView());
+		auto colorView = theMesh->GetColorVertexBufferView();
+		d3dCommandList->IASetVertexBuffers(1, 1, &colorView);
 	}
 
 	if (theMesh->HasTexture())
 	{
-		vertexBufferViews.push_back(theMesh->GetTextureVertexBufferView());
+		auto textureView = theMesh->GetTextureVertexBufferView();
+		d3dCommandList->IASetVertexBuffers(2, 1, &textureView);
 	}
 
 	if (theMesh->HasNormals())
 	{
-		vertexBufferViews.push_back(theMesh->GetNormalsVertexBufferView());
+		auto normalsView = theMesh->GetNormalsVertexBufferView();
+		d3dCommandList->IASetVertexBuffers(3, 1, &normalsView);
 	}
-
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, vertexBufferViews.size(), vertexBufferViews.data());
 }
 
 void RenderContext::BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot)

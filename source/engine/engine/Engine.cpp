@@ -261,7 +261,7 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			return renderContext.CreateVertexBuffer(meshDescriptor.numOfVertices * 3, components, meshOutput.data(), name.c_str());
 		};
 
-		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data)
+		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data) -> HTexture
 		{
 			std::string name = "TEX_" + meshName;
 
@@ -278,7 +278,7 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			textureDesc.name = name.c_str();
 			textureDesc.UseFullMipChain();
 
-			renderContext.CreateTexture(textureDesc, data.data());
+			return renderContext.CreateTexture(textureDesc, data.data());
 		};
 
 		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))
@@ -308,21 +308,21 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			normalizedNormals.data(),
 			normalBufferName.c_str());
 
-		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
+		HMesh mesh = renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
 
 		//auto texturePath = std::filesystem::current_path() / textureName;
 		auto texturePath = currentPath.remove_filename() / textureName;
 		assetManager.ImageLoadAndDecode(texturePath.string().c_str());
 		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
 
-		CreateTexture(imageDescriptor, imageOutput);
+		HTexture texture = CreateTexture(imageDescriptor, imageOutput);
 
 		RenderItem item{};
 		item.position = gameObject.position;
 		item.rotation = gameObject.rotation;
 		item.scale = gameObject.scale;
-		item.mesh = HMesh(renderContext.GetNumOfMeshes() - 1);
-		item.texture = HTexture(renderContext.GetNumOfMeshes() - 1);
+		item.mesh = mesh;
+		item.texture = texture;
 		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
 
 		const Entity entity = CreateEntity(item);

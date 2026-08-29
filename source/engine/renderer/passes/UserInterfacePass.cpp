@@ -23,17 +23,29 @@ void UserInterfacePass::ConfigurePipelineState()
     RootSignatureBuilder builder;
     rootSignature = renderContext.CreateRootSignature(builder);
 
-    renderTarget = renderContext.CreateRenderTarget("RT_UserInterfacePass", RenderTargetFormat::RGB8_UNORM, 64, 64);
+	HTexture compositionTexture = renderContext.GetTexture("CompositionTexture");
+	renderTarget = renderContext.CreateRenderTarget("RT_UserInterfacePass", compositionTexture);
 }
 
 void UserInterfacePass::PostAssetLoad()
 {
+	float quad[] =
+	{
+		0.78f, -0.15f, 0.0f, 1.0f,
+		0.98f, -0.15f, 0.0f, 1.0f,
+		0.78f,  0.15f, 0.0f, 1.0f,
+
+		0.98f, -0.15f, 0.0f, 1.0f,
+		0.98f,  0.15f, 0.0f, 1.0f,
+		0.78f,  0.15f, 0.0f, 1.0f
+	};
+	HVertexBuffer letter = renderContext.CreateVertexBuffer(6, 4, quad, "UI_Letter");
+	letterMesh = renderContext.CreateMesh(letter, HVertexBuffer::Invalid(), HVertexBuffer::Invalid(),
+		HVertexBuffer::Invalid(), "UI_Letter");
 }
 
 void UserInterfacePass::Initialize()
 {
-	float quad[] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-	renderContext.CreateVertexBuffer(4, 2, quad, "UI_Letter");
 }
 
 void UserInterfacePass::Update()
@@ -42,6 +54,14 @@ void UserInterfacePass::Update()
 
 void UserInterfacePass::Execute()
 {
+	renderContext.SetupRenderPass(commandList, pipelineState, rootSignature);
+
+	HTexture outputTexture = renderContext.GetTexture(renderTarget);
+	renderContext.TransitionTo(commandList, outputTexture, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	renderContext.BindRenderTarget(commandList, renderTarget);
+
+	renderContext.BindGeometry(commandList, letterMesh);
+	renderContext.DrawMesh(commandList, letterMesh);
 }
 
 void UserInterfacePass::PostSubmit()
