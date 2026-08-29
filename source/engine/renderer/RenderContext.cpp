@@ -914,8 +914,8 @@ void RenderContext::CreateMesh(HVertexBuffer position, HVertexBuffer color, HVer
 	UINT vertexCount = vertexBuffers[vbPositionIndex]->GetNumOfVertices();
 	const auto localMin = vertexBuffers[vbPositionIndex]->GetLocalMin();
 	const auto localMax = vertexBuffers[vbPositionIndex]->GetLocalMax();
-	meshes.push_back(new Mesh(position.Index(), vbvPosition, color.Index(), vbvColor, texture.Index(), vbvTexture,
-		normals.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
+	meshes.push_back(new Mesh(position, vbvPosition, color, vbvColor, texture, vbvTexture,
+		normals, vbvNormalsTexture, vertexCount, localMin, localMax, name));
 }
 
 float RenderContext::GetSceneBoundsRadius() const
@@ -1318,15 +1318,29 @@ void RenderContext::BindTextureOnlySRV(HCommandList commandList, HTexture textur
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 {
+	auto theMesh = meshes[mesh.Index()];
+	assert(theMesh->HasPosition());
+
 	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
+	std::vector< D3D12_VERTEX_BUFFER_VIEW> vertexBufferViews;
+	vertexBufferViews.push_back(theMesh->GetPositionVertexBufferView());
+
+	if (theMesh->HasColor())
 	{
-		meshes[mesh.Index()]->GetPositionVertexBufferView(),
-		meshes[mesh.Index()]->GetColorVertexBufferView(),
-		meshes[mesh.Index()]->GetTextureVertexBufferView(),
-		meshes[mesh.Index()]->GetNormalsVertexBufferView()
-	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 4, vbvPosition);
+		vertexBufferViews.push_back(theMesh->GetColorVertexBufferView());
+	}
+
+	if (theMesh->HasTexture())
+	{
+		vertexBufferViews.push_back(theMesh->GetTextureVertexBufferView());
+	}
+
+	if (theMesh->HasNormals())
+	{
+		vertexBufferViews.push_back(theMesh->GetNormalsVertexBufferView());
+	}
+
+	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, vertexBufferViews.size(), vertexBufferViews.data());
 }
 
 void RenderContext::BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot)

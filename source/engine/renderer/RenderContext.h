@@ -145,7 +145,8 @@ public:
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
 	HDepthBuffer CreateDepthBuffer();
 	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
-	void CreateMesh(HVertexBuffer position, HVertexBuffer color, HVertexBuffer texture, HVertexBuffer normals, const CHAR* name);
+	void CreateMesh(HVertexBuffer position, HVertexBuffer color =  HVertexBuffer::Invalid(),
+		HVertexBuffer texture = HVertexBuffer::Invalid(), HVertexBuffer normals = HVertexBuffer::Invalid(), const CHAR* name = "Unnamed");
 	void CreateTexture(const TextureCreateDesc& desc, BYTE* data);
 	void PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data);
 	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight, bool isSrgb);
