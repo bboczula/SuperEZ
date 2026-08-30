@@ -30,3 +30,10 @@ If you already cloned wihout submodules, you need to do this.
 git submodule init
 git submodule update
 ```
+
+## Documentation
+
+- [Handling Geometry](docs/handling-geometry.md)
+- [Handling Textures](docs/handling-textures.md)
+- [Functional Specification](docs/functional-specification/README.md)
+- [Asset Import Pipeline](docs/asset-import-pipeline.md)

@@ -24,5 +24,12 @@ PSInput VSMain(VSInput input)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return BitmapFont.Sample(FontSampler, input.textureCoordinate);
+    float4 color = BitmapFont.Sample(FontSampler, input.textureCoordinate);
+
+    if (all(color.rgb < float3(0.1f, 0.1f, 0.1f)))
+    {
+        discard;
+    }
+
+    return color;
 }
