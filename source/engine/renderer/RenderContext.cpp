@@ -472,14 +472,14 @@ HInputLayout RenderContext::CreateInputLayout()
 	return HInputLayout(inputLayouts.size() - 1);
 }
 
-HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
+HVertexBuffer RenderContext::CreateVertexBuffer(VertexBufferCreateDesc& desc, FLOAT* meshData)
 {
 	using DirectX::SimpleMath::Vector3;
 
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
 	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
-	const UINT vbSizeInBytes = numOfVertices * numOfFloatsPerVertex * sizeof(float);
+	const UINT vbSizeInBytes = desc.numOfVertices * desc.numOfFloatsPerVertex * sizeof(float);
 
 	// Note: using upload heaps to transfer static data like vert buffers is not 
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
@@ -492,7 +492,7 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 	deviceContext.CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
 
 	CHAR tempName[64];
-	snprintf(tempName, sizeof(tempName), "VB_%s", name);
+	snprintf(tempName, sizeof(tempName), "VB_%s", desc.name);
 	WCHAR wName[64];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
@@ -500,11 +500,11 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 
 	Vector3 localMin(FLT_MAX, FLT_MAX, FLT_MAX);
 	Vector3 localMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-	if (meshData != nullptr && numOfFloatsPerVertex >= 3)
+	if (meshData != nullptr && desc.numOfFloatsPerVertex >= 3)
 	{
-		for (UINT vertexIndex = 0; vertexIndex < numOfVertices; ++vertexIndex)
+		for (UINT vertexIndex = 0; vertexIndex < desc.numOfVertices; ++vertexIndex)
 		{
-			const UINT offset = vertexIndex * numOfFloatsPerVertex;
+			const UINT offset = vertexIndex * desc.numOfFloatsPerVertex;
 			const Vector3 position(meshData[offset + 0], meshData[offset + 1], meshData[offset + 2]);
 			localMin = Vector3::Min(localMin, position);
 			localMax = Vector3::Max(localMax, position);
@@ -516,7 +516,7 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 		localMax = Vector3(1.0f, 1.0f, 1.0f);
 	}
 
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName, localMin, localMax));
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, desc.numOfVertices, tempName, localMin, localMax));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -590,7 +590,11 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	CHAR tempName[64];
 	snprintf(tempName, sizeof(tempName), "COLOR_%s", name);
 
-	HVertexBuffer vertexBuffer = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
+	VertexBufferCreateDesc desc;
+	desc.numOfVertices = numOfTriangles * 3;
+	desc.numOfFloatsPerVertex = 4;
+	desc.name = tempName;
+	HVertexBuffer vertexBuffer = CreateVertexBuffer(desc, meshPositionAndColor);
 
 	return vertexBuffer;
 }

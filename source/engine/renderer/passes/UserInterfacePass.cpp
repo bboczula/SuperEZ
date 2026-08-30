@@ -39,9 +39,16 @@ void UserInterfacePass::PostAssetLoad()
 		0.98f,  0.15f, 0.0f, 1.0f,
 		0.78f,  0.15f, 0.0f, 1.0f
 	};
-	HVertexBuffer letter = renderContext.CreateVertexBuffer(6, 4, quad, "UI_Letter");
+
+	VertexBufferCreateDesc desc;
+	desc.numOfVertices = 6;
+	desc.numOfFloatsPerVertex = 4;
+	desc.name = "UI_Letter";
+
+	HVertexBuffer letter = renderContext.CreateVertexBuffer(desc, quad);
+
 	letterMesh = renderContext.CreateMesh(letter, HVertexBuffer::Invalid(), HVertexBuffer::Invalid(),
-		HVertexBuffer::Invalid(), "UI_Letter");
+		HVertexBuffer::Invalid(), "UI_Letter_Mesh");
 }
 
 void UserInterfacePass::Initialize()

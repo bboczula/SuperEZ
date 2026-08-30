@@ -63,7 +63,7 @@ public:
 	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN;
 	DXGI_FORMAT srgbSrvFormat = DXGI_FORMAT_UNKNOWN;
-	const CHAR* name = "Texture";
+	const CHAR* name = "UNNAMED_TEXTURE";
 
 	D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
 	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
@@ -103,9 +103,20 @@ private:
 	}
 };
 
+struct VertexBufferCreateDesc
+{
+	UINT numOfVertices = 0;
+	UINT numOfFloatsPerVertex = 0;
+	const CHAR* name = "UNNAMED_VERTEX_BUFFER";
+};
+
 class RenderContext
 {
 public:
+	// --- Key Functionality ---
+	HTexture CreateTexture(const TextureCreateDesc& desc, BYTE* data);
+	HVertexBuffer CreateVertexBuffer(VertexBufferCreateDesc& desc, FLOAT* meshData);
+	// -------------------------
 	RenderContext();
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
@@ -147,7 +158,6 @@ public:
 	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	HMesh CreateMesh(HVertexBuffer position, HVertexBuffer color = HVertexBuffer::Invalid(),
 		HVertexBuffer texture = HVertexBuffer::Invalid(), HVertexBuffer normals = HVertexBuffer::Invalid(), const CHAR* name = "Unnamed");
-	HTexture CreateTexture(const TextureCreateDesc& desc, BYTE* data);
 	void PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data);
 	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight, bool isSrgb);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
@@ -194,7 +204,6 @@ public:
 	HBuffer CreateConsantBuffer();
 	HBuffer CreateTextureUploadBuffer(HTexture textureHandle, UINT64 uploadBufferSize);
 	// Geometry
-	HVertexBuffer CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name);
 	HVertexBuffer GenerateColors(float* data, size_t size, UINT numOfTriangles, const CHAR* name);
 	Mesh* GetMesh(HMesh mesh) { return meshes[mesh.Index()]; }
 	// Constants

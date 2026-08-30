@@ -258,7 +258,12 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		auto CreateVB = [&](std::string_view label, int components) -> HVertexBuffer
 		{
 			std::string name = std::string(label) + "_" + meshName;
-			return renderContext.CreateVertexBuffer(meshDescriptor.numOfVertices * 3, components, meshOutput.data(), name.c_str());
+
+			VertexBufferCreateDesc desc;
+			desc.numOfVertices = meshDescriptor.numOfVertices * 3;
+			desc.numOfFloatsPerVertex = components;
+			desc.name = name.c_str();
+			return renderContext.CreateVertexBuffer(desc, meshOutput.data());
 		};
 
 		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data) -> HTexture
@@ -302,11 +307,13 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		const UINT vertexCount = meshDescriptor.numOfVertices * 3;
 		auto normalizedNormals = NormalizeNormalStream(meshOutput, vertexCount);
 		std::string normalBufferName = "NORMAL_" + meshName;
-		auto vbNormals = renderContext.CreateVertexBuffer(
-			vertexCount,
-			4,
-			normalizedNormals.data(),
-			normalBufferName.c_str());
+
+		VertexBufferCreateDesc vbDesc;
+		vbDesc.numOfVertices = vertexCount;
+		vbDesc.numOfFloatsPerVertex = 4;
+		vbDesc.name = normalBufferName.c_str();
+
+		auto vbNormals = renderContext.CreateVertexBuffer(vbDesc, normalizedNormals.data());
 
 		HMesh mesh = renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
 
