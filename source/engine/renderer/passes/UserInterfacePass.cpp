@@ -37,57 +37,127 @@ void UserInterfacePass::ConfigurePipelineState()
 
 void UserInterfacePass::PostAssetLoad()
 {
-	float quad[] =
-	{
-		0.78f, -0.15f, 0.0f, 1.0f,
-		0.98f, -0.15f, 0.0f, 1.0f,
-		0.78f,  0.15f, 0.0f, 1.0f,
+	const float width = 730.0f;
+	const float height = 650.0f;
+	const float leftMargin = 48.0f;
+	const float topMargin = 48.0f;
+	const float letterWidth = 39.0f;
+	const float letterHeight = 55.0f;
 
-		0.98f, -0.15f, 0.0f, 1.0f,
-		0.98f,  0.15f, 0.0f, 1.0f,
-		0.78f,  0.15f, 0.0f, 1.0f
-	};
-	float colors[] =
-	{
-		1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
+	const HTexture outputTexture = renderContext.GetTexture(renderTarget);
+	const D3D12_RESOURCE_DESC outputDesc =
+		renderContext.GetTexture(outputTexture)->GetResource()->GetDesc();
+	const float renderTargetAspectCorrection =
+		static_cast<float>(outputDesc.Height) / static_cast<float>(outputDesc.Width);
 
-		1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f
-	};
-	float textureCoordinates[] =
-	{
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		0.0f, 0.0f,
+	constexpr unsigned int labelSlotCount = 7;
+	constexpr unsigned int drawableGlyphCount = 6;
+	constexpr unsigned int verticesPerGlyph = 6;
+	constexpr unsigned int positionValuesPerVertex = 4;
+	constexpr unsigned int colorValuesPerVertex = 4;
+	constexpr unsigned int textureCoordinateValuesPerVertex = 2;
+	constexpr unsigned int glyphColumns[labelSlotCount] = { 5, 4, 12, 0, 1, 2, 7 };
+	constexpr unsigned int glyphRows[labelSlotCount] = { 1, 0, 1, 0, 4, 6, 4 };
+	constexpr bool glyphVisible[labelSlotCount] = { true, true, true, false, true, true, true };
 
-		1.0f, 1.0f,
-		1.0f, 0.0f,
-		0.0f, 0.0f
-	};
+	const float quadHeight = 0.0375f;
+	const float quadWidth = quadHeight * (letterWidth / letterHeight) * renderTargetAspectCorrection;
+	const float horizontalSpacing = 9.0f;  // 48 - 39
+	const float verticalSpacing = 25.0f;   // 80 - 55
+	const float quadSpacing = quadWidth * (horizontalSpacing / letterWidth);
+	const float glyphAdvance = quadWidth + quadSpacing;
+	const float labelWidth = labelSlotCount * quadWidth + (labelSlotCount - 1) * quadSpacing;
+	const float rightMargin = 0.05f;
+	const float bottomMargin = 0.05f;
+	const float labelLeft = 1.0f - rightMargin - labelWidth;
+	const float quadBottom = -1.0f + bottomMargin;
+	const float quadTop = quadBottom + quadHeight;
+
+	float quad[drawableGlyphCount * verticesPerGlyph * positionValuesPerVertex] = {};
+	float colors[drawableGlyphCount * verticesPerGlyph * colorValuesPerVertex] = {};
+	float textureCoordinates[drawableGlyphCount * verticesPerGlyph * textureCoordinateValuesPerVertex] = {};
+
+	unsigned int drawableGlyphIndex = 0;
+	for (unsigned int slotIndex = 0; slotIndex < labelSlotCount; ++slotIndex)
+	{
+		if (!glyphVisible[slotIndex])
+		{
+			continue;
+		}
+
+		const float quadLeft = labelLeft + slotIndex * glyphAdvance;
+		const float quadRight = quadLeft + quadWidth;
+		const float glyphLeft =
+			leftMargin + glyphColumns[slotIndex] * (letterWidth + horizontalSpacing);
+		const float glyphTop =
+			topMargin + glyphRows[slotIndex] * (letterHeight + verticalSpacing);
+		const float glyphRight = glyphLeft + letterWidth;
+		const float glyphBottom = glyphTop + letterHeight;
+
+		const float glyphPositions[] =
+		{
+			quadLeft,  quadBottom, 0.0f, 1.0f,
+			quadRight, quadBottom, 0.0f, 1.0f,
+			quadLeft,  quadTop,    0.0f, 1.0f,
+
+			quadRight, quadBottom, 0.0f, 1.0f,
+			quadRight, quadTop,    0.0f, 1.0f,
+			quadLeft,  quadTop,    0.0f, 1.0f
+		};
+		const float glyphTextureCoordinates[] =
+		{
+			glyphLeft / width, glyphBottom / height,
+			glyphRight / width, glyphBottom / height,
+			glyphLeft / width, glyphTop / height,
+
+			glyphRight / width, glyphBottom / height,
+			glyphRight / width, glyphTop / height,
+			glyphLeft / width, glyphTop / height
+		};
+
+		const unsigned int positionOffset =
+			drawableGlyphIndex * verticesPerGlyph * positionValuesPerVertex;
+		for (unsigned int valueIndex = 0;
+			valueIndex < verticesPerGlyph * positionValuesPerVertex;
+			++valueIndex)
+		{
+			quad[positionOffset + valueIndex] = glyphPositions[valueIndex];
+			colors[positionOffset + valueIndex] = 1.0f;
+		}
+
+		const unsigned int textureCoordinateOffset =
+			drawableGlyphIndex * verticesPerGlyph * textureCoordinateValuesPerVertex;
+		for (unsigned int valueIndex = 0;
+			valueIndex < verticesPerGlyph * textureCoordinateValuesPerVertex;
+			++valueIndex)
+		{
+			textureCoordinates[textureCoordinateOffset + valueIndex] =
+				glyphTextureCoordinates[valueIndex];
+		}
+
+		++drawableGlyphIndex;
+	}
 
 	VertexBufferCreateDesc positionDesc;
-	positionDesc.numOfVertices = 6;
+	positionDesc.numOfVertices = drawableGlyphCount * verticesPerGlyph;
 	positionDesc.numOfFloatsPerVertex = 4;
-	positionDesc.name = "UI_Letter_Position";
+	positionDesc.name = "UI_Label_Position";
 	HVertexBuffer position = renderContext.CreateVertexBuffer(positionDesc, quad);
 
 	VertexBufferCreateDesc colorDesc;
-	colorDesc.numOfVertices = 6;
+	colorDesc.numOfVertices = drawableGlyphCount * verticesPerGlyph;
 	colorDesc.numOfFloatsPerVertex = 4;
-	colorDesc.name = "UI_Letter_Color";
+	colorDesc.name = "UI_Label_Color";
 	HVertexBuffer color = renderContext.CreateVertexBuffer(colorDesc, colors);
 
 	VertexBufferCreateDesc textureCoordinateDesc;
-	textureCoordinateDesc.numOfVertices = 6;
+	textureCoordinateDesc.numOfVertices = drawableGlyphCount * verticesPerGlyph;
 	textureCoordinateDesc.numOfFloatsPerVertex = 2;
-	textureCoordinateDesc.name = "UI_Letter_TextureCoordinate";
+	textureCoordinateDesc.name = "UI_Label_TextureCoordinate";
 	HVertexBuffer textureCoordinate = renderContext.CreateVertexBuffer(textureCoordinateDesc, textureCoordinates);
 
 	letterMesh = renderContext.CreateMesh(position, color, textureCoordinate,
-		HVertexBuffer::Invalid(), "UI_Letter_Mesh");
+		HVertexBuffer::Invalid(), "UI_Label_Mesh");
 }
 
 void UserInterfacePass::Initialize()
