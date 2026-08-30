@@ -115,7 +115,7 @@ class RenderContext
 public:
 	// --- Key Functionality ---
 	HTexture CreateTexture(const TextureCreateDesc& desc, BYTE* data);
-	HVertexBuffer CreateVertexBuffer(VertexBufferCreateDesc& desc, FLOAT* meshData);
+	HVertexBuffer CreateVertexBuffer(const VertexBufferCreateDesc& desc, FLOAT* meshData);
 	// -------------------------
 	RenderContext();
 	~RenderContext();

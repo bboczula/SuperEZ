@@ -472,7 +472,7 @@ HInputLayout RenderContext::CreateInputLayout()
 	return HInputLayout(inputLayouts.size() - 1);
 }
 
-HVertexBuffer RenderContext::CreateVertexBuffer(VertexBufferCreateDesc& desc, FLOAT* meshData)
+HVertexBuffer RenderContext::CreateVertexBuffer(const VertexBufferCreateDesc& desc, FLOAT* meshData)
 {
 	using DirectX::SimpleMath::Vector3;
 
