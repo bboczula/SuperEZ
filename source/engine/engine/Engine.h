@@ -76,6 +76,7 @@ public:
 	void Run(IGame& game);
 	void ProcessSingleFrame();
 	void LoadSceneAssets(std::string sceneName);
+	void LoadEngineAssets();
 	void UnloadSceneAssets();
 	void ChangeState(IEngineState* newState);
 	void ProcessGlobalCommands();

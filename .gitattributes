@@ -1,2 +1,10 @@
-# Auto detect text files and perform LF normalization
+# Auto-detect other text files. Engine source files are explicitly checked out
+# with Windows line endings to match Visual Studio and .editorconfig.
 * text=auto
+*.c text eol=crlf
+*.cpp text eol=crlf
+*.h text eol=crlf
+*.hpp text eol=crlf
+*.hlsl text eol=crlf
+*.md text eol=crlf
+AGENTS.md text eol=crlf

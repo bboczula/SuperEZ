@@ -7,11 +7,12 @@
 // font rendering.
 
 class Orbit;
+struct EngineAssets;
 
 class UserInterfacePass : public RenderPass
 {
 public:
-    UserInterfacePass();
+    explicit UserInterfacePass(const EngineAssets& engineAssets);
     ~UserInterfacePass();
 
     void ConfigurePipelineState() override;
@@ -22,5 +23,6 @@ public:
 	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
+	const EngineAssets& engineAssets;
 	HMesh letterMesh;
 };

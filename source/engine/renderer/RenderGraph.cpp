@@ -12,7 +12,8 @@
 #include "passes/ShadowMapPass.h"
 #include "passes/UserInterfacePass.h"
 
-RenderGraph::RenderGraph()
+RenderGraph::RenderGraph(const EngineAssets& engineAssets)
+	: engineAssets(engineAssets)
 {
 	RenderPass* selectionPass = new SelectionPass();
 	renderPasses.push_back(selectionPass);
@@ -40,7 +41,7 @@ RenderGraph::RenderGraph()
 	RenderPass* compositionPass = new CompositionPass();
 	renderPasses.push_back(compositionPass);
 
-	RenderPass* userInterface = new UserInterfacePass();
+	RenderPass* userInterface = new UserInterfacePass(engineAssets);
 	renderPasses.push_back(userInterface);
 
 #if IS_EDITOR

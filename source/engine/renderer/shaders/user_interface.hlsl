@@ -1,16 +1,28 @@
+Texture2D BitmapFont : register(t0);
+SamplerState FontSampler : register(s0);
+
+struct VSInput
+{
+    float4 position : POSITION;
+    float4 color : COLOR;
+    float2 textureCoordinate : TEXCOORD;
+};
+
 struct PSInput
 {
     float4 position : SV_POSITION;
+    float2 textureCoordinate : TEXCOORD;
 };
 
-PSInput VSMain(float4 position : POSITION)
+PSInput VSMain(VSInput input)
 {
     PSInput result;
-    result.position = position;
+    result.position = input.position;
+    result.textureCoordinate = input.textureCoordinate;
     return result;
 }
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return float4(1.0f, 0.0f, 1.0f, 1.0f);
+    return BitmapFont.Sample(FontSampler, input.textureCoordinate);
 }

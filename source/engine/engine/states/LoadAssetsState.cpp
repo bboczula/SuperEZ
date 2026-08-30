@@ -10,6 +10,7 @@ LoadAssetsState::LoadAssetsState(std::string sceneName) : sceneName(std::move(sc
 void LoadAssetsState::Enter(Engine& engine)
 {
 	OutputDebugString(L"LoadAssetsState::Enter\n");
+	engine.LoadEngineAssets();
 	engine.LoadSceneAssets(sceneName);
 
 	// Transition to the next state after loading assets

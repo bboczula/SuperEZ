@@ -19,6 +19,7 @@
 #include "TimeSystem.h"
 #include "Components.h"
 #include "ECSTypes.h"
+#include "EngineAssets.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -34,7 +35,8 @@ Settings settings;
 WindowContext windowContext;
 DeviceContext deviceContext;
 RenderContext renderContext;
-RenderGraph renderGraph;
+EngineAssets engineAssets;
+RenderGraph renderGraph(engineAssets);
 Subject<WinMessageEvent> winMessageSubject;
 RawInput rawInput;
 CursorInput cursorInput;
@@ -618,6 +620,32 @@ void Engine::LoadSceneAssets(std::string sceneName)
 	};
 	ProcessScene(gameObjects, cameras, sunlights, sceneData);
 	LoadAssets(gameObjects, cameras, sunlights, sceneData.currentPath);
+}
+
+void Engine::LoadEngineAssets()
+{
+	auto path = std::filesystem::current_path() / "assets" / "engine" / "bitmap_font_minogram.bmp";
+	AssetSuite::Manager assetManager;
+	assetManager.ImageLoadAndDecode(path.string().c_str());
+
+	std::vector<uint8_t> imageOutput;
+	AssetSuite::ImageDescriptor imageDescriptor{};
+	assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
+
+	TextureCreateDesc textureDesc;
+	textureDesc.width = imageDescriptor.width;
+	textureDesc.height = imageDescriptor.height;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+	textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if ENABLE_COLOR_PIPELINE_DEBUG
+	textureDesc.srgbSrvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#else
+	textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#endif
+	textureDesc.name = "BITMAP_FONT";
+	textureDesc.UseFullMipChain();
+
+	engineAssets.bitmapFont = renderContext.CreateTexture(textureDesc, imageOutput.data());
 }
 
 void Engine::UnloadSceneAssets()
