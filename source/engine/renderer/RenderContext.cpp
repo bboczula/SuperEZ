@@ -472,14 +472,14 @@ HInputLayout RenderContext::CreateInputLayout()
 	return HInputLayout(inputLayouts.size() - 1);
 }
 
-HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFloatsPerVertex, FLOAT* meshData, const CHAR* name)
+HVertexBuffer RenderContext::CreateVertexBuffer(const VertexBufferCreateDesc& desc, FLOAT* meshData)
 {
 	using DirectX::SimpleMath::Vector3;
 
 	OutputDebugString(L"CreateVertexBuffer\n");
 	
 	// Each vertex is: 4xFLOAT for position + 4xFLOAT for color
-	const UINT vbSizeInBytes = numOfVertices * numOfFloatsPerVertex * sizeof(float);
+	const UINT vbSizeInBytes = desc.numOfVertices * desc.numOfFloatsPerVertex * sizeof(float);
 
 	// Note: using upload heaps to transfer static data like vert buffers is not 
 	// recommended. Every time the GPU needs it, the upload heap will be marshalled 
@@ -492,7 +492,7 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 	deviceContext.CreateUploadResource(heapFlags, &resourceDesc, initResourceState, IID_PPV_ARGS(& vertexBuffer));
 
 	CHAR tempName[64];
-	snprintf(tempName, sizeof(tempName), "VB_%s", name);
+	snprintf(tempName, sizeof(tempName), "VB_%s", desc.name);
 	WCHAR wName[64];
 	size_t numOfCharsConverted;;
 	mbstowcs_s(&numOfCharsConverted, wName, tempName, 32);
@@ -500,11 +500,11 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 
 	Vector3 localMin(FLT_MAX, FLT_MAX, FLT_MAX);
 	Vector3 localMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-	if (meshData != nullptr && numOfFloatsPerVertex >= 3)
+	if (meshData != nullptr && desc.numOfFloatsPerVertex >= 3)
 	{
-		for (UINT vertexIndex = 0; vertexIndex < numOfVertices; ++vertexIndex)
+		for (UINT vertexIndex = 0; vertexIndex < desc.numOfVertices; ++vertexIndex)
 		{
-			const UINT offset = vertexIndex * numOfFloatsPerVertex;
+			const UINT offset = vertexIndex * desc.numOfFloatsPerVertex;
 			const Vector3 position(meshData[offset + 0], meshData[offset + 1], meshData[offset + 2]);
 			localMin = Vector3::Min(localMin, position);
 			localMax = Vector3::Max(localMax, position);
@@ -516,7 +516,7 @@ HVertexBuffer RenderContext::CreateVertexBuffer(UINT numOfVertices, UINT numOfFl
 		localMax = Vector3(1.0f, 1.0f, 1.0f);
 	}
 
-	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, numOfVertices, tempName, localMin, localMax));
+	vertexBuffers.push_back(new VertexBuffer(vertexBuffer, vbSizeInBytes, desc.numOfVertices, tempName, localMin, localMax));
 	
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
@@ -590,7 +590,11 @@ HVertexBuffer RenderContext::GenerateColors(float* data, size_t size, UINT numOf
 	CHAR tempName[64];
 	snprintf(tempName, sizeof(tempName), "COLOR_%s", name);
 
-	HVertexBuffer vertexBuffer = CreateVertexBuffer(numOfTriangles * 3, 4, meshPositionAndColor, tempName);
+	VertexBufferCreateDesc desc;
+	desc.numOfVertices = numOfTriangles * 3;
+	desc.numOfFloatsPerVertex = 4;
+	desc.name = tempName;
+	HVertexBuffer vertexBuffer = CreateVertexBuffer(desc, meshPositionAndColor);
 
 	return vertexBuffer;
 }
@@ -891,30 +895,41 @@ HBuffer RenderContext::CreateReadbackBuffer()
 	return HBuffer(buffers.size() - 1);
 }
 
-void RenderContext::CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name)
+HMesh RenderContext::CreateMesh(HVertexBuffer position, HVertexBuffer color, HVertexBuffer texture, HVertexBuffer normals, const CHAR* name)
 {
 	OutputDebugString(L"CreateMesh\n");
+	assert(position.IsValid() && "A mesh requires a position vertex buffer.");
+	assert(position.Index() < vertexBuffers.size() && "Position vertex buffer handle is out of range.");
 
 	auto createVBV = [&](HVertexBuffer handle, UINT stride) -> D3D12_VERTEX_BUFFER_VIEW
 	{
+		D3D12_VERTEX_BUFFER_VIEW vbv{};
+		if (!handle.IsValid())
+		{
+			return vbv;
+		}
+
+		assert(handle.Index() < vertexBuffers.size() && "Vertex buffer handle is out of range.");
 		auto& vb = vertexBuffers[handle.Index()];
-		D3D12_VERTEX_BUFFER_VIEW vbv;
 		vbv.BufferLocation = vb->GetResource()->GetGPUVirtualAddress();
 		vbv.StrideInBytes = stride;
 		vbv.SizeInBytes = vb->GetSizeInBytes();
 		return vbv;
 	};
 
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(vbIndexPosition, 4 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(vbIndexColor, 4 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(vbIndexTexture, 2 * sizeof(float));
-	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(vbNormalsTexture, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvPosition = createVBV(position, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvColor = createVBV(color, 4 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvTexture = createVBV(texture, 2 * sizeof(float));
+	D3D12_VERTEX_BUFFER_VIEW vbvNormalsTexture = createVBV(normals, 4 * sizeof(float));
 
-	UINT vertexCount = vertexBuffers[vbIndexPosition.Index()]->GetNumOfVertices();
-	const auto localMin = vertexBuffers[vbIndexPosition.Index()]->GetLocalMin();
-	const auto localMax = vertexBuffers[vbIndexPosition.Index()]->GetLocalMax();
-	meshes.push_back(new Mesh(vbIndexPosition.Index(), vbvPosition, vbIndexColor.Index(), vbvColor,
-		vbIndexTexture.Index(), vbvTexture, vbNormalsTexture.Index(), vbvNormalsTexture, vertexCount, localMin, localMax, name));
+	size_t vbPositionIndex = position.Index();
+	UINT vertexCount = vertexBuffers[vbPositionIndex]->GetNumOfVertices();
+	const auto localMin = vertexBuffers[vbPositionIndex]->GetLocalMin();
+	const auto localMax = vertexBuffers[vbPositionIndex]->GetLocalMax();
+	meshes.push_back(new Mesh(position, vbvPosition, color, vbvColor, texture, vbvTexture,
+		normals, vbvNormalsTexture, vertexCount, localMin, localMax, name));
+
+	return HMesh(meshes.size() - 1);
 }
 
 float RenderContext::GetSceneBoundsRadius() const
@@ -936,7 +951,7 @@ float RenderContext::GetSceneBoundsRadius() const
 	return (sceneMax - sceneMin).Length() * 0.5f;
 }
 
-void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
+HTexture RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");
 
@@ -1004,6 +1019,10 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 	const UINT rawDescriptorIndex = static_cast<UINT>(texture->GetSrvDescriptorIndex());
 	const UINT srgbDescriptorIndex = static_cast<UINT>(texture->GetColorSrvDescriptorIndex(true));
 	materials.push_back(new Material(textureHandle, rawDescriptorIndex, srgbDescriptorIndex, desc.name));
+
+	// BindTexture currently uses HTexture as a material-table handle. Return that
+	// table index explicitly instead of relying on it matching a mesh index.
+	return HTexture(materials.size() - 1);
 }
 
 void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data)
@@ -1284,6 +1303,8 @@ void RenderContext::BindDepthBuffer(HCommandList commandList, HDepthBuffer depth
 
 void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
+	assert(texture.IsValid() && "Invalid material handle.");
+	assert(texture.Index() < materials.size() && "Material handle is out of range.");
 	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
 		materials[texture.Index()]->GetHandleOffset(linearColorEnabled), cbvSrvUavHeap.GetDescriptorSize());
 
@@ -1317,15 +1338,34 @@ void RenderContext::BindTextureOnlySRV(HCommandList commandList, HTexture textur
 
 void RenderContext::BindGeometry(HCommandList commandList, HMesh mesh)
 {
-	commandLists[commandList.Index()]->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	D3D12_VERTEX_BUFFER_VIEW vbvPosition[] =
+	assert(mesh.IsValid() && "Invalid mesh handle.");
+	assert(mesh.Index() < meshes.size() && "Mesh handle is out of range.");
+	auto theMesh = meshes[mesh.Index()];
+	assert(theMesh->HasPosition());
+
+	auto d3dCommandList = commandLists[commandList.Index()]->GetCommandList();
+	d3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	auto positionView = theMesh->GetPositionVertexBufferView();
+	d3dCommandList->IASetVertexBuffers(0, 1, &positionView);
+
+	if (theMesh->HasColor())
 	{
-		meshes[mesh.Index()]->GetPositionVertexBufferView(),
-		meshes[mesh.Index()]->GetColorVertexBufferView(),
-		meshes[mesh.Index()]->GetTextureVertexBufferView(),
-		meshes[mesh.Index()]->GetNormalsVertexBufferView()
-	};
-	commandLists[commandList.Index()]->GetCommandList()->IASetVertexBuffers(0, 4, vbvPosition);
+		auto colorView = theMesh->GetColorVertexBufferView();
+		d3dCommandList->IASetVertexBuffers(1, 1, &colorView);
+	}
+
+	if (theMesh->HasTexture())
+	{
+		auto textureView = theMesh->GetTextureVertexBufferView();
+		d3dCommandList->IASetVertexBuffers(2, 1, &textureView);
+	}
+
+	if (theMesh->HasNormals())
+	{
+		auto normalsView = theMesh->GetNormalsVertexBufferView();
+		d3dCommandList->IASetVertexBuffers(3, 1, &normalsView);
+	}
 }
 
 void RenderContext::BindConstantBuffer(HCommandList commandList, HBuffer buffer, UINT slot)

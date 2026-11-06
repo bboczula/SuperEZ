@@ -14,12 +14,12 @@
 #include "IGame.h"
 #include "RawInputService.h"
 #include "SceneService.h"
-#include "RenderService.h"
 #include "IInput.h"
 #include "IScene.h"
 #include "TimeSystem.h"
 #include "Components.h"
 #include "ECSTypes.h"
+#include "EngineAssets.h"
 
 #include "states/EngineCommandQueue.h"
 #include "states/StartupState.h"
@@ -35,7 +35,8 @@ Settings settings;
 WindowContext windowContext;
 DeviceContext deviceContext;
 RenderContext renderContext;
-RenderGraph renderGraph;
+EngineAssets engineAssets;
+RenderGraph renderGraph(engineAssets);
 Subject<WinMessageEvent> winMessageSubject;
 RawInput rawInput;
 CursorInput cursorInput;
@@ -111,7 +112,6 @@ void Engine::Initialize()
 	// Prepare GameServices
 	rawInputService = new RawInputService(rawInput);
 	sceneService = new SceneService(renderContext, &mCoordinator);
-	renderService = new RenderService();
 
 	timeSystem = new TimeSystem();
 	timeSystem->SetMaxDeltaSeconds(0.1);
@@ -260,10 +260,15 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		auto CreateVB = [&](std::string_view label, int components) -> HVertexBuffer
 		{
 			std::string name = std::string(label) + "_" + meshName;
-			return renderContext.CreateVertexBuffer(meshDescriptor.numOfVertices * 3, components, meshOutput.data(), name.c_str());
+
+			VertexBufferCreateDesc desc;
+			desc.numOfVertices = meshDescriptor.numOfVertices * 3;
+			desc.numOfFloatsPerVertex = components;
+			desc.name = name.c_str();
+			return renderContext.CreateVertexBuffer(desc, meshOutput.data());
 		};
 
-		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data)
+		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data) -> HTexture
 		{
 			std::string name = "TEX_" + meshName;
 
@@ -280,7 +285,7 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 			textureDesc.name = name.c_str();
 			textureDesc.UseFullMipChain();
 
-			renderContext.CreateTexture(textureDesc, data.data());
+			return renderContext.CreateTexture(textureDesc, data.data());
 		};
 
 		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))
@@ -304,30 +309,32 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		const UINT vertexCount = meshDescriptor.numOfVertices * 3;
 		auto normalizedNormals = NormalizeNormalStream(meshOutput, vertexCount);
 		std::string normalBufferName = "NORMAL_" + meshName;
-		auto vbNormals = renderContext.CreateVertexBuffer(
-			vertexCount,
-			4,
-			normalizedNormals.data(),
-			normalBufferName.c_str());
 
-		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
+		VertexBufferCreateDesc vbDesc;
+		vbDesc.numOfVertices = vertexCount;
+		vbDesc.numOfFloatsPerVertex = 4;
+		vbDesc.name = normalBufferName.c_str();
+
+		auto vbNormals = renderContext.CreateVertexBuffer(vbDesc, normalizedNormals.data());
+
+		HMesh mesh = renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
 
 		//auto texturePath = std::filesystem::current_path() / textureName;
 		auto texturePath = currentPath.remove_filename() / textureName;
 		assetManager.ImageLoadAndDecode(texturePath.string().c_str());
 		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
 
-		CreateTexture(imageDescriptor, imageOutput);
+		HTexture texture = CreateTexture(imageDescriptor, imageOutput);
 
 		RenderItem item{};
 		item.position = gameObject.position;
 		item.rotation = gameObject.rotation;
 		item.scale = gameObject.scale;
-		item.mesh = HMesh(renderContext.GetNumOfMeshes() - 1);
-		item.texture = HTexture(renderContext.GetNumOfMeshes() - 1);
+		item.mesh = mesh;
+		item.texture = texture;
 		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
 
-		const Entity entity = renderService->CreateEntity(mCoordinator, item);
+		const Entity entity = CreateEntity(item);
 		item.id = entity;
 		renderContext.CreateRenderItem(item);
 		mCoordinator.GetComponent<MaterialComponent>(entity).textureFileName = textureName;
@@ -339,7 +346,6 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 		.input = rawInputService,
 		.camera = renderContext.GetActiveCamera(),
 		.picker = nullptr,
-		.render = renderService
 	};
 	game->OnInit(services);
 }
@@ -488,6 +494,69 @@ void Engine::ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameOb
 	}
 }
 
+Entity Engine::CreateEntity(RenderItem& renderItem)
+{
+	// --- NEW ECS CODE ---
+		// 1. Create the Entity representation of this object
+	Entity newEntity = mCoordinator.CreateEntity();
+	renderItem.id = newEntity;
+
+	// 2. Add Transform (Default to 0,0,0 for now)
+	mCoordinator.AddComponent(newEntity, TransformComponent{
+	    {renderItem.position.x, renderItem.position.y, renderItem.position.z},
+	    {renderItem.rotation.x, renderItem.rotation.y, renderItem.rotation.z},
+	    {renderItem.scale.x, renderItem.scale.y, renderItem.scale.z}
+		});
+
+	// 3. Add Geometry Component
+	mCoordinator.AddComponent(newEntity, GeometryComponent{ renderItem.mesh });
+	mCoordinator.AddComponent(newEntity, MaterialComponent{ renderItem.texture });
+	mCoordinator.AddComponent(newEntity, InfoComponent{ renderItem.name });
+	return newEntity;
+}
+
+void Engine::SynchronizeRenderWorld()
+{
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+	{
+		Signature sig = mCoordinator.GetEntityManager()->GetSignature(entity);
+		bool hasTransform = sig.test(mCoordinator.GetComponentType<TransformComponent>());
+		bool hasGeometry = sig.test(mCoordinator.GetComponentType<GeometryComponent>());
+		bool hasMaterial = sig.test(mCoordinator.GetComponentType<MaterialComponent>());
+		bool hasInfo = sig.test(mCoordinator.GetComponentType<InfoComponent>());
+
+		if (!hasTransform || !hasGeometry || !hasMaterial || !hasInfo)
+			continue;
+
+		//assert(entity != 0 && "Entity 0 is usually reserved/not used.");
+		auto& transform = mCoordinator.GetComponent<TransformComponent>(entity);
+		auto& geo = mCoordinator.GetComponent<GeometryComponent>(entity);
+		auto& mat = mCoordinator.GetComponent<MaterialComponent>(entity);
+		auto& info = mCoordinator.GetComponent<InfoComponent>(entity);
+
+		// Create the item
+		RenderItem item;
+		item.id = entity;
+		item.position = DirectX::SimpleMath::Vector3(transform.position); // assuming vector math matches
+		item.rotation = DirectX::SimpleMath::Vector3(transform.rotation);
+		item.scale = DirectX::SimpleMath::Vector3(transform.scale);
+		item.mesh = geo.meshHandle;
+		item.texture = mat.textureHandle;
+		item.diffuseStrength = mat.diffuseStrength;
+		item.specularStrength = mat.specularStrength;
+		item.shininess = mat.shininess;
+		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
+
+		// Update the RenderItem in the RenderContext (not create)
+		RenderItem* renderItem = renderContext.GetRenderItemById(entity);
+		assert(renderItem != nullptr && "RenderItem not found for ECS entity.");
+		*renderItem = item;
+
+		// Here, we can further bridge ECS with Renderer Context as needed
+		// For example, we might want to set additional flags or update other systems
+	}
+}
+
 void Engine::Tick()
 {
 	if (rawInput.IsKeyDown(VK_ESCAPE))
@@ -531,8 +600,8 @@ void Engine::ProcessSingleFrame()
 	const FrameTime& frameTime = timeSystem->Tick();
 	game->OnUpdate(frameTime);
 	sceneService->Update(frameTime.dt);
-	renderService->Update(mCoordinator);
-
+	
+	SynchronizeRenderWorld();
 	Tick();
 
 	winMessageSubject.RunPostFrame();
@@ -551,6 +620,32 @@ void Engine::LoadSceneAssets(std::string sceneName)
 	};
 	ProcessScene(gameObjects, cameras, sunlights, sceneData);
 	LoadAssets(gameObjects, cameras, sunlights, sceneData.currentPath);
+}
+
+void Engine::LoadEngineAssets()
+{
+	auto path = std::filesystem::current_path() / "assets" / "engine" / "bitmap_font_minogram.bmp";
+	AssetSuite::Manager assetManager;
+	assetManager.ImageLoadAndDecode(path.string().c_str());
+
+	std::vector<uint8_t> imageOutput;
+	AssetSuite::ImageDescriptor imageDescriptor{};
+	assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
+
+	TextureCreateDesc textureDesc;
+	textureDesc.width = imageDescriptor.width;
+	textureDesc.height = imageDescriptor.height;
+	textureDesc.format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+	textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if ENABLE_COLOR_PIPELINE_DEBUG
+	textureDesc.srgbSrvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#else
+	textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#endif
+	textureDesc.name = "BITMAP_FONT";
+	textureDesc.UseFullMipChain();
+
+	engineAssets.bitmapFont = renderContext.CreateTexture(textureDesc, imageOutput.data());
 }
 
 void Engine::UnloadSceneAssets()
