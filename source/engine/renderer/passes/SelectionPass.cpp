@@ -1,5 +1,6 @@
 #include "SelectionPass.h"
 #include "../RenderContext.h"
+#include "../RenderTarget.h"
 #include "../../core/InputLayout.h"
 #include "../../core/DeviceContext.h"
 #include "../../engine/camera/Camera.h"
@@ -102,8 +103,15 @@ void SelectionPass::Execute()
 	auto mousePositionX = cursorInput.GetMouseX();
 	auto mousePositionY = cursorInput.GetMouseY();
 #if IS_EDITOR
-	mousePositionX -= 400;
-	mousePositionY -= 20; // Adjust for the menu height
+	const auto& viewport = renderContext.GetEditorViewport();
+	const float localX = static_cast<float>(mousePositionX) - viewport.x;
+	const float localY = static_cast<float>(mousePositionY) - viewport.y;
+	if (!viewport.pickable || viewport.width <= 0 || viewport.height <= 0 ||
+		localX < 0 || localY < 0 || localX >= viewport.width || localY >= viewport.height)
+		return;
+	const auto* selectionTarget = renderContext.GetRenderTarget(renderTarget);
+	mousePositionX = static_cast<LONG>(localX / viewport.width * selectionTarget->GetWidth());
+	mousePositionY = static_cast<LONG>(localY / viewport.height * selectionTarget->GetHeight());
 #endif
 
 	// Only request a readback if the user actually clicked this frame

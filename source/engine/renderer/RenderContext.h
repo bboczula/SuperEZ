@@ -103,6 +103,12 @@ private:
 	}
 };
 
+struct EditorViewport
+{
+	float x = 0, y = 0, width = 0, height = 0;
+	bool pickable = false;
+};
+
 struct VertexBufferCreateDesc
 {
 	UINT numOfVertices = 0;
@@ -118,6 +124,11 @@ public:
 	HVertexBuffer CreateVertexBuffer(const VertexBufferCreateDesc& desc, FLOAT* meshData);
 	// -------------------------
 	RenderContext();
+	const EditorViewport& GetEditorViewport() const { return editorViewport; }
+	void SetEditorViewport(float x, float y, float width, float height, bool pickable)
+	{
+		editorViewport = { x, y, width, height, pickable };
+	}
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
@@ -150,7 +161,6 @@ public:
 	const SunlightViewProjection& GetSunlightViewProjection() const { return sunlightViewProjection; }
 	void SetShadowMapTexture(HTexture texture) { shadowMapTexture = texture; }
 	HTexture GetShadowMapTexture() const { return shadowMapTexture; }
-	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
@@ -248,12 +258,14 @@ public:
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 	void Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ);
-	// A huuuuge hack...
+	// Rebuilt from ECS components before rendering; GPU resources live independently.
+private:
 	std::vector<RenderItem> renderItems;
 private:
 	HBuffer CreateConstantBufferInternal(UINT bufferSizeInBytes);
 private:
 	DescriptorHeap rtvHeap;
+	EditorViewport editorViewport;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
 	DescriptorHeap samplerHeap;

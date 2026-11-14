@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <fstream>
 #include <cmath>
+#include <algorithm>
 
 extern WindowContext windowContext;
 extern DeviceContext deviceContext;
@@ -57,6 +58,8 @@ void ImGuiPass::ConfigurePipelineState()
 
 void ImGuiPass::PostAssetLoad()
 {
+	selectedLibraryMesh.clear();
+	assetLibrarySearch[0] = '\0';
 }
 
 void ImGuiPass::Initialize()
@@ -109,6 +112,99 @@ void ImGuiPass::Initialize()
 	colorCopyTexture = renderContext.CreateEmptyTexture(textureDesc);
 }
 
+void ImGuiPass::DrawAssetLibraryWindow(float x, float y, float width, float height)
+{
+	ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+	ImGui::Begin("Asset Library", nullptr, ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+	ImGui::SetNextItemOpen(assetLibraryExpanded, ImGuiCond_Always);
+	assetLibraryExpanded = ImGui::CollapsingHeader("Asset Library");
+	if (assetLibraryExpanded)
+	{
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::InputTextWithHint("##AssetSearch", "Search assets...", assetLibrarySearch, IM_ARRAYSIZE(assetLibrarySearch));
+
+		// The catalog includes groups that have no instances in the scene.
+		static const std::vector<std::string> emptyLibrary;
+		const auto& meshNames = editorEngine ? editorEngine->GetMeshLibraryGroups() : emptyLibrary;
+		if (!std::binary_search(meshNames.begin(), meshNames.end(), selectedLibraryMesh))
+			selectedLibraryMesh.clear();
+
+		const float footerHeight = ImGui::GetFrameHeightWithSpacing() * 2.0f;
+		if (ImGui::BeginChild("AssetList", ImVec2(0, ImMax(1.0f, ImGui::GetContentRegionAvail().y - footerHeight)), true))
+		{
+			bool hasMatches = false;
+			if (ImGui::BeginTable("LibraryEntries", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable))
+			{
+			ImGui::TableSetupColumn("Mesh group");
+			ImGui::TableSetupColumn("Texture");
+			ImGui::TableHeadersRow();
+			for (const auto& name : meshNames)
+			{
+				if (assetLibrarySearch[0] != '\0' && ImStristr(name.c_str(), nullptr, assetLibrarySearch, nullptr) == nullptr)
+					continue;
+				hasMatches = true;
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				if (ImGui::Selectable(name.c_str(), selectedLibraryMesh == name,
+					ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick))
+				{
+					selectedLibraryMesh = name;
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !editorEngine->GetLibraryTexture(name).empty())
+						editorEngine->QueueLibraryAsset(name);
+				}
+				ImGui::TableNextColumn();
+				const std::string texture = editorEngine->GetLibraryTexture(name);
+				if (texture.empty())
+					ImGui::TextDisabled("Unassigned");
+				else
+					ImGui::TextUnformatted(texture.c_str());
+			}
+			ImGui::EndTable();
+			}
+			if (editorEngine && !editorEngine->GetMeshLibraryError().empty())
+				ImGui::TextDisabled("%s", editorEngine->GetMeshLibraryError().c_str());
+			else if (!hasMatches)
+				ImGui::TextDisabled(meshNames.empty() ? "No mesh groups in the current library." : "No matching assets.");
+		}
+		ImGui::EndChild();
+		ImGui::BeginDisabled(selectedLibraryMesh.empty() || !editorEngine);
+		const std::string assignedTexture = editorEngine ? editorEngine->GetLibraryTexture(selectedLibraryMesh) : std::string{};
+		ImGui::SetNextItemWidth(ImMin(350.0f, ImGui::GetContentRegionAvail().x * 0.45f));
+		if (ImGui::BeginCombo("Texture", assignedTexture.empty() ? "Choose texture..." : assignedTexture.c_str()))
+		{
+			if (editorEngine)
+			{
+				if (ImGui::Selectable("Unassigned", assignedTexture.empty()))
+					editorEngine->SetLibraryTexture(selectedLibraryMesh, "");
+				for (const auto& texture : editorEngine->GetLibraryTextures())
+				{
+					if (ImGui::Selectable(texture.c_str(), texture == assignedTexture))
+						editorEngine->SetLibraryTexture(selectedLibraryMesh, texture);
+				}
+				if (editorEngine->GetLibraryTextures().empty())
+					ImGui::TextDisabled("No scene textures available.");
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::TextDisabled("Library default for this session");
+		const bool canAdd = editorEngine && !selectedLibraryMesh.empty() && !editorEngine->GetLibraryTexture(selectedLibraryMesh).empty();
+		ImGui::BeginDisabled(!canAdd);
+		if (ImGui::Button("Add to Scene"))
+			editorEngine->QueueLibraryAsset(selectedLibraryMesh);
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (editorEngine && !editorEngine->GetLibraryInsertionError().empty())
+			ImGui::TextUnformatted(editorEngine->GetLibraryInsertionError().c_str());
+		else
+			ImGui::TextDisabled(canAdd ? "Double-click to add at the origin." : "Select a mesh and assign a texture to add it.");
+	}
+	ImGui::End();
+}
+
 void ImGuiPass::Update()
 {
 }
@@ -131,6 +227,10 @@ void ImGuiPass::Execute()
 	ImGuiIO& io = ImGui::GetIO();
 
 	float menuHeight = 0.0f;
+	if (editorEngine && io.KeyCtrl && !io.KeyAlt && !io.KeyShift && !io.WantTextInput &&
+		!ImGui::IsAnyItemActive() && ImGui::IsKeyPressed(ImGuiKey_D, false) &&
+		editorEngine->CanDuplicateObject(renderContext.GetSelectedObjectId()))
+		editorEngine->QueueDuplicateObject(renderContext.GetSelectedObjectId());
 	if (ImGui::BeginMainMenuBar()) {
 		menuHeight = ImGui::GetFrameHeight();
 		if (ImGui::BeginMenu("File")) {
@@ -266,6 +366,15 @@ void ImGuiPass::Execute()
 			else if (HasComponent<InfoComponent>(*editorCoordinator, currentSelection))
 			{
 				ImGui::Text("Entity: %u", currentSelection);
+				const bool canDuplicate = editorEngine && editorEngine->CanDuplicateObject(currentSelection);
+				ImGui::BeginDisabled(!canDuplicate);
+				if (ImGui::Button("Duplicate (Ctrl+D)"))
+					editorEngine->QueueDuplicateObject(currentSelection);
+				ImGui::EndDisabled();
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+					ImGui::SetTooltip(canDuplicate ? "Copy at the same position, then move it with Transform." : "Select a mesh object to duplicate. Cameras and lights are not supported.");
+				if (editorEngine && !editorEngine->GetDuplicateError().empty())
+					ImGui::TextWrapped("%s", editorEngine->GetDuplicateError().c_str());
 				DrawComponentSections(*editorCoordinator, currentSelection);
 			}
 			else
@@ -283,7 +392,12 @@ void ImGuiPass::Execute()
 	ImGui::End();
 
 	ImVec2 viewport_pos = ImVec2(400, menuHeight);     // Top-left corner
-	ImVec2 viewport_size = ImVec2(1920 - 400, 1080 - menuHeight - 25);      // 300 px wide, height auto
+	const float availableHeight = ImMax(1.0f, io.DisplaySize.y - menuHeight - 25.0f);
+	const float libraryHeight = assetLibraryExpanded
+		? ImMin(260.0f, availableHeight * 0.35f)
+		: ImGui::GetFrameHeight() + ImGui::GetStyle().WindowPadding.y * 2.0f;
+	ImVec2 viewport_size = ImVec2(ImMax(1.0f, io.DisplaySize.x - 400.0f),
+		ImMax(1.0f, availableHeight - libraryHeight));
 
 	ImGui::SetNextWindowPos(viewport_pos, ImGuiCond_Always);
 	ImGui::SetNextWindowSize(viewport_size, ImGuiCond_Always);
@@ -299,11 +413,11 @@ void ImGuiPass::Execute()
 	auto srvHandleGPU = renderContext.GetSrvHeap().GetGPU(DescriptorHeap::HeapPartition::STATIC, finalScene->GetSrvDescriptorIndex());
 	ImTextureID textureID = (ImTextureID)srvHandleGPU.ptr;
 	ImVec2 size = ImGui::GetContentRegionAvail();
-	if (renderContext.IsDebugViewActive())
+	if (size.x > 0.0f && size.y > 0.0f)
 	{
-		// DebugBlitTexture is 16:9; stretching it to the viewport region would
-		// distort it, so fit it by aspect ratio and center it instead.
-		const float textureAspect = 1920.0f / 1080.0f;
+		// Fit the image without stretching when the library changes the available area.
+		const auto imageDesc = finalScene->GetResource()->GetDesc();
+		const float textureAspect = static_cast<float>(imageDesc.Width) / imageDesc.Height;
 		ImVec2 fitted = size;
 		if (fitted.x / fitted.y > textureAspect)
 		{
@@ -318,13 +432,19 @@ void ImGuiPass::Execute()
 		ImGui::SetCursorPos(ImVec2(
 			cursor.x + (size.x - fitted.x) * 0.5f,
 			cursor.y + (size.y - fitted.y) * 0.5f));
+		const ImVec2 imagePosition = ImGui::GetCursorScreenPos();
+		const ImVec2 mainPosition = ImGui::GetMainViewport()->Pos;
+		renderContext.SetEditorViewport(imagePosition.x - mainPosition.x, imagePosition.y - mainPosition.y,
+			fitted.x, fitted.y, !renderContext.IsDebugViewActive());
 		ImGui::Image(textureID, fitted);
 	}
 	else
 	{
-		ImGui::Image(textureID, size);
+		renderContext.SetEditorViewport(0, 0, 0, 0, false);
 	}
 	ImGui::End();
+
+	DrawAssetLibraryWindow(viewport_pos.x, viewport_pos.y + viewport_size.y, viewport_size.x, libraryHeight);
 
 	if (settings != nullptr)
 	{

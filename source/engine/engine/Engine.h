@@ -3,6 +3,10 @@
 #include <vector>
 #include <filesystem>
 #include <string>
+#include <map>
+#include "../asset/Handle.h"
+
+namespace AssetSuite { class Manager; }
 
 #include "states/IEngineState.h"
 #include "Coordinator.h"
@@ -84,8 +88,22 @@ public:
 	std::string GetStartupSceneName() const { return startupSceneName; }
 	std::string GetCurrentSceneName() const { return currentSceneName; }
 	std::string GetCurrentMeshLibraryFile() const { return currentMeshLibraryFile; }
+	const std::vector<std::string>& GetMeshLibraryGroups() const { return meshLibraryGroups; }
+	const std::string& GetMeshLibraryError() const { return meshLibraryError; }
+	const std::vector<std::string>& GetLibraryTextures() const { return libraryTextures; }
+	std::string GetLibraryTexture(const std::string& meshName) const;
+	bool SetLibraryTexture(const std::string& meshName, const std::string& textureName);
+	void QueueLibraryAsset(const std::string& meshName);
+	bool CanDuplicateObject(Entity entity);
+	void QueueDuplicateObject(Entity entity);
+	const std::string& GetDuplicateError() const { return duplicateError; }
+	const std::string& GetLibraryInsertionError() const { return libraryInsertionError; }
 private:
 	// Handle scene XML processing
+	bool PrepareObjectResources(AssetSuite::Manager& manager, const GameObjectData& object, HMesh& mesh, HTexture& texture);
+	Entity CreateSceneObject(const GameObjectData& object, HMesh mesh, HTexture texture);
+	void AddLibraryAsset(const std::string& meshName, const std::string& textureName);
+	void DuplicateObject(Entity entity);
 	void ProcessScene(GameObjects& gameObjects, Cameras& cameras, Sunlights& sunlights, SceneData& sceneData);
 	void ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras);
 	void ProcessSunlights(tinyxml2::XMLElement* scene, Sunlights& sunlights);
@@ -98,6 +116,16 @@ private:
 	std::string startupSceneName;
 	std::string currentSceneName;
 	std::string currentMeshLibraryFile;
+	std::vector<std::string> meshLibraryGroups;
+	std::string meshLibraryError;
+	std::vector<std::string> libraryTextures;
+	std::map<std::string, std::string> libraryTextureAssignments;
+	std::map<std::string, HMesh> loadedMeshes;
+	std::map<std::string, HTexture> loadedTextures;
+	std::filesystem::path modelLibraryPath;
+	std::string libraryInsertionError;
+	std::string duplicateError;
+	uint64_t sceneGeneration = 0;
 	RawInputService* rawInputService = nullptr;
 	SceneService* sceneService = nullptr;
 	TimeSystem* timeSystem = nullptr;

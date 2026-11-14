@@ -258,11 +258,6 @@ void RenderContext::UpdateSunlightViewProjection()
 	sunlightViewProjection.viewProjection = lightView * lightProjection;
 }
 
-void RenderContext::CreateRenderItem(const RenderItem& item)
-{
-	renderItems.push_back(item);
-}
-
 HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
 {
 	int width = windowContext.GetWidth();
