@@ -1,4 +1,7 @@
 #include "Engine.h"
+#include "../asset/MeshLibraryCatalog.h"
+#include <fstream>
+#include <set>
 
 #include "../core/DeviceContext.h"
 #include "WindowContext.h"
@@ -123,22 +126,254 @@ void Engine::CreateRenderResources()
 	// Here we can make engine speciffic allocations
 }
 
+std::string Engine::GetLibraryTexture(const std::string& meshName) const
+{
+	const auto found = libraryTextureAssignments.find(meshName);
+	return found != libraryTextureAssignments.end() ? found->second : std::string{};
+}
+
+bool Engine::SetLibraryTexture(const std::string& meshName, const std::string& textureName)
+{
+	if (!std::binary_search(meshLibraryGroups.begin(), meshLibraryGroups.end(), meshName) ||
+		(!textureName.empty() && !std::binary_search(libraryTextures.begin(), libraryTextures.end(), textureName)))
+		return false;
+	libraryTextureAssignments[meshName] = textureName;
+	return true;
+}
+
+bool Engine::PrepareObjectResources(AssetSuite::Manager& manager, const GameObjectData& object, HMesh& mesh, HTexture& texture)
+{
+	const auto cachedMesh = loadedMeshes.find(object.meshName);
+	if (cachedMesh != loadedMeshes.end())
+		mesh = cachedMesh->second;
+	else
+	{
+		std::vector<float> positions, texcoords, normals;
+		AssetSuite::MeshDescriptor positionsDesc{}, texcoordsDesc{}, normalsDesc{};
+		if (manager.MeshGet(object.meshName.c_str(), AssetSuite::MeshOutputFormat::POSITION, positions, positionsDesc) != AssetSuite::ErrorCode::OK ||
+			manager.MeshGet(object.meshName.c_str(), AssetSuite::MeshOutputFormat::TEXCOORD, texcoords, texcoordsDesc) != AssetSuite::ErrorCode::OK ||
+			manager.MeshGet(object.meshName.c_str(), AssetSuite::MeshOutputFormat::NORMAL, normals, normalsDesc) != AssetSuite::ErrorCode::OK ||
+			positions.empty() || texcoords.empty() || normals.empty() || positionsDesc.numOfVertices == 0 ||
+			positionsDesc.numOfVertices != texcoordsDesc.numOfVertices || positionsDesc.numOfVertices != normalsDesc.numOfVertices)
+		{
+			libraryInsertionError = "Cannot load mesh '" + object.meshName + "': positions, UVs and normals are required.";
+			return false;
+		}
+		const UINT vertexCount = positionsDesc.numOfVertices * 3;
+		if (positions.size() < static_cast<size_t>(vertexCount) * 4 ||
+			texcoords.size() < static_cast<size_t>(vertexCount) * 2 || normals.size() < static_cast<size_t>(vertexCount) * 3 ||
+			normals.size() % vertexCount != 0)
+		{
+			libraryInsertionError = "Mesh streams are incomplete: " + object.meshName;
+			return false;
+		}
+		auto normalized = NormalizeNormalStream(normals, vertexCount);
+		const auto position = renderContext.CreateVertexBuffer(vertexCount, 4, positions.data(), ("POSITION_" + object.meshName).c_str());
+		const auto color = renderContext.GenerateColors(positions.data(), positions.size(), positionsDesc.numOfVertices, object.meshName.c_str());
+		const auto uv = renderContext.CreateVertexBuffer(vertexCount, 2, texcoords.data(), ("TEXCOORD_" + object.meshName).c_str());
+		const auto normal = renderContext.CreateVertexBuffer(vertexCount, 4, normalized.data(), ("NORMAL_" + object.meshName).c_str());
+		renderContext.CreateMesh(position, color, uv, normal, object.meshName.c_str());
+		mesh = HMesh(renderContext.GetNumOfMeshes() - 1);
+		loadedMeshes.emplace(object.meshName, mesh);
+	}
+
+	const auto cachedTexture = loadedTextures.find(object.textureName);
+	if (cachedTexture != loadedTextures.end())
+		texture = cachedTexture->second;
+	else
+	{
+		std::vector<uint8_t> pixels;
+		AssetSuite::ImageDescriptor image{};
+		const auto path = modelLibraryPath.parent_path() / object.textureName;
+		if (manager.ImageLoadAndDecode(path.string().c_str()) != AssetSuite::ErrorCode::OK ||
+			manager.ImageGet(AssetSuite::OutputFormat::RGB8, pixels, image) != AssetSuite::ErrorCode::OK ||
+			!image.width || !image.height || pixels.size() < static_cast<size_t>(image.width) * image.height * 3)
+		{
+			libraryInsertionError = "Cannot load texture: " + object.textureName;
+			return false;
+		}
+		const std::string resourceName = "TEX_" + std::to_string(loadedTextures.size());
+		TextureCreateDesc desc;
+		desc.width = image.width;
+		desc.height = image.height;
+		desc.format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+		desc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+#if ENABLE_COLOR_PIPELINE_DEBUG
+		desc.srgbSrvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#else
+		desc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+#endif
+		desc.name = resourceName.c_str();
+		desc.UseFullMipChain();
+		texture = renderContext.CreateTexture(desc, pixels.data());
+		loadedTextures.emplace(object.textureName, texture);
+	}
+	return true;
+}
+
+Entity Engine::CreateSceneObject(const GameObjectData& object, HMesh mesh, HTexture texture)
+{
+	RenderItem item{};
+	item.position = object.position;
+	item.rotation = object.rotation;
+	item.scale = object.scale;
+	item.mesh = mesh;
+	item.texture = texture;
+	strncpy_s(item.name, object.name.c_str(), _TRUNCATE);
+	const Entity entity = renderService->CreateEntity(mCoordinator, item);
+	mCoordinator.GetComponent<InfoComponent>(entity).name = object.name;
+	mCoordinator.GetComponent<MaterialComponent>(entity).textureFileName = object.textureName;
+	return entity;
+}
+
+bool Engine::CanDuplicateObject(Entity entity)
+{
+	if (entity >= MAX_ENTITIES || !mCoordinator.GetEntityManager()->CanCreateEntity())
+		return false;
+	const auto signature = mCoordinator.GetEntityManager()->GetSignature(entity);
+	return signature.test(mCoordinator.GetComponentType<InfoComponent>()) &&
+		signature.test(mCoordinator.GetComponentType<TransformComponent>()) &&
+		signature.test(mCoordinator.GetComponentType<GeometryComponent>()) &&
+		signature.test(mCoordinator.GetComponentType<MaterialComponent>());
+}
+
+void Engine::QueueDuplicateObject(Entity entity)
+{
+	duplicateError.clear();
+	GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::DuplicateObject,
+		DuplicateObjectPayload{ entity, sceneGeneration } });
+}
+
+void Engine::DuplicateObject(Entity entity)
+{
+	duplicateError.clear();
+	if (!CanDuplicateObject(entity))
+	{
+		duplicateError = "Cannot duplicate this selection (requires a mesh object and space in the scene).";
+		return;
+	}
+	// Copy values before creating an entity, which may move component storage.
+	const auto transform = mCoordinator.GetComponent<TransformComponent>(entity);
+	const auto geometry = mCoordinator.GetComponent<GeometryComponent>(entity);
+	const auto material = mCoordinator.GetComponent<MaterialComponent>(entity);
+	std::string base = mCoordinator.GetComponent<InfoComponent>(entity).name;
+	base.resize((std::min)(base.size(), size_t{20}));
+	if (base.empty()) base = "Object";
+	std::set<std::string> names;
+	for (Entity other = 0; other < MAX_ENTITIES; ++other)
+		if (mCoordinator.GetEntityManager()->GetSignature(other).test(mCoordinator.GetComponentType<InfoComponent>()))
+			names.insert(mCoordinator.GetComponent<InfoComponent>(other).name);
+	std::string name;
+	for (unsigned int suffix = 1; ; ++suffix)
+	{
+		name = base + "_" + std::to_string(suffix);
+		if (!names.count(name)) break;
+	}
+	GameObjectData object{ name, {}, material.textureFileName,
+		DirectX::SimpleMath::Vector3(transform.position), DirectX::SimpleMath::Vector3(transform.rotation),
+		DirectX::SimpleMath::Vector3(transform.scale) };
+	const Entity copy = CreateSceneObject(object, geometry.meshHandle, material.textureHandle);
+	mCoordinator.GetComponent<MaterialComponent>(copy) = material;
+	renderContext.SetSelectedObjectId(copy);
+}
+
+void Engine::QueueLibraryAsset(const std::string& meshName)
+{
+	libraryInsertionError.clear();
+	GlobalCommandQueue::Push(EngineCommand{ EngineCommandType::AddLibraryAsset,
+		AddLibraryAssetPayload{ meshName, GetLibraryTexture(meshName), sceneGeneration } });
+}
+
+void Engine::AddLibraryAsset(const std::string& meshName, const std::string& textureName)
+{
+	libraryInsertionError.clear();
+	if (!std::binary_search(meshLibraryGroups.begin(), meshLibraryGroups.end(), meshName) ||
+		textureName.empty() || !std::binary_search(libraryTextures.begin(), libraryTextures.end(), textureName))
+	{
+		libraryInsertionError = "Choose a mesh and texture before adding to the scene.";
+		return;
+	}
+	if (!mCoordinator.GetEntityManager()->CanCreateEntity())
+	{
+		libraryInsertionError = "The scene has reached its object limit.";
+		return;
+	}
+	std::set<std::string> names;
+	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+		if (mCoordinator.GetEntityManager()->GetSignature(entity).test(mCoordinator.GetComponentType<InfoComponent>()))
+			names.insert(mCoordinator.GetComponent<InfoComponent>(entity).name);
+	std::string baseName = meshName;
+	if (baseName.size() > 5 && baseName.compare(baseName.size() - 5, 5, "_Mesh") == 0)
+		baseName.resize(baseName.size() - 5);
+	baseName.resize((std::min)(baseName.size(), size_t{20}));
+	if (baseName.empty()) baseName = "Asset";
+	std::string name = baseName;
+	for (unsigned int suffix = 1; names.count(name); ++suffix)
+		name = baseName + "_" + std::to_string(suffix);
+	GameObjectData object{ name, meshName, textureName, {0, 0, 0}, {0, 0, 0}, {1, 1, 1} };
+	AssetSuite::Manager manager;
+	if (!loadedMeshes.count(meshName) &&
+		manager.MeshLoadAndDecode(modelLibraryPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT) != AssetSuite::ErrorCode::OK)
+	{
+		libraryInsertionError = "Cannot open the model library.";
+		return;
+	}
+	HMesh mesh;
+	HTexture texture;
+	if (!PrepareObjectResources(manager, object, mesh, texture))
+		return;
+	renderContext.SetSelectedObjectId(CreateSceneObject(object, mesh, texture));
+}
+
 void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunlights, std::filesystem::path currentPath)
 {
+	++sceneGeneration;
+	duplicateError.clear();
+	modelLibraryPath = currentPath;
+	loadedMeshes.clear();
+	loadedTextures.clear();
+	libraryInsertionError.clear();
+	meshLibraryGroups.clear();
+	meshLibraryError.clear();
+	std::ifstream libraryFile(currentPath);
+	if (libraryFile)
+	{
+		meshLibraryGroups = ReadMeshLibraryGroups(libraryFile);
+		if (libraryFile.bad())
+		{
+			meshLibraryGroups.clear();
+			meshLibraryError = "Could not read the model library.";
+		}
+	}
+	else
+	{
+		meshLibraryError = "Could not open the model library.";
+	}
+
+	libraryTextures.clear();
+	libraryTextureAssignments.clear();
+	std::set<std::string> textures;
+	std::map<std::string, std::set<std::string>> meshTextures;
+	for (const auto& object : gameObjects)
+	{
+		std::error_code error;
+		if (object.textureName.empty() ||
+			!std::filesystem::is_regular_file(currentPath.parent_path() / object.textureName, error))
+			continue;
+		textures.insert(object.textureName);
+		meshTextures[object.meshName].insert(object.textureName);
+	}
+	libraryTextures.assign(textures.begin(), textures.end());
+	for (const auto& name : meshLibraryGroups)
+	{
+		const auto found = meshTextures.find(name);
+		// Multiple scene variants have no unambiguous default: let the user choose.
+		if (found != meshTextures.end() && found->second.size() == 1)
+			libraryTextureAssignments[name] = *found->second.begin();
+	}
+
 	AssetSuite::Manager assetManager;
 	assetManager.MeshLoadAndDecode(currentPath.string().c_str(), AssetSuite::MeshDecoders::WAVEFRONT);
-
-	std::vector<float> meshOutput;
-	AssetSuite::MeshDescriptor meshDescriptor{};
-	std::vector<uint8_t> imageOutput;
-	AssetSuite::ImageDescriptor imageDescriptor{};
-
-	auto LogMeshError = [](const std::string& meshName)
-		{
-			OutputDebugStringW(L"Failed to load mesh: ");
-			OutputDebugStringA(meshName.c_str());
-			OutputDebugStringW(L"\n");
-		};
 
 	const auto aspectRatio = static_cast<float>(windowContext.GetWidth()) / static_cast<float>(windowContext.GetHeight());
 
@@ -243,96 +478,11 @@ void Engine::LoadAssets(GameObjects gameObjects, Cameras cameras, Sunlights sunl
 
 	for (const auto& gameObject : gameObjects)
 	{
-		const auto& meshName = gameObject.meshName;
-		const auto& textureName = gameObject.textureName;
-
-		auto TryGetMesh = [&](AssetSuite::MeshOutputFormat format) -> bool
-		{
-			auto errorCode = assetManager.MeshGet(meshName.c_str(), format, meshOutput, meshDescriptor);
-			if (errorCode != AssetSuite::ErrorCode::OK)
-			{
-				LogMeshError(meshName);
-				return false;
-			}
-			return true;
-		};
-
-		auto CreateVB = [&](std::string_view label, int components) -> HVertexBuffer
-		{
-			std::string name = std::string(label) + "_" + meshName;
-			return renderContext.CreateVertexBuffer(meshDescriptor.numOfVertices * 3, components, meshOutput.data(), name.c_str());
-		};
-
-		auto CreateTexture = [&](const AssetSuite::ImageDescriptor& desc, std::vector<uint8_t>& data)
-		{
-			std::string name = "TEX_" + meshName;
-
-			TextureCreateDesc textureDesc;
-			textureDesc.width = desc.width;
-			textureDesc.height = desc.height;
-			textureDesc.format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
-			textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-#if ENABLE_COLOR_PIPELINE_DEBUG
-			textureDesc.srgbSrvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-#else
-			textureDesc.srvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-#endif
-			textureDesc.name = name.c_str();
-			textureDesc.UseFullMipChain();
-
-			renderContext.CreateTexture(textureDesc, data.data());
-		};
-
-		if (!TryGetMesh(AssetSuite::MeshOutputFormat::POSITION))
-		{
-			continue;
-		}
-		auto vbPosition = CreateVB("POSITION", 4);
-
-		auto vbColor = renderContext.GenerateColors(meshOutput.data(), meshOutput.size(), meshDescriptor.numOfVertices, meshName.c_str());
-
-		if (!TryGetMesh(AssetSuite::MeshOutputFormat::TEXCOORD))
-		{
-			continue;
-		}
-		auto vbTexcoord = CreateVB("TEXCOORD", 2);
-
-		if (!TryGetMesh(AssetSuite::MeshOutputFormat::NORMAL))
-		{
-			continue;
-		}
-		const UINT vertexCount = meshDescriptor.numOfVertices * 3;
-		auto normalizedNormals = NormalizeNormalStream(meshOutput, vertexCount);
-		std::string normalBufferName = "NORMAL_" + meshName;
-		auto vbNormals = renderContext.CreateVertexBuffer(
-			vertexCount,
-			4,
-			normalizedNormals.data(),
-			normalBufferName.c_str());
-
-		renderContext.CreateMesh(vbPosition, vbColor, vbTexcoord, vbNormals, meshName.c_str());
-
-		//auto texturePath = std::filesystem::current_path() / textureName;
-		auto texturePath = currentPath.remove_filename() / textureName;
-		assetManager.ImageLoadAndDecode(texturePath.string().c_str());
-		assetManager.ImageGet(AssetSuite::OutputFormat::RGB8, imageOutput, imageDescriptor);
-
-		CreateTexture(imageDescriptor, imageOutput);
-
-		RenderItem item{};
-		item.position = gameObject.position;
-		item.rotation = gameObject.rotation;
-		item.scale = gameObject.scale;
-		item.mesh = HMesh(renderContext.GetNumOfMeshes() - 1);
-		item.texture = HTexture(renderContext.GetNumOfMeshes() - 1);
-		strncpy_s(item.name, gameObject.name.c_str(), _TRUNCATE);
-
-		const Entity entity = renderService->CreateEntity(mCoordinator, item);
-		item.id = entity;
-		renderContext.CreateRenderItem(item);
-		mCoordinator.GetComponent<MaterialComponent>(entity).textureFileName = textureName;
+		HMesh mesh;
+		HTexture texture;
+		if (PrepareObjectResources(assetManager, gameObject, mesh, texture))
+			CreateSceneObject(gameObject, mesh, texture);
 	}
-
 	EngineServices services
 	{
 		.scene = sceneService,
@@ -555,6 +705,16 @@ void Engine::LoadSceneAssets(std::string sceneName)
 
 void Engine::UnloadSceneAssets()
 {
+	duplicateError.clear();
+	++sceneGeneration;
+	loadedMeshes.clear();
+	loadedTextures.clear();
+	modelLibraryPath.clear();
+	libraryInsertionError.clear();
+	libraryTextures.clear();
+	libraryTextureAssignments.clear();
+	meshLibraryGroups.clear();
+	meshLibraryError.clear();
 	sceneService->Reset();
 	mCoordinator.Reset();
 	renderContext.UnloadAssets();
@@ -602,6 +762,20 @@ void Engine::ProcessGlobalCommands()
 		case EngineCommandType::GameLoop:
 			ChangeState(new GameLoopState());
 			break;
+		case EngineCommandType::AddLibraryAsset:
+		{
+			const auto& payload = std::get<AddLibraryAssetPayload>(cmd.payload);
+			if (payload.sceneGeneration == sceneGeneration)
+				AddLibraryAsset(payload.meshName, payload.textureName);
+			break;
+		}
+		case EngineCommandType::DuplicateObject:
+		{
+			const auto& payload = std::get<DuplicateObjectPayload>(cmd.payload);
+			if (payload.sceneGeneration == sceneGeneration)
+				DuplicateObject(payload.entity);
+			break;
+		}
 		case EngineCommandType::UnloadAssets:
 			ChangeState(new UnloadAssetsState());
 			break;

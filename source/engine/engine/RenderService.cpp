@@ -27,6 +27,9 @@ Entity RenderService::CreateEntity(Coordinator& coordinator, RenderItem& renderI
 
 void RenderService::Update(Coordinator& coordinator)
 {
+      // Rebuild the CPU snapshot; clear() retains storage and leaves GPU assets alone.
+      auto& renderItems = renderContext.GetRenderItems();
+      renderItems.clear();
       for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
       {
 		Signature sig = coordinator.GetEntityManager()->GetSignature(entity);
@@ -45,7 +48,7 @@ void RenderService::Update(Coordinator& coordinator)
 		auto& info = coordinator.GetComponent<InfoComponent>(entity);
 
             // Create the item
-            RenderItem item;
+            RenderItem item{};
             item.id = entity;
             item.position = DirectX::SimpleMath::Vector3(transform.position); // assuming vector math matches
             item.rotation = DirectX::SimpleMath::Vector3(transform.rotation);
@@ -57,12 +60,6 @@ void RenderService::Update(Coordinator& coordinator)
 		item.shininess = mat.shininess;
 		strncpy_s(item.name, info.name.c_str(), _TRUNCATE);
 
-		// Update the RenderItem in the RenderContext (not create)
-		RenderItem* renderItem = renderContext.GetRenderItemById(entity);
-		assert(renderItem != nullptr && "RenderItem not found for ECS entity.");
-		*renderItem = item;
-
-		// Here, we can further bridge ECS with Renderer Context as needed
-		// For example, we might want to set additional flags or update other systems
+		renderItems.push_back(item);
 	}
 }

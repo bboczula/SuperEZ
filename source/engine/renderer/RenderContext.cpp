@@ -258,11 +258,6 @@ void RenderContext::UpdateSunlightViewProjection()
 	sunlightViewProjection.viewProjection = lightView * lightProjection;
 }
 
-void RenderContext::CreateRenderItem(const RenderItem& item)
-{
-	renderItems.push_back(item);
-}
-
 HRenderTarget RenderContext::CreateRenderTarget(const char* name, RenderTargetFormat format)
 {
 	int width = windowContext.GetWidth();
@@ -936,7 +931,7 @@ float RenderContext::GetSceneBoundsRadius() const
 	return (sceneMax - sceneMin).Length() * 0.5f;
 }
 
-void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
+HTexture RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 {
 	OutputDebugString(L"CreateTexture\n");
 
@@ -1004,6 +999,7 @@ void RenderContext::CreateTexture(const TextureCreateDesc& desc, BYTE* data)
 	const UINT rawDescriptorIndex = static_cast<UINT>(texture->GetSrvDescriptorIndex());
 	const UINT srgbDescriptorIndex = static_cast<UINT>(texture->GetColorSrvDescriptorIndex(true));
 	materials.push_back(new Material(textureHandle, rawDescriptorIndex, srgbDescriptorIndex, desc.name));
+	return textureHandle;
 }
 
 void RenderContext::PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data)
@@ -1285,7 +1281,7 @@ void RenderContext::BindDepthBuffer(HCommandList commandList, HDepthBuffer depth
 void RenderContext::BindTexture(HCommandList commandList, HTexture texture, UINT slot)
 {
 	CD3DX12_GPU_DESCRIPTOR_HANDLE textureHandle(cbvSrvUavHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart(),
-		materials[texture.Index()]->GetHandleOffset(linearColorEnabled), cbvSrvUavHeap.GetDescriptorSize());
+		static_cast<INT>(textures[texture.Index()]->GetColorSrvDescriptorIndex(linearColorEnabled)), cbvSrvUavHeap.GetDescriptorSize());
 
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot + 1, samplerHeap.GetHeap()->GetGPUDescriptorHandleForHeapStart());
 	commandLists[commandList.Index()]->GetCommandList()->SetGraphicsRootDescriptorTable(slot, textureHandle);

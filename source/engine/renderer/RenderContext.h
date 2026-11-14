@@ -103,10 +103,21 @@ private:
 	}
 };
 
+struct EditorViewport
+{
+	float x = 0, y = 0, width = 0, height = 0;
+	bool pickable = false;
+};
+
 class RenderContext
 {
 public:
 	RenderContext();
+	const EditorViewport& GetEditorViewport() const { return editorViewport; }
+	void SetEditorViewport(float x, float y, float width, float height, bool pickable)
+	{
+		editorViewport = { x, y, width, height, pickable };
+	}
 	~RenderContext();
 	void CreateDescriptorHeap(DeviceContext* deviceContext);
 	void CreateRenderTargetFromBackBuffer(DeviceContext* deviceContext);
@@ -139,14 +150,13 @@ public:
 	const SunlightViewProjection& GetSunlightViewProjection() const { return sunlightViewProjection; }
 	void SetShadowMapTexture(HTexture texture) { shadowMapTexture = texture; }
 	HTexture GetShadowMapTexture() const { return shadowMapTexture; }
-	void CreateRenderItem(const RenderItem& item);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format);
 	HRenderTarget CreateRenderTarget(const char* name, RenderTargetFormat format, int width, int height);
 	HRenderTarget CreateRenderTarget(const char* name, HTexture texture);
 	HDepthBuffer CreateDepthBuffer();
 	HDepthBuffer CreateDepthBuffer(UINT width, UINT height, const char* name);
 	void CreateMesh(HVertexBuffer vbIndexPosition, HVertexBuffer vbIndexColor, HVertexBuffer vbIndexTexture, HVertexBuffer vbNormalsTexture, const CHAR* name);
-	void CreateTexture(const TextureCreateDesc& desc, BYTE* data);
+	HTexture CreateTexture(const TextureCreateDesc& desc, BYTE* data);
 	void PrepareTextureForUpload(std::vector<UINT32>& pixels, unsigned int width, unsigned int height, BYTE* data);
 	void PrepareAndDonwsampleTexture(const std::vector<UINT32>& srcPixels, UINT srcWidth, UINT srcHeight, std::vector<UINT32>& dstPixels, UINT dstWidth, UINT dstHeight, bool isSrgb);
 	UINT CreateUnorderedAccessView(ID3D12Resource* resource, DXGI_FORMAT format, bool isStatic);
@@ -238,12 +248,14 @@ public:
 	// Drawing
 	void DrawMesh(HCommandList commandList, HMesh mesh);
 	void Dispatch(HCommandList commandList, UINT threadGroupX, UINT threadGroupY, UINT threadGroupZ);
-	// A huuuuge hack...
+	// Rebuilt from ECS components before rendering; GPU resources live independently.
+private:
 	std::vector<RenderItem> renderItems;
 private:
 	HBuffer CreateConstantBufferInternal(UINT bufferSizeInBytes);
 private:
 	DescriptorHeap rtvHeap;
+	EditorViewport editorViewport;
 	DescriptorHeap dsvHeap;
 	DescriptorHeap cbvSrvUavHeap;
 	DescriptorHeap samplerHeap;

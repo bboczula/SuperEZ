@@ -23,6 +23,8 @@ public:
             mLivingEntityCount = 0;
       }
 
+      bool CanCreateEntity() const { return mLivingEntityCount < MAX_ENTITIES; }
+
       Entity CreateEntity() {
             assert(mLivingEntityCount < MAX_ENTITIES && "Too many entities in existence.");
 

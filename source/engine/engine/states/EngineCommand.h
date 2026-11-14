@@ -10,10 +10,12 @@ enum class EngineCommandType
 	LoadAssets,
 	GameLoop,
 	UnloadAssets,
+	AddLibraryAsset,
+	DuplicateObject,
 	Exit
 };
 
-using EngineCommandPayload = std::variant<std::monostate, LoadAssetsPayload>;
+using EngineCommandPayload = std::variant<std::monostate, LoadAssetsPayload, AddLibraryAssetPayload, DuplicateObjectPayload>;
 
 struct EngineCommand
 {

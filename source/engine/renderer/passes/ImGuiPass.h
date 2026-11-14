@@ -23,6 +23,10 @@ public:
 	void PostSubmit() override;
 	void Allocate(DeviceContext* deviceContext) override;
 private:
+	void DrawAssetLibraryWindow(float x, float y, float width, float height);
+	bool assetLibraryExpanded = true;
+	char assetLibrarySearch[128] = {};
+	std::string selectedLibraryMesh;
 	void DrawInfoComponent(InfoComponent& info);
 	void DrawTransformComponent(TransformComponent& transform);
 	void DrawInfoSection(Coordinator& coordinator, Entity entity);
