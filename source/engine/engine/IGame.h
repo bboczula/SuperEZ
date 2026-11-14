@@ -5,7 +5,6 @@
 class SceneService;
 class IInput;
 class Picker;
-class RenderService;
 class Camera;
 
 struct EngineServices
@@ -21,13 +20,8 @@ struct EngineServices
       // Main active runtime camera. For entity-level camera work, prefer scene APIs.
       Camera* camera = nullptr;
 
-      // --- Optional / incremental services ---
-
       // Picking / raycast (entity + world position)
       Picker* picker = nullptr;
-
-      // Rendering interface (only if game needs to spawn / modify renderables)
-      RenderService* render = nullptr;
 };
 
 class IGame

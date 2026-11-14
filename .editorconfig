@@ -1,5 +1,5 @@
 root = true
 
-[*.{h,hpp,c,cpp}]
+[*.{h,hpp,c,cpp,hlsl,md}]
 end_of_line = crlf
 insert_final_newline = true

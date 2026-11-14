@@ -65,7 +65,7 @@ class IGame;
 class RawInputService;
 class SceneService;
 class TimeSystem;
-class RenderService;
+class RenderItem;
 class tinyxml2::XMLElement;
 
 class Engine
@@ -80,6 +80,7 @@ public:
 	void Run(IGame& game);
 	void ProcessSingleFrame();
 	void LoadSceneAssets(std::string sceneName);
+	void LoadEngineAssets();
 	void UnloadSceneAssets();
 	void ChangeState(IEngineState* newState);
 	void ProcessGlobalCommands();
@@ -107,6 +108,8 @@ private:
 	void ProcessCameras(tinyxml2::XMLElement* scene, Cameras& cameras);
 	void ProcessSunlights(tinyxml2::XMLElement* scene, Sunlights& sunlights);
 	void ProcessGameObjects(tinyxml2::XMLElement* scene, GameObjects& gameObjects);
+	Entity CreateEntity(RenderItem& renderItem);
+	void SynchronizeRenderWorld();
 private:
 	IGame* game = nullptr;
 	IEngineState* currentState = nullptr;
@@ -127,5 +130,4 @@ private:
 	SceneService* sceneService = nullptr;
 	TimeSystem* timeSystem = nullptr;
 	Coordinator mCoordinator;
-	RenderService* renderService = nullptr;
 };
